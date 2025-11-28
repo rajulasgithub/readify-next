@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -29,10 +29,20 @@ const navItems: { label: string; href: string }[] = [
   { label: "Categories", href: "/categories" },
   { label: "Browse", href: "/browse" },
   { label: "About", href: "/about" },
-  { label: "Register", href: "/register" },
+  { label: "Register", href: "/register" }
+
+ 
+
 ];
 
+
+
 export default function Navbar() {
+   const [mounted, setMounted] = useState(false); // ✅ define mounted
+
+  useEffect(() => {
+    setMounted(true); // ✅ set mounted after client mounts
+  }, []);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
   const handleDrawerToggle = (): void => {
@@ -89,7 +99,7 @@ export default function Navbar() {
       </List>
     </Box>
   );
-
+ if (!mounted) return null;
   return (
     <>
       <AppBar

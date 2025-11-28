@@ -1,10 +1,11 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/src/components/Navbar";
 import Footer from "@/src/components/Footer";
-import { Provider } from "react-redux";
-import { store } from "@/src/Redux/store/store";
+import ReduxProvider from "./ReduxProvider";
+
 
 
 
@@ -34,9 +35,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar/>
-         <Provider store={store}>
+     <ReduxProvider>
           {children}
-          </Provider>
+
+     </ReduxProvider>
+      
+        
         <Footer/>
       </body>
     </html>

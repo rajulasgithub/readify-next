@@ -1,6 +1,5 @@
 "use client";
 import {
-  Box,
   TextField,
   Button,
   Typography,
@@ -8,56 +7,82 @@ import {
   MenuItem,
   Paper,
   Stack,
+  Select,
 } from "@mui/material";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-
-// Redux
 import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/Redux/store/store";
 import { registerUser } from "@/src/Redux/store/authSlice";
-
+import { useEffect,useContext } from "react";
+import { useAuth } from "@/src/context/AuthContext";
 
 type SignupFormData = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
+  countryCode: string;
   phone: string;
   password: string;
   role: string;
 };
 
 const schema = yup.object().shape({
-  name: yup.string().required("Name is required"),
+  firstName: yup.string().required("First name is required"),
+  lastName: yup.string().required("Last name is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
+  countryCode: yup.string().required("Country code is required"),
   phone: yup
-    .string()
-    .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
-    .required("Phone number is required"),
+  .string()
+  .required("Phone number is required")
+  .matches(/^[0-9]{10}$/, "Phone number must be 10 digits"),
   password: yup.string().min(6, "Minimum 6 characters").required("Password is required"),
   role: yup.string().required("Please select a role"),
 });
 
 export default function RegisterPage() {
-  const dispatch = useDispatch();
+ const { loginUser } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, loading, error } = useSelector((state: RootState) => state.auth);
 
-  // Get Redux state
-  const { loading, error, user } = useSelector((state: any) => state.auth);
+  useEffect(() => {
+    if (error) {
+      console.log(" REGISTER ERROR FROM REDUX:", error);
+    }
+  }, [error]);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: yupResolver(schema),
+    defaultValues: {
+      countryCode: "+91", 
+    },
   });
 
-  const onSubmit = (data: SignupFormData) => {
-    dispatch(registerUser(data)); // ⬅🔥 send to Redux backend API
-  };
+  const onSubmit = async (data: SignupFormData) => {
+  const result = await dispatch(registerUser(data));
+
+  if (registerUser.fulfilled.match(result)) {
+    const { token, role, email } = result.payload;
+
+    // Store in AuthContext
+    loginUser(token, role, email);
+
+    console.log("Stored in AuthContext:", token, role, email);
+  } else {
+    console.log("Registration failed:", result.payload);
+  }
+};
+
 
   return (
-    <Container maxWidth="sm" sx={{ py: 5 }}>
+    <Container maxWidth="sm" >
       <Paper
         elevation={0}
         sx={{
@@ -90,14 +115,12 @@ export default function RegisterPage() {
           Join Readify and start exploring books!
         </Typography>
 
-        {/* Show error */}
         {error && (
           <Typography sx={{ color: "red", mb: 2, textAlign: "center" }}>
             {error}
           </Typography>
         )}
 
-        {/* Show success */}
         {user && (
           <Typography sx={{ color: "green", mb: 2, textAlign: "center" }}>
             Account created successfully!
@@ -107,10 +130,18 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3}>
             <TextField
-              label="Full Name"
-              {...register("name")}
-              error={!!errors.name}
-              helperText={errors.name?.message}
+              label="First Name"
+              {...register("firstName")}
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+              fullWidth
+            />
+
+            <TextField
+              label="Last Name"
+              {...register("lastName")}
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
               fullWidth
             />
 
@@ -122,13 +153,27 @@ export default function RegisterPage() {
               fullWidth
             />
 
-            <TextField
-              label="Phone Number"
-              {...register("phone")}
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
-              fullWidth
-            />
+          <Stack direction="row" spacing={1}>
+        <Controller
+          name="countryCode"
+          control={control}
+          render={({ field }) => (
+            <Select {...field} fullWidth>
+              <MenuItem value="+91">+91</MenuItem>
+              <MenuItem value="+1">+1</MenuItem>
+              <MenuItem value="+44">+44</MenuItem>
+            </Select>
+          )}
+        />
+
+        <TextField
+          label="Phone Number"
+          {...register("phone")}
+          error={!!errors.phone}
+          helperText={errors.phone?.message}
+          fullWidth
+        />
+      </Stack>
 
             <TextField
               type="password"
@@ -155,7 +200,7 @@ export default function RegisterPage() {
               type="submit"
               variant="contained"
               fullWidth
-              disabled={loading} // disable while loading
+              disabled={loading}
               sx={{
                 mt: 1,
                 borderRadius: "999px",

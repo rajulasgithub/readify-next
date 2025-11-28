@@ -101,7 +101,7 @@ const Footer: React.FC = () => {
             mt: 3,
           }}
         >
-          © {new Date().getFullYear()} Readify. All rights reserved.
+          {/* © {new Date().getFullYear()} Readify. All rights reserved. */}
         </Typography>
       </Container>
     </Box>

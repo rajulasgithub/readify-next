@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   TextField,
@@ -14,13 +14,15 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
-// ---- Types ----
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/Redux/store/store";
+import { loginUser } from "@/src/Redux/store/authSlice";
+
 type LoginFormInputs = {
   email: string;
   password: string;
 };
 
-// ---- Yup Schema ----
 const schema = yup.object({
   email: yup
     .string()
@@ -33,10 +35,18 @@ const schema = yup.object({
 });
 
 export default function LoginPage() {
+  const dispatch = useDispatch<AppDispatch>();
+
+
+  const { user, loading, error } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+ 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginFormInputs>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -45,11 +55,15 @@ export default function LoginPage() {
     },
   });
 
+
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    console.log("Login Data:", data);
-    // Example:
-    // const res = await api.post("/login", data);
+    dispatch(loginUser(data));
   };
+
+ 
+  useEffect(() => {
+    if (error) console.log("Login error:", error);
+  }, [error]);
 
   return (
     <Box
@@ -85,6 +99,18 @@ export default function LoginPage() {
             Login to continue
           </Typography>
 
+          {error && (
+            <Typography sx={{ color: "red", mb: 2, textAlign: "center" }}>
+              {error}
+            </Typography>
+          )}
+
+          {user && (
+            <Typography sx={{ color: "green", mb: 2, textAlign: "center" }}>
+              Logged in successfully!
+            </Typography>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={3}>
               {/* EMAIL */}
@@ -113,7 +139,7 @@ export default function LoginPage() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={isSubmitting}
+                disabled={loading}
                 sx={{
                   py: 1.3,
                   borderRadius: "10px",
@@ -125,7 +151,7 @@ export default function LoginPage() {
                   },
                 }}
               >
-                {isSubmitting ? "Logging in..." : "Login"}
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </Stack>
           </form>
