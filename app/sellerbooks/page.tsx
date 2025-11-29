@@ -9,21 +9,19 @@ import {
   CardContent,
   CardActions,
   Button,
-  IconButton,
   Stack,
   Pagination,
   CircularProgress,
 } from "@mui/material";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 
-import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/src/Redux/store/store";
 import { fetchBooks, Book } from "@/src/Redux/store/bookSlice";
 import Searchfield from "@/src/components/Searchfield";
 
-export default function ViewBooks() {
+export default function ViewSellerBooks() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -35,46 +33,47 @@ export default function ViewBooks() {
   const limit = 8;
   const [search, setSearch] = useState("");
 
-  
+  // ✅ Fetch books whenever page OR search changes
   useEffect(() => {
-    dispatch(
+    const res = dispatch(
       fetchBooks({
         page,
         limit,
-        search: search.trim() || undefined, 
+        search: search.trim() || undefined,
       }) as any
     );
-  }, [page, search, dispatch]); 
+    console.log(res);
+  }, [page, search, dispatch]); // 👈 search added here
 
   const handlePageChange = (_: any, value: number) => setPage(value);
 
- const viewDetails = (id: string) => {
+  const viewDetails = (id: string) => {
     router.push(`/viewonebook/${id}`);
   };
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        {/* Heading */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Browse Books
-          </Typography>
-          <Typography sx={{ color: "text.secondary" }}>
-            Explore books from all categories
-          </Typography>
-        </Box>
-
         {/* Search bar */}
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 3 }}>
           <Searchfield
             value={search}
             onChange={(val) => {
               setSearch(val);
-              setPage(1); 
+              setPage(1); // reset to first page on new search
             }}
             placeholder="Search books..."
           />
+        </Box>
+
+        {/* Heading */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            My Books
+          </Typography>
+          <Typography sx={{ color: "text.secondary" }}>
+            Manage your uploaded books
+          </Typography>
         </Box>
 
         {/* Books Cards */}
@@ -88,7 +87,7 @@ export default function ViewBooks() {
           </Typography>
         ) : books.length === 0 ? (
           <Typography align="center" sx={{ py: 6 }}>
-            No books found.
+            No books uploaded yet.
           </Typography>
         ) : (
           <Box
@@ -116,31 +115,12 @@ export default function ViewBooks() {
                   transition: "all 0.25s ease",
                 }}
               >
-                <Box sx={{ position: "relative", p: 2, pb: 0 }}>
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      bgcolor: "#ffffff",
-                      "&:hover": { bgcolor: "#f1f5f9" },
-                    }}
-                  >
-                    <FavoriteBorderOutlinedIcon fontSize="small" />
-                  </IconButton>
-
-                  <CardMedia
-                    component="img"
-                    image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
-                    alt={book.title}
-                    sx={{
-                      borderRadius: 3,
-                      height: 170,
-                      objectFit: "cover",
-                    }}
-                  />
-                </Box>
+                <CardMedia
+                  component="img"
+                  image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
+                  alt={book.title}
+                  sx={{ borderRadius: 3, height: 170, objectFit: "cover" }}
+                />
 
                 <CardContent sx={{ pt: 1, pb: 0 }}>
                   <Typography
@@ -193,7 +173,7 @@ export default function ViewBooks() {
           </Box>
         )}
 
-        {/* Pagination from backend */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <Stack alignItems="center" sx={{ pb: 4 }}>
             <Pagination

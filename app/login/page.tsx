@@ -17,6 +17,7 @@ import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/Redux/store/store";
 import { loginUser } from "@/src/Redux/store/authSlice";
+import { useRouter } from "next/navigation";
 
 type LoginFormInputs = {
   email: string;
@@ -35,9 +36,10 @@ const schema = yup.object({
 });
 
 export default function LoginPage() {
+  const router = useRouter()
   const dispatch = useDispatch<AppDispatch>();
-
-
+   
+   
   const { user, loading, error } = useSelector(
     (state: RootState) => state.auth
   );
@@ -57,8 +59,34 @@ export default function LoginPage() {
 
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
-    dispatch(loginUser(data));
-  };
+  try {
+    // dispatch the loginUser thunk and unwrap the result
+    const payload = await dispatch(loginUser(data)).unwrap();
+
+    // save data to localStorage
+    localStorage.setItem("accessToken", payload.accessToken);
+    localStorage.setItem("role", payload.data.role);
+    localStorage.setItem("email", payload.data.email);
+
+    switch (payload.data.role) {
+      case "seller":
+        router.push("/sellerbooks"); 
+        break;
+      case "customer":
+        router.push("/viewbooks");
+        break;
+      case "admin":
+        router.push("/admindashboard"); 
+        break;
+      default:
+        router.push("/"); // fallback
+    }
+
+    
+  } catch (err) {
+    console.error("Login failed:", err);
+  }
+};
 
  
   useEffect(() => {

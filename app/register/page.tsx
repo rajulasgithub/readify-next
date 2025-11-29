@@ -16,8 +16,10 @@ import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/Redux/store/store";
 import { registerUser } from "@/src/Redux/store/authSlice";
-import { useEffect,useContext } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/src/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 
 type SignupFormData = {
   firstName: string;
@@ -43,6 +45,7 @@ const schema = yup.object().shape({
 });
 
 export default function RegisterPage() {
+  const router = useRouter()
  const { loginUser } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const { user, loading, error } = useSelector((state: RootState) => state.auth);
@@ -65,21 +68,34 @@ export default function RegisterPage() {
     },
   });
 
-  const onSubmit = async (data: SignupFormData) => {
-  const result = await dispatch(registerUser(data));
+ const onSubmit = async (data: SignupFormData) => {
+  const res = await dispatch(registerUser(data));
 
-  if (registerUser.fulfilled.match(result)) {
-    const { token, role, email } = result.payload;
+  if (registerUser.fulfilled.match(res)) {
+    const payload = res.payload;
+    localStorage.setItem("accessToken",payload.accessToken)
+    localStorage.setItem("role",payload.data.role)
+    localStorage.setItem("email",payload.data.email)
 
-    // Store in AuthContext
-    loginUser(token, role, email);
-
-    console.log("Stored in AuthContext:", token, role, email);
+    switch (payload.data.role) {
+      case "seller":
+        router.push("/sellerbooks"); 
+        break;
+      case "customer":
+        router.push("/viewbooks");
+        break;
+      case "admin":
+        router.push("/admindashboard"); 
+        break;
+      default:
+        router.push("/"); // fallback
+    }
   } else {
-    console.log("Registration failed:", result.payload);
+    console.log("Registration failed:", res);
   }
 };
 
+  
 
   return (
     <Container maxWidth="sm" >

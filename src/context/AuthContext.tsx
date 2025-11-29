@@ -1,5 +1,4 @@
 "use client";
-
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 
 // ---------- TYPES ----------
@@ -60,7 +59,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ---------- CUSTOM HOOK ----------
 export const useAuth = () => {
   const context = React.useContext(AuthContext);
   if (!context) {

@@ -2,13 +2,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/src/components/api";
 
+
 interface User {
-  id: string;
-  firstName: string;
-  lastName?: string;
   email: string;
-  phone?: string;
-  role?: string;
+  role: string;
 }
 
 
@@ -27,17 +24,16 @@ interface RegisterFormData {
   role: string;
 }
 
-
-
 interface LoginFormData {
   email: string;
   password: string;
 }
 
-interface ApiResponse {
-  user: User;
-  token?: string;
-  message?: string;
+export interface ApiResponse {
+  success: boolean;
+  message: string;
+  accessToken: string;
+  data: User;
 }
 
 
@@ -52,7 +48,7 @@ export const registerUser = createAsyncThunk<
     const { data } = await api.post<ApiResponse>("/api/user/register", formData);
     return data;
   } catch (err: any) {
-    console.log("🔥 FULL ERROR:", err.response);
+    console.log(" FULL ERROR:", err.response);
     return rejectWithValue(err.response?.data?.message || "Something went wrong");
   }
 });
@@ -95,7 +91,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
         state.loading = false;
-        state.user = action.payload.user;
+        state.user = action.payload.data;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -109,7 +105,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
         state.loading = false;
-        state.user = action.payload.user;
+        state.user = action.payload.data;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
