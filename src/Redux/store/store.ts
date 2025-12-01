@@ -4,6 +4,7 @@ import authReducer from "./authSlice";
 import bookReducer from "./bookSlice";
 import cartReducer from "./cartSlice";
 import wishlistReducer from "./wishlistSlice";
+import adminReducer from "./adminSlice";
 
 // --- Configure store ---
 export const store = configureStore({
@@ -12,6 +13,7 @@ export const store = configureStore({
     books: bookReducer,
     cart: cartReducer, 
     wishlist: wishlistReducer, 
+     admin: adminReducer,
   },
 });
 

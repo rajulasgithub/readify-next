@@ -76,7 +76,7 @@ export default function LoginPage() {
         router.push("/viewbooks");
         break;
       case "admin":
-        router.push("/admindashboard"); 
+        router.push("/admin"); 
         break;
       default:
         router.push("/"); // fallback
