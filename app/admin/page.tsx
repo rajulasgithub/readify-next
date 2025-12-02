@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDashboardStats } from "@/src/Redux/store/adminSlice";
 import { AppDispatch, RootState } from "@/src/Redux/store/store";
+import AdminStatsChart from "./adminstatechart/page";
 
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
@@ -285,6 +286,8 @@ const AdminDashboard: React.FC = () => {
             </Button>
           </Card>
         </Box>
+      <AdminStatsChart/>
+
       </Container>
     </Box>
   );

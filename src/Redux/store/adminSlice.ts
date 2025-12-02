@@ -1,3 +1,4 @@
+// src/Redux/store/adminSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/src/components/api";
 
@@ -11,12 +12,25 @@ export interface DashboardStats {
 
 export interface User {
   _id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   createdAt?: string;
   orders?: { totalAmount: number }[];
-  totalOrders: number;   // number of orders
-  totalSpent: number;    // total amount spent
+  totalOrders: number; // number of orders
+  totalSpent: number; // total amount spent
+  role?: string;
+  blocked?: boolean;
+}
+
+export interface Book {
+  _id: string;
+  title: string;
+  author: string;
+  prize: number; // ⬅ matches your backend field name
+  category: string;
+  coverImage?: string;
+  createdAt: string;
 }
 
 interface FetchUsersResponse {
@@ -31,18 +45,27 @@ interface FetchUsersResponse {
 }
 
 interface AdminState {
-  loading: boolean;
+  loading: boolean; // for list/dashboard fetching
   error: string | null;
   stats: DashboardStats;
   sellers: User[];
   customers: User[];
+  sellerBooks: Book[];
   pagination: {
     total: number;
     page: number;
     limit: number;
     totalPages: number;
   };
+  actionLoading: boolean; // for block/delete actions
+  actionError: string | null;
 }
+
+// -------------------- HELPERS --------------------
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("accessToken");
+};
 
 // -------------------- ASYNC THUNKS --------------------
 
@@ -53,9 +76,9 @@ export const fetchDashboardStats = createAsyncThunk<
   { rejectValue: string }
 >("admin/fetchDashboardStats", async (_, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("accessToken");
+    const token = getToken();
     const res = await api.get("/api/admin/dashboardstats", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data.data as DashboardStats;
   } catch (err: any) {
@@ -63,23 +86,24 @@ export const fetchDashboardStats = createAsyncThunk<
   }
 });
 
-// Fetch sellers
-export const fetchSellers = createAsyncThunk<
+// Fetch users (sellers or customers)
+export const fetchUsers = createAsyncThunk<
   FetchUsersResponse,
-  { page?: number; limit?: number; search?: string } | undefined,
+  { type: "seller" | "customer"; page?: number; limit?: number; search?: string },
   { rejectValue: string }
->("admin/fetchSellers", async (params, { rejectWithValue }) => {
+>("admin/fetchUsers", async (params, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("accessToken");
+    const token = getToken();
+
     const queryParams = new URLSearchParams({
-      type: "seller",
-      page: params?.page?.toString() || "1",
-      limit: params?.limit?.toString() || "10",
-      search: params?.search || "",
+      type: params.type,
+      page: params.page?.toString() || "1",
+      limit: params.limit?.toString() || "10",
+      search: params.search || "",
     }).toString();
 
     const res = await api.get(`/api/admin/viewallusers?${queryParams}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     return res.data as FetchUsersResponse;
@@ -88,32 +112,62 @@ export const fetchSellers = createAsyncThunk<
   }
 });
 
-// Fetch customers
-export const fetchCustomers = createAsyncThunk<
-  FetchUsersResponse,
-  { page?: number; limit?: number; search?: string } | undefined,
+// Fetch all books for a seller
+export const fetchSellerBooks = createAsyncThunk<
+  Book[],
+  string,
   { rejectValue: string }
->("admin/fetchCustomers", async (params, { rejectWithValue }) => {
+>("admin/fetchSellerBooks", async (id, { rejectWithValue }) => {
   try {
-    const token = localStorage.getItem("accessToken");
-    const queryParams = new URLSearchParams({
-      type: "customer",
-      page: params?.page?.toString() || "1",
-      limit: params?.limit?.toString() || "10",
-      search: params?.search || "",
-    }).toString();
-
-    const res = await api.get(`/api/admin/viewallusers?${queryParams}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const token = getToken();
+    const res = await api.get(`/api/admin/sellerbooks/${id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-
-    return res.data as FetchUsersResponse;
+    return res.data.data as Book[];
   } catch (err: any) {
     return rejectWithValue(err.response?.data?.message || err.message);
   }
 });
 
-// -------------------- INITIAL STATE --------------------
+// 🔥 BLOCK / UNBLOCK USER thunk (toggle)
+export const toggleBlockUser = createAsyncThunk<
+  { userId: string; role: "seller" | "customer" },
+  { userId: string; role: "seller" | "customer" },
+  { rejectValue: string }
+>("admin/toggleBlockUser", async ({ userId, role }, { rejectWithValue }) => {
+  try {
+    const token = getToken();
+    await api.patch(
+      `/api/admin/blockuser/${userId}`,
+      {},
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+    return { userId, role };
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data?.message || err.message);
+  }
+});
+
+// 🔥 DELETE USER thunk
+export const deleteUserThunk = createAsyncThunk<
+  { userId: string; role: "seller" | "customer" },
+  { userId: string; role: "seller" | "customer" },
+  { rejectValue: string }
+>("admin/deleteUser", async ({ userId, role }, { rejectWithValue }) => {
+  try {
+    const token = getToken();
+    await api.delete(`/api/admin/deleteuser/${userId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return { userId, role };
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data?.message || err.message);
+  }
+});
+
+// -------------------- SLICE --------------------
 const initialState: AdminState = {
   loading: false,
   error: null,
@@ -125,10 +179,12 @@ const initialState: AdminState = {
   },
   sellers: [],
   customers: [],
+  sellerBooks: [],
   pagination: { total: 0, page: 1, limit: 10, totalPages: 0 },
+  actionLoading: false,
+  actionError: null,
 };
 
-// -------------------- SLICE --------------------
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -136,6 +192,8 @@ const adminSlice = createSlice({
     resetAdminState: (state) => {
       state.loading = false;
       state.error = null;
+      state.actionLoading = false;
+      state.actionError = null;
       state.stats = {
         customersCount: 0,
         sellersCount: 0,
@@ -144,7 +202,11 @@ const adminSlice = createSlice({
       };
       state.sellers = [];
       state.customers = [];
+      state.sellerBooks = [];
       state.pagination = { total: 0, page: 1, limit: 10, totalPages: 0 };
+    },
+    clearSellerBooks: (state) => {
+      state.sellerBooks = [];
     },
   },
   extraReducers: (builder) => {
@@ -166,39 +228,90 @@ const adminSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Sellers
+    // Fetch users
     builder
-      .addCase(fetchSellers.pending, (state) => {
+      .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchSellers.fulfilled, (state, action: PayloadAction<FetchUsersResponse>) => {
+      .addCase(fetchUsers.fulfilled, (state, action) => {
         state.loading = false;
-        state.sellers = action.payload.data;
+
+        if (action.meta.arg.type === "seller") {
+          state.sellers = action.payload.data;
+        } else {
+          state.customers = action.payload.data;
+        }
+
         state.pagination = action.payload.pagination;
       })
-      .addCase(fetchSellers.rejected, (state, action) => {
+      .addCase(fetchUsers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
 
-    // Customers
+    // Fetch seller books
     builder
-      .addCase(fetchCustomers.pending, (state) => {
+      .addCase(fetchSellerBooks.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchCustomers.fulfilled, (state, action: PayloadAction<FetchUsersResponse>) => {
-        state.loading = false;
-        state.customers = action.payload.data;
-        state.pagination = action.payload.pagination;
-      })
-      .addCase(fetchCustomers.rejected, (state, action) => {
+      .addCase(
+        fetchSellerBooks.fulfilled,
+        (state, action: PayloadAction<Book[]>) => {
+          state.loading = false;
+          state.sellerBooks = action.payload;
+        }
+      )
+      .addCase(fetchSellerBooks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      });
+
+    // 🔥 Toggle Block / Unblock
+    builder
+      .addCase(toggleBlockUser.pending, (state) => {
+        state.actionLoading = true;
+        state.actionError = null;
+      })
+      .addCase(toggleBlockUser.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const { userId, role } = action.payload;
+        const list = role === "seller" ? state.sellers : state.customers;
+        const user = list.find((u) => u._id === userId);
+        if (user) {
+          user.blocked = !user.blocked;
+        }
+      })
+      .addCase(toggleBlockUser.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.actionError = action.payload as string;
+      });
+
+    // 🔥 Delete User
+    builder
+      .addCase(deleteUserThunk.pending, (state) => {
+        state.actionLoading = true;
+        state.actionError = null;
+      })
+      .addCase(deleteUserThunk.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const { userId, role } = action.payload;
+
+        if (role === "seller") {
+          state.sellers = state.sellers.filter((u) => u._id !== userId);
+        } else {
+          state.customers = state.customers.filter((u) => u._id !== userId);
+        }
+
+        // You might also want to update pagination.total here if needed
+      })
+      .addCase(deleteUserThunk.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.actionError = action.payload as string;
       });
   },
 });
 
-export const { resetAdminState } = adminSlice.actions;
+export const { resetAdminState, clearSellerBooks } = adminSlice.actions;
 export default adminSlice.reducer;

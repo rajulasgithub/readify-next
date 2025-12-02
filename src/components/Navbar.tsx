@@ -14,39 +14,72 @@ import {
   Box,
   Stack,
   Divider,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import SearchIcon from "@mui/icons-material/Search";
-
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// nav items with paths
+// normal nav items (without Categories)
 const navItems: { label: string; href: string }[] = [
-
-  { label: "Categories", href: "/categories" },
-  { label: "Browse", href: "/browse" },
   { label: "About", href: "/about" },
-  { label: "Register", href: "/register" }
-
- 
-
+  { label: "Register", href: "/register" },
 ];
 
-
+// your category list (show these in 3 columns)
+const categories = [
+  "Fiction",
+  "Non-Fiction",
+  "Romance",
+  "Thriller",
+  "Science",
+  "Self Help",
+  "Biography",
+  "Children",
+  "Comics",
+  "Fantasy",
+  "Horror",
+  "History",
+];
 
 export default function Navbar() {
-   const [mounted, setMounted] = useState(false); // ✅ define mounted
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+
+  // state for Categories menu
+  const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
+  const isCatMenuOpen = Boolean(catAnchorEl);
 
   useEffect(() => {
-    setMounted(true); // ✅ set mounted after client mounts
+    setMounted(true);
   }, []);
-  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
   const handleDrawerToggle = (): void => {
     setMobileOpen((prev) => !prev);
+  };
+
+  // open categories menu
+  const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) => {
+    setCatAnchorEl(event.currentTarget);
+  };
+
+  // close categories menu
+  const handleCategoriesClose = () => {
+    setCatAnchorEl(null);
+  };
+
+  // when user clicks a category
+  const handleCategorySelect = (cat: string) => {
+    setCatAnchorEl(null);
+    // navigate however you want, example:
+    router.push(`/categories?name=${encodeURIComponent(cat)}`);
   };
 
   const drawer = (
@@ -68,6 +101,21 @@ export default function Navbar() {
       <Divider sx={{ mb: 2 }} />
 
       <List>
+        {/* For mobile: just go to /categories page */}
+        <ListItem>
+          <Link
+            href="/categories"
+            style={{ textDecoration: "none", width: "100%" }}
+          >
+            <ListItemText
+              primary="Categories"
+              primaryTypographyProps={{
+                sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+              }}
+            />
+          </Link>
+        </ListItem>
+
         {navItems.map((item) => (
           <ListItem key={item.label}>
             <Link
@@ -99,7 +147,9 @@ export default function Navbar() {
       </List>
     </Box>
   );
- if (!mounted) return null;
+
+  if (!mounted) return null;
+
   return (
     <>
       <AppBar
@@ -132,7 +182,7 @@ export default function Navbar() {
             </Typography>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav */}
           <Stack
             direction="row"
             spacing={3}
@@ -141,6 +191,21 @@ export default function Navbar() {
               alignItems: "center",
             }}
           >
+            {/* Categories dropdown trigger */}
+            <Typography
+              onClick={handleCategoriesClick}
+              sx={{
+                color: "#4b5563",
+                fontSize: 15,
+                fontWeight: 500,
+                cursor: "pointer",
+                "&:hover": { color: "#111827" },
+              }}
+            >
+              Categories
+            </Typography>
+
+            {/* Normal nav items */}
             {navItems.map((item) => (
               <Link
                 key={item.label}
@@ -161,20 +226,18 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {/* Icons */}
-            <IconButton>
-              <SearchIcon sx={{ color: "#4b5563" }} />
+            <IconButton onClick={() => router.push("/wishlist")}>
+              <FavoriteBorderIcon sx={{ color: "#c57a45" }} />
             </IconButton>
 
-            <IconButton>
-              <FavoriteBorderIcon sx={{ color: "#4b5563" }} />
+            <IconButton onClick={() => router.push("/cart")}>
+              <ShoppingCartOutlinedIcon sx={{ color: "#4b5563" }} />
             </IconButton>
 
             <IconButton>
               <PersonOutlineIcon sx={{ color: "#4b5563" }} />
             </IconButton>
 
-            {/* Sign In */}
             <Link href="/login" style={{ textDecoration: "none" }}>
               <Button
                 variant="contained"
@@ -201,6 +264,48 @@ export default function Navbar() {
           </IconButton>
         </Toolbar>
       </AppBar>
+
+      {/* Categories dropdown menu (desktop) */}
+      <Menu
+        anchorEl={catAnchorEl}
+        open={isCatMenuOpen}
+        onClose={handleCategoriesClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        MenuListProps={{ sx: { p: 0 } }}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            p: 2,
+            borderRadius: 2,
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(2, minmax(0, 1fr))",
+              sm: "repeat(3, minmax(0, 1fr))",
+            },
+            gap: 1,
+            minWidth: 260,
+          }}
+        >
+          {categories.map((cat) => (
+            <MenuItem
+              key={cat}
+              onClick={() => handleCategorySelect(cat)}
+              sx={{
+                borderRadius: 1,
+                fontSize: 14,
+              }}
+            >
+              {cat}
+            </MenuItem>
+          ))}
+        </Box>
+      </Menu>
 
       {/* Mobile Drawer */}
       <Drawer

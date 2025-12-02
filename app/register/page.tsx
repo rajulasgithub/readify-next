@@ -79,7 +79,7 @@ export default function RegisterPage() {
 
     switch (payload.data.role) {
       case "seller":
-        router.push("/sellerbooks"); 
+        router.push("/sellerdashboard"); 
         break;
       case "customer":
         router.push("/viewbooks");
@@ -88,7 +88,7 @@ export default function RegisterPage() {
         router.push("/admindashboard"); 
         break;
       default:
-        router.push("/"); // fallback
+        router.push("/"); 
     }
   } else {
     console.log("Registration failed:", res);

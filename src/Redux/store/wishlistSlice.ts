@@ -20,7 +20,6 @@ getAllWishList returns each item mapped as:
   category: item.book.category,
   image: item.book.image,
 }
-
 */
 
 export interface WishlistItem {
@@ -35,7 +34,7 @@ export interface WishlistItem {
   language: string;
   prize: number;
   category: string;
-  image: string | string[]; // in case Book.image is array
+  image: string | string[];
 }
 
 interface WishlistState {
@@ -43,6 +42,12 @@ interface WishlistState {
   loading: boolean;
   error: string | null;
   success: boolean;
+
+  // ⭐ NEW Pagination fields
+  totalPages: number;
+  currentPage: number;
+   totalItems: number; 
+
 }
 
 const initialState: WishlistState = {
@@ -50,45 +55,54 @@ const initialState: WishlistState = {
   loading: false,
   error: null,
   success: false,
+
+  // ⭐ Initialize pagination
+  totalPages: 1,
+  currentPage: 1,
+  totalItems: 0,   
 };
 
 // helper for token
 const getToken = () => localStorage.getItem("accessToken");
 
- 
-
+// --------------------
 // 1️⃣ Get all wishlist items
+// --------------------
+interface FetchWishlistResponse {
+  items: WishlistItem[];
+  totalPages: number;
+  currentPage: number;
+}
+
 export const fetchWishlist = createAsyncThunk<
-  WishlistItem[],
-  void,
+  FetchWishlistResponse,
+  { page: number; limit: number },
   { rejectValue: string }
->("wishlist/fetchWishlist", async (_, { rejectWithValue }) => {
+>("wishlist/fetchWishlist", async ({ page, limit }, { rejectWithValue }) => {
   try {
     const token = getToken();
     if (!token) return rejectWithValue("No token found");
 
     const res = await api.get("/api/wishlist/getallwishlistitem", {
       headers: { Authorization: `Bearer ${token}` },
+      params: { page, limit }    // ⭐ send params here
     });
 
-    return res.data.data || [];
+    return {
+      items: res.data.data || [],
+      totalPages: res.data.totalPages || 1,
+      currentPage: res.data.currentPage || page,
+    };
   } catch (err: any) {
-    // treat "Wishlist is Empty" as empty list
-    if (
-      err.response?.status === 400 &&
-      typeof err.response?.data?.message === "string" &&
-      err.response.data.message.toLowerCase().includes("wishlist is empty")
-    ) {
-      return [] as WishlistItem[];
-    }
-
     return rejectWithValue(
       err.response?.data?.message || "Failed to fetch wishlist"
     );
   }
 });
 
-
+// --------------------
+// Add to wishlist
+// --------------------
 export const addToWishlist = createAsyncThunk<
   void,
   string,
@@ -103,8 +117,6 @@ export const addToWishlist = createAsyncThunk<
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-
-  
   } catch (err: any) {
     return rejectWithValue(
       err.response?.data?.message || "Failed to add to wishlist"
@@ -112,9 +124,11 @@ export const addToWishlist = createAsyncThunk<
   }
 });
 
-
+// --------------------
+// Remove wishlist item
+// --------------------
 export const removeFromWishlist = createAsyncThunk<
-  string, 
+  string,
   string,
   { rejectValue: string }
 >("wishlist/removeFromWishlist", async (bookId, { rejectWithValue }) => {
@@ -134,7 +148,9 @@ export const removeFromWishlist = createAsyncThunk<
   }
 });
 
-
+// --------------------
+// Clear wishlist
+// --------------------
 export const clearWishlist = createAsyncThunk<
   void,
   void,
@@ -154,10 +170,9 @@ export const clearWishlist = createAsyncThunk<
   }
 });
 
-/* ─────────────────────────────
-   SLICE
-   ───────────────────────────── */
-
+// --------------------
+// Slice
+// --------------------
 export const wishlistSlice = createSlice({
   name: "wishlist",
   initialState,
@@ -178,9 +193,11 @@ export const wishlistSlice = createSlice({
       })
       .addCase(
         fetchWishlist.fulfilled,
-        (state, action: PayloadAction<WishlistItem[]>) => {
+        (state, action: PayloadAction<FetchWishlistResponse>) => {
           state.loading = false;
-          state.items = action.payload;
+          state.items = action.payload.items;
+          state.totalPages = action.payload.totalPages;
+          state.currentPage = action.payload.currentPage;
           state.success = true;
         }
       )
@@ -189,13 +206,7 @@ export const wishlistSlice = createSlice({
         state.success = false;
         state.error =
           (action.payload as string) || "Failed to fetch wishlist";
-
-        if (
-          typeof action.payload === "string" &&
-          action.payload.toLowerCase().includes("wishlist is empty")
-        ) {
-          state.items = [];
-        }
+        state.items = [];
       });
 
     // ADD
@@ -252,6 +263,8 @@ export const wishlistSlice = createSlice({
         state.loading = false;
         state.success = true;
         state.items = [];
+        state.totalPages = 1;
+        state.currentPage = 1;
       })
       .addCase(clearWishlist.rejected, (state, action) => {
         state.loading = false;

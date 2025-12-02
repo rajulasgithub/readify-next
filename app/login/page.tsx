@@ -70,7 +70,7 @@ export default function LoginPage() {
 
     switch (payload.data.role) {
       case "seller":
-        router.push("/sellerbooks"); 
+        router.push("/sellerdashboard"); 
         break;
       case "customer":
         router.push("/viewbooks");

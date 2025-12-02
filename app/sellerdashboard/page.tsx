@@ -24,6 +24,8 @@ import CurrencyRupeeOutlinedIcon from "@mui/icons-material/CurrencyRupeeOutlined
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useRouter } from "next/navigation";
+import SellerSalesChart from "../sellersaleschart/page";
 
 type StatCard = {
   id: number;
@@ -105,53 +107,23 @@ const myBooks: SellerBook[] = [
   },
 ];
 
-const recentOrders: SellerOrder[] = [
-  {
-    id: "#ORD-2048",
-    customer: "Rahul Menon",
-    book: "The Silent Library",
-    amount: "₹399",
-    status: "Completed",
-    date: "Today",
-  },
-  {
-    id: "#ORD-2047",
-    customer: "Ananya Verma",
-    book: "Love Beyond Words",
-    amount: "₹220",
-    status: "Pending",
-    date: "Today",
-  },
-  {
-    id: "#ORD-2046",
-    customer: "Vikram Shah",
-    book: "The Art of Calm",
-    amount: "₹350",
-    status: "Cancelled",
-    date: "Yesterday",
-  },
-];
 
 const SellerDashboard: React.FC = () => {
-  // TODO: replace with real API navigation / actions
+    const router = useRouter()
+
   const handleAddBook = () => {
-    console.log("Add new book");
-    // navigate("/seller/add-book") etc.
+   router.push('/addbook')
   };
 
   const handleEditBook = (bookId: string) => {
-    console.log("Edit book:", bookId);
-    // navigate(`/seller/books/edit/${bookId}`)
+    router.push(`/updatebook/${bookId}`)
+    
   };
 
-  const handleDeleteBook = (bookId: string) => {
-    console.log("Delete book:", bookId);
-    // api.delete(`/api/seller/books/${bookId}`).then(refetch)
-  };
-
+  
   const handleManageOrders = () => {
     console.log("Go to orders page");
-    // navigate("/seller/orders")
+    
   };
 
   return (
@@ -293,314 +265,8 @@ const SellerDashboard: React.FC = () => {
           ))}
         </Box>
 
-        {/* MAIN LAYOUT: LEFT (MY BOOKS) | RIGHT (RECENT ORDERS + ACTIONS) */}
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={3}
-          alignItems="stretch"
-        >
-          {/* LEFT – MY BOOKS */}
-          <Box sx={{ flex: 2, minWidth: 0 }}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 3,
-                bgcolor: "#ffffff",
-                border: "1px solid #e5e7eb",
-                height: "100%",
-              }}
-            >
-              <CardHeader
-                title={
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    My Books
-                  </Typography>
-                }
-                subheader={
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "text.secondary" }}
-                  >
-                    Manage your active, out-of-stock, and draft listings.
-                  </Typography>
-                }
-              />
-              <Divider />
-              <CardContent sx={{ p: 0, maxHeight: 380, overflowY: "auto" }}>
-                <List disablePadding>
-                  {myBooks.map((book, index) => (
-                    <React.Fragment key={book.id}>
-                      <ListItem
-                        sx={{
-                          px: 3,
-                          py: 1.5,
-                          alignItems: "flex-start",
-                          "&:hover": { bgcolor: "#f9fafb" },
-                        }}
-                        secondaryAction={
-                          <Stack direction="row" spacing={1}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditBook(book.id)}
-                              sx={{
-                                color: "#334155",
-                                "&:hover": { bgcolor: "#e5e7eb" },
-                              }}
-                            >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteBook(book.id)}
-                              sx={{
-                                color: "#b91c1c",
-                                "&:hover": { bgcolor: "#fee2e2" },
-                              }}
-                            >
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Stack>
-                        }
-                      >
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 600 }}
-                              noWrap
-                            >
-                              {book.title}
-                            </Typography>
-                          }
-                          secondary={
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              alignItems="center"
-                              sx={{ mt: 0.3, flexWrap: "wrap" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "text.secondary" }}
-                              >
-                                {book.category}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600 }}
-                              >
-                                • {book.price}
-                              </Typography>
-                              <Chip
-                                label={book.status}
-                                size="small"
-                                sx={{
-                                  ml: 0.5,
-                                  borderRadius: "999px",
-                                  fontSize: 11,
-                                  bgcolor:
-                                    book.status === "Active"
-                                      ? "#dcfce7"
-                                      : book.status === "Out of Stock"
-                                      ? "#fee2e2"
-                                      : "#e5e7eb",
-                                  color:
-                                    book.status === "Active"
-                                      ? "#166534"
-                                      : book.status === "Out of Stock"
-                                      ? "#b91c1c"
-                                      : "#4b5563",
-                                }}
-                              />
-                            </Stack>
-                          }
-                        />
-                      </ListItem>
-                      {index !== myBooks.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              </CardContent>
-            </Card>
-          </Box>
-
-          {/* RIGHT – RECENT ORDERS + QUICK ACTIONS */}
-          <Box sx={{ flex: 1.3, minWidth: 0 }}>
-            <Stack spacing={3} height="100%">
-              {/* Recent Orders */}
-              <Card
-                elevation={0}
-                sx={{
-                  borderRadius: 3,
-                  bgcolor: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <CardHeader
-                  title={
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Recent Orders
-                    </Typography>
-                  }
-                  subheader={
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "text.secondary" }}
-                    >
-                      Latest orders placed on your books.
-                    </Typography>
-                  }
-                />
-                <Divider />
-                <CardContent sx={{ p: 0, maxHeight: 260, overflowY: "auto" }}>
-                  <List disablePadding>
-                    {recentOrders.map((order, index) => (
-                      <React.Fragment key={order.id}>
-                        <ListItem
-                          sx={{
-                            px: 3,
-                            py: 1.5,
-                            "&:hover": { bgcolor: "#f9fafb" },
-                          }}
-                        >
-                          <ListItemText
-                            primary={
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600 }}
-                              >
-                                {order.id} • {order.book}
-                              </Typography>
-                            }
-                            secondary={
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "text.secondary" }}
-                              >
-                                {order.customer} • {order.date}
-                              </Typography>
-                            }
-                          />
-                          <Stack
-                            direction="column"
-                            alignItems="flex-end"
-                            spacing={0.5}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 600 }}
-                            >
-                              {order.amount}
-                            </Typography>
-                            <Chip
-                              label={order.status}
-                              size="small"
-                              sx={{
-                                borderRadius: "999px",
-                                fontSize: 11,
-                                bgcolor:
-                                  order.status === "Completed"
-                                    ? "#dcfce7"
-                                    : order.status === "Pending"
-                                    ? "#fef9c3"
-                                    : "#fee2e2",
-                                color:
-                                  order.status === "Completed"
-                                    ? "#166534"
-                                    : order.status === "Pending"
-                                    ? "#854d0e"
-                                    : "#b91c1c",
-                              }}
-                            />
-                          </Stack>
-                        </ListItem>
-                        {index !== recentOrders.length - 1 && <Divider />}
-                      </React.Fragment>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card
-                elevation={0}
-                sx={{
-                  borderRadius: 3,
-                  bgcolor: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <CardHeader
-                  title={
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Quick Actions
-                    </Typography>
-                  }
-                />
-                <CardContent sx={{ pt: 0 }}>
-                  <Stack spacing={1.5}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        borderRadius: "999px",
-                        textTransform: "none",
-                        borderColor: "#e5e7eb",
-                        justifyContent: "flex-start",
-                        "&:hover": {
-                          borderColor: "#c57a45",
-                          bgcolor: "rgba(197,122,69,0.04)",
-                        },
-                      }}
-                      startIcon={<AddOutlinedIcon />}
-                      onClick={handleAddBook}
-                    >
-                      Add New Book
-                    </Button>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        borderRadius: "999px",
-                        textTransform: "none",
-                        borderColor: "#e5e7eb",
-                        justifyContent: "flex-start",
-                        "&:hover": {
-                          borderColor: "#c57a45",
-                          bgcolor: "rgba(197,122,69,0.04)",
-                        },
-                      }}
-                      startIcon={<ShoppingBagOutlinedIcon />}
-                      onClick={handleManageOrders}
-                    >
-                      Manage Orders
-                    </Button>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      sx={{
-                        borderRadius: "999px",
-                        textTransform: "none",
-                        borderColor: "#e5e7eb",
-                        justifyContent: "flex-start",
-                        "&:hover": {
-                          borderColor: "#c57a45",
-                          bgcolor: "rgba(197,122,69,0.04)",
-                        },
-                      }}
-                      startIcon={<EditOutlinedIcon />}
-                    >
-                      Edit Store Profile
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Stack>
-          </Box>
-        </Stack>
+        {/* <SellerSalesChar /> */}
+     
       </Container>
     </Box>
   );

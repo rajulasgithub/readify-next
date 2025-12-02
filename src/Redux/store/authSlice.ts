@@ -6,6 +6,10 @@ import api from "@/src/components/api";
 interface User {
   email: string;
   role: string;
+  firstName:string,
+  lastName:string,
+  phone:Number,
+  createdAt?:boolean
 }
 
 
