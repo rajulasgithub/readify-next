@@ -1,8 +1,8 @@
-// src/Redux/store/adminSlice.ts
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import api from "@/src/components/api";
 
-// -------------------- TYPES --------------------
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import api from "@/utils/api";
+
+
 export interface DashboardStats {
   customersCount: number;
   sellersCount: number;
@@ -17,8 +17,8 @@ export interface User {
   email: string;
   createdAt?: string;
   orders?: { totalAmount: number }[];
-  totalOrders: number; // number of orders
-  totalSpent: number; // total amount spent
+  totalOrders: number;
+  totalSpent: number; 
   role?: string;
   blocked?: boolean;
 }
@@ -27,7 +27,7 @@ export interface Book {
   _id: string;
   title: string;
   author: string;
-  prize: number; // ⬅ matches your backend field name
+  prize: number; 
   category: string;
   coverImage?: string;
   createdAt: string;
@@ -45,7 +45,7 @@ interface FetchUsersResponse {
 }
 
 interface AdminState {
-  loading: boolean; // for list/dashboard fetching
+  loading: boolean; 
   error: string | null;
   stats: DashboardStats;
   sellers: User[];
@@ -57,19 +57,18 @@ interface AdminState {
     limit: number;
     totalPages: number;
   };
-  actionLoading: boolean; // for block/delete actions
+  actionLoading: boolean; 
   actionError: string | null;
 }
 
-// -------------------- HELPERS --------------------
+
 const getToken = () => {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("accessToken");
 };
 
-// -------------------- ASYNC THUNKS --------------------
 
-// Fetch dashboard stats
+
 export const fetchDashboardStats = createAsyncThunk<
   DashboardStats,
   void,
@@ -86,7 +85,7 @@ export const fetchDashboardStats = createAsyncThunk<
   }
 });
 
-// Fetch users (sellers or customers)
+
 export const fetchUsers = createAsyncThunk<
   FetchUsersResponse,
   { type: "seller" | "customer"; page?: number; limit?: number; search?: string },
@@ -112,7 +111,7 @@ export const fetchUsers = createAsyncThunk<
   }
 });
 
-// Fetch all books for a seller
+
 export const fetchSellerBooks = createAsyncThunk<
   Book[],
   string,
@@ -129,7 +128,7 @@ export const fetchSellerBooks = createAsyncThunk<
   }
 });
 
-// 🔥 BLOCK / UNBLOCK USER thunk (toggle)
+
 export const toggleBlockUser = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
   { userId: string; role: "seller" | "customer" },
@@ -150,7 +149,7 @@ export const toggleBlockUser = createAsyncThunk<
   }
 });
 
-// 🔥 DELETE USER thunk
+
 export const deleteUserThunk = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
   { userId: string; role: "seller" | "customer" },
@@ -167,7 +166,7 @@ export const deleteUserThunk = createAsyncThunk<
   }
 });
 
-// -------------------- SLICE --------------------
+
 const initialState: AdminState = {
   loading: false,
   error: null,
@@ -268,7 +267,7 @@ const adminSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // 🔥 Toggle Block / Unblock
+    //  Toggle Block / Unblock
     builder
       .addCase(toggleBlockUser.pending, (state) => {
         state.actionLoading = true;
@@ -288,7 +287,7 @@ const adminSlice = createSlice({
         state.actionError = action.payload as string;
       });
 
-    // 🔥 Delete User
+    //  Delete User
     builder
       .addCase(deleteUserThunk.pending, (state) => {
         state.actionLoading = true;
@@ -304,7 +303,7 @@ const adminSlice = createSlice({
           state.customers = state.customers.filter((u) => u._id !== userId);
         }
 
-        // You might also want to update pagination.total here if needed
+       
       })
       .addCase(deleteUserThunk.rejected, (state, action) => {
         state.actionLoading = false;

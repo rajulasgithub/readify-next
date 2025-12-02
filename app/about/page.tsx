@@ -7,7 +7,7 @@ export default function AboutPage() {
     <Box sx={{ bgcolor: "#f5f7fb", py: 8, minHeight: "100vh" }}>
       <Container maxWidth="md">
         
-        {/* Heading */}
+      
         <Typography
           variant="h3"
           fontWeight={700}
@@ -25,7 +25,7 @@ export default function AboutPage() {
           Your trusted online marketplace for books — discover, explore, and enjoy reading.
         </Typography>
 
-        {/* Section 1 */}
+      
         <Card
           sx={{
             mb: 4,
@@ -49,7 +49,7 @@ export default function AboutPage() {
           </CardContent>
         </Card>
 
-        {/* Section 2 */}
+     
         <Card
           sx={{
             mb: 4,
@@ -78,7 +78,7 @@ export default function AboutPage() {
           </CardContent>
         </Card>
 
-        {/* Section 3 */}
+   
         <Card
           sx={{
             mb: 4,
@@ -102,7 +102,6 @@ export default function AboutPage() {
           </CardContent>
         </Card>
 
-        {/* Section 4 */}
         <Card
           sx={{
             p: 3,
@@ -126,7 +125,7 @@ export default function AboutPage() {
           </CardContent>
         </Card>
 
-        {/* Footer Text */}
+       
         <Typography
           textAlign="center"
           sx={{ mt: 5, color: "#6b7280", fontSize: 14 }}

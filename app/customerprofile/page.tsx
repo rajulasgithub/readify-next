@@ -16,7 +16,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useSelector } from "react-redux";
-import { RootState } from "@/src/Redux/store/store";
+import { RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 
 export default function UserProfilePage() {
@@ -34,9 +34,7 @@ export default function UserProfilePage() {
   const userEmail = user?.email || "Not provided";
   const userPhone = user?.phone || "Not provided";
   const userRole = user?.role || "Customer";
-  // const joinedAt = user?.createdAt
-  //   ? new Date(user.createdAt).toLocaleDateString()
-  //   : "Recently joined";
+ 
 
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 4 }}>
@@ -109,12 +107,11 @@ export default function UserProfilePage() {
                   <Typography variant="subtitle2" sx={{ color: "#6b7280" }}>
                     Phone
                   </Typography>
-                  {/* <Typography sx={{ mb: 1.5 }}>{userPhone}</Typography> */}
-
+                
                   <Typography variant="subtitle2" sx={{ color: "#6b7280" }}>
                     Member Since
                   </Typography>
-                  {/* <Typography>{joinedAt}</Typography> */}
+                
                 </Box>
 
                 <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
@@ -134,10 +131,10 @@ export default function UserProfilePage() {
             </CardContent>
           </Card>
 
-          {/* ---------- RIGHT SIDE : CONTENT ---------- */}
+        
           <Box sx={{ flex: 1 }}>
             <Stack spacing={3}>
-              {/* --------- Stats Section --------- */}
+        
               <Box
                 sx={{
                   display: "flex",
@@ -145,7 +142,7 @@ export default function UserProfilePage() {
                   flexWrap: "wrap",
                 }}
               >
-                {/* Wishlist */}
+             
                 <Card
                   sx={{
                     flex: "1 1 250px",
@@ -180,7 +177,7 @@ export default function UserProfilePage() {
                   </CardContent>
                 </Card>
 
-                {/* Cart */}
+               
                 <Card
                   sx={{
                     flex: "1 1 250px",
@@ -216,7 +213,6 @@ export default function UserProfilePage() {
                 </Card>
               </Box>
 
-              {/* ----------- Orders Section ----------- */}
               <Card
                 sx={{
                   borderRadius: 3,
@@ -271,7 +267,7 @@ export default function UserProfilePage() {
                 </CardContent>
               </Card>
 
-              {/* -------- Quick Actions -------- */}
+            
               <Card
                 sx={{
                   borderRadius: 3,

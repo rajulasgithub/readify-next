@@ -21,8 +21,8 @@ import * as yup from "yup";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store";
-import { fetchSingleBook, updateBook } from "@/src/Redux/store/bookSlice";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { fetchSingleBook, updateBook } from "@/src/redux/slices/bookSlice";
 
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -44,7 +44,7 @@ type BookFormInputs = {
   category: string;
 };
 
-// Yup validation schema
+
 const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
   title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required"),
@@ -89,14 +89,13 @@ const [imageError, setImageError] = useState<string | null>(null);
   },
 });
 
-  // Fetch single book on mount
   useEffect(() => {
     if (bookId) {
       dispatch(fetchSingleBook(bookId));
     }
   }, [bookId, dispatch]);
 
-  // Pre-fill form when book data is available
+
   useEffect(() => {
   if (singleBook) {
     reset({
@@ -115,7 +114,6 @@ const [imageError, setImageError] = useState<string | null>(null);
   }
 }, [singleBook, reset]);
 
-  // ------------------ IMAGE HANDLERS ------------------
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -173,8 +171,7 @@ const removeNewImage = () => {
           Edit the book details and images. Changes will be reflected in the store instantly.
         </Typography>
 
-        {/* IMAGE SECTION */}
-      {/* IMAGE SECTION */}
+      
 <Stack spacing={1.5} sx={{ mb: 3 }}>
   <Typography variant="subtitle2">Book Image *</Typography>
 
@@ -227,7 +224,7 @@ const removeNewImage = () => {
 
         {error && <Typography variant="body2" sx={{ color: "#b91c1c", mb: 2, fontWeight: 500 }}>{typeof error === "string" ? error : "Failed to update book"}</Typography>}
 
-        {/* FORM */}
+      
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Stack spacing={2.3}>
             <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />

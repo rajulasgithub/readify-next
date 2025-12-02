@@ -129,7 +129,7 @@ const SellerDashboard: React.FC = () => {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* HEADER */}
+  
         <Box
           sx={{
             mb: 4,
@@ -196,7 +196,7 @@ const SellerDashboard: React.FC = () => {
           </Stack>
         </Box>
 
-        {/* STATS */}
+       
         <Box
           sx={{
             display: "flex",
@@ -265,7 +265,7 @@ const SellerDashboard: React.FC = () => {
           ))}
         </Box>
 
-        {/* <SellerSalesChar /> */}
+     
      
       </Container>
     </Box>

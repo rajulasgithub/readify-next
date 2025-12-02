@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
           spacing={3}
           sx={{ textAlign: { xs: "center", md: "left" } }}
         >
-          {/* LEFT SECTION */}
+       
           <Box>
             <Typography
               variant="h5"
@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* CENTER LINKS */}
+      
           <Stack spacing={1}>
             <Typography
               variant="subtitle1"
@@ -66,7 +66,7 @@ const Footer: React.FC = () => {
             )}
           </Stack>
 
-          {/* SOCIAL ICONS */}
+    
           <Stack alignItems="center" spacing={1}>
             <Typography
               variant="subtitle1"
@@ -91,7 +91,7 @@ const Footer: React.FC = () => {
           </Stack>
         </Stack>
 
-        {/* BOTTOM COPYRIGHT */}
+      
         <Typography
           variant="caption"
           sx={{
@@ -101,7 +101,7 @@ const Footer: React.FC = () => {
             mt: 3,
           }}
         >
-          {/* © {new Date().getFullYear()} Readify. All rights reserved. */}
+      
         </Typography>
       </Container>
     </Box>

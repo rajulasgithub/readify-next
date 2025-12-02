@@ -23,13 +23,13 @@ interface SellerSalesChartProps {
 }
 
 const SellerSalesChart: React.FC<SellerSalesChartProps> = ({ orders }) => {
-  // Group orders by month & sum totalAmount
+
   const data = useMemo(() => {
     const map = new Map<string, number>();
 
     orders.forEach((order) => {
       const d = new Date(order.createdAt);
-      // e.g., "Jan 2025"
+     
       const key = d.toLocaleDateString("en-IN", {
         month: "short",
         year: "numeric",
@@ -39,10 +39,10 @@ const SellerSalesChart: React.FC<SellerSalesChartProps> = ({ orders }) => {
       map.set(key, prev + (order.totalAmount || 0));
     });
 
-    // Convert map to array for chart
+    
     const result = Array.from(map.entries())
       .map(([month, total]) => ({ month, total }))
-      // sort by actual date order
+    
       .sort((a, b) => {
         const [am, ay] = a.month.split(" ");
         const [bm, by] = b.month.split(" ");

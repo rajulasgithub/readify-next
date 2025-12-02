@@ -26,15 +26,14 @@ import {
   DialogActions,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store";
+import type { RootState, AppDispatch } from "@/src/redux/store";
 import {
   fetchUsers,
   toggleBlockUser,
   deleteUserThunk,
-} from "@/src/Redux/store/adminSlice";
+} from "@/src/redux/slices/adminSlice";
 import { useSearchParams, useRouter } from "next/navigation";
 
-// -------------------- CONFIRM DIALOG STATE --------------------
 interface ConfirmDialogState {
   open: boolean;
   action: "block" | "delete" | null;
@@ -44,9 +43,9 @@ interface ConfirmDialogState {
 const AdminUsersList: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const role = searchParams.get("type"); // "customer" or "seller"
+  const role = searchParams.get("type"); 
 
-  // ⬇ PAGE STATE — default = ?page=1
+ 
   const initialPage = Number(searchParams.get("page")) || 1;
   const [page, setPage] = useState(initialPage);
 
@@ -63,17 +62,17 @@ const AdminUsersList: React.FC = () => {
 
   const [search, setSearch] = useState<string>("");
 
-  // Confirm dialog state
+ 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     action: null,
     userId: null,
   });
 
-  // Choose correct users list
+  
   const users = role === "seller" ? sellers : customers;
 
-  // Fetch users whenever role or page changes
+
   useEffect(() => {
     if (!role) return;
 
@@ -81,15 +80,13 @@ const AdminUsersList: React.FC = () => {
       fetchUsers({
         type: role as "seller" | "customer",
         page,
-        limit: 2, // or whatever you want
+        limit: 2, 
       })
     );
 
-    // Update URL without refreshing
     router.replace(`?type=${role}&page=${page}`);
   }, [dispatch, role, page, router]);
 
-  // No additional filtering now (you can later hook search into backend)
   const filteredUsers = users || [];
 
   const formatDate = (iso?: string) => {
@@ -104,7 +101,6 @@ const AdminUsersList: React.FC = () => {
 
   const title = role === "seller" ? "All Sellers" : "All Customers";
 
-  // 👉 When user clicks Block button, open confirmation dialog
   const openBlockDialog = (userId: string) => {
     setConfirmDialog({
       open: true,
@@ -113,7 +109,6 @@ const AdminUsersList: React.FC = () => {
     });
   };
 
-  // 👉 When user clicks Delete button, open confirmation dialog
   const openDeleteDialog = (userId: string) => {
     setConfirmDialog({
       open: true,
@@ -130,7 +125,6 @@ const AdminUsersList: React.FC = () => {
     });
   };
 
-  // 👉 Called when user confirms Block/Delete in dialog
   const handleConfirmAction = async () => {
     if (!confirmDialog.userId || !confirmDialog.action || !role) {
       handleCloseDialog();
@@ -154,7 +148,6 @@ const AdminUsersList: React.FC = () => {
         ).unwrap();
       }
 
-      // Optional: re-fetch users to keep pagination.total synced with backend
       await dispatch(
         fetchUsers({
           type: userRole,
@@ -275,7 +268,7 @@ const AdminUsersList: React.FC = () => {
                             </TableCell>
                             <TableCell>{formatDate(user.createdAt)}</TableCell>
 
-                            {/* 🔥 Actions column */}
+                      
                             <TableCell align="right">
                               <Stack
                                 direction="row"
@@ -329,7 +322,7 @@ const AdminUsersList: React.FC = () => {
                   </Table>
                 </Box>
 
-                {/* ⬇ PAGINATION HERE ⬇ */}
+          
                 <Stack sx={{ py: 3 }} alignItems="center">
                   <Pagination
                     count={pagination?.totalPages || 1}
@@ -342,7 +335,6 @@ const AdminUsersList: React.FC = () => {
               </>
             )}
 
-            {/* 🔔 Confirmation Dialog for Block/Delete */}
             <Dialog open={confirmDialog.open} onClose={handleCloseDialog}>
               <DialogTitle sx={{ fontWeight: 600 }}>
                 {confirmDialog.action === "delete"

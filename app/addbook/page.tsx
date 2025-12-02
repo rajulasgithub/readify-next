@@ -21,10 +21,10 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
 
-// Redux
+
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store"; 
-import { addBook } from "@/src/Redux/store/bookSlice"; 
+import type { RootState, AppDispatch } from "@/src/redux/store"; 
+import { addBook } from "@/src/redux/slices/bookSlice"; 
 
 import { useRouter } from "next/navigation";
 

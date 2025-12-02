@@ -15,8 +15,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store";
-import { loginUser } from "@/src/Redux/store/authSlice";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { loginUser } from "@/src/redux/slices/authSlice";
 import { useRouter } from "next/navigation";
 
 type LoginFormInputs = {
@@ -60,13 +60,8 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
   try {
-    // dispatch the loginUser thunk and unwrap the result
+  
     const payload = await dispatch(loginUser(data)).unwrap();
-
-    // save data to localStorage
-    localStorage.setItem("accessToken", payload.accessToken);
-    localStorage.setItem("role", payload.data.role);
-    localStorage.setItem("email", payload.data.email);
 
     switch (payload.data.role) {
       case "seller":
@@ -79,7 +74,7 @@ export default function LoginPage() {
         router.push("/admin"); 
         break;
       default:
-        router.push("/"); // fallback
+        router.push("/"); 
     }
 
     
@@ -141,7 +136,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={3}>
-              {/* EMAIL */}
+          
               <TextField
                 label="Email Address"
                 type="email"
@@ -152,7 +147,7 @@ export default function LoginPage() {
                 helperText={errors.email?.message}
               />
 
-              {/* PASSWORD */}
+         
               <TextField
                 label="Password"
                 type="password"

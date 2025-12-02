@@ -15,9 +15,9 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useSelector } from "react-redux";
-import { RootState } from "@/src/Redux/store/store";
+import { RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
-import api from "@/src/components/api";
+import api from "@/utils/api";
 import { toast } from "react-toastify";
 
 type EditProfileForm = {
@@ -50,17 +50,17 @@ export default function EditProfilePage() {
     defaultValues: {
       name: user?.firstName || "",
       email: user?.email || "",
-    //   phone: user?.phone || "",
+   
     },
   });
 
-  // When user data changes (or page loads), sync it into the form
+  
   useEffect(() => {
     if (user) {
       reset({
         name: user.firstName || "",
         email: user.email || "",
-        // phone: user.phone || "",
+       
       });
     }
   }, [user, reset]);
@@ -78,7 +78,7 @@ export default function EditProfilePage() {
         return;
       }
 
-      // 🔹 Update this URL to match your backend route
+     
       const res = await api.put(
         "/api/users/update-profile",
         {
@@ -95,9 +95,7 @@ export default function EditProfilePage() {
 
       toast.success("Profile updated successfully");
 
-      // If your backend returns updated user:
-      // const updatedUser = res.data.user;
-      // Optionally dispatch(authActions.setUser(updatedUser)) here if you have it
+    
 
       router.push("/profile");
     } catch (err: any) {
@@ -107,7 +105,7 @@ export default function EditProfilePage() {
     }
   };
 
-  // If no user in Redux (not logged in)
+ 
   if (!user) {
     return (
       <Box

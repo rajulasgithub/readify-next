@@ -26,8 +26,8 @@ import {
   removeCartItem,
   updateCartQuantity,
   clearCart,
-} from "@/src/Redux/store/cartSlice";
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
+} from "@/src/redux/slices/cartSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 
 export default function CartPage() {
@@ -85,7 +85,7 @@ export default function CartPage() {
       }}
     >
       <Container maxWidth="md">
-        {/* Header */}
+     
         <Box
           sx={{
             mb: 4,
@@ -140,7 +140,7 @@ export default function CartPage() {
           </Typography>
         )}
 
-        {/* Empty state */}
+       
         {items.length === 0 ? (
           <Box
             sx={{
@@ -174,7 +174,7 @@ export default function CartPage() {
           </Box>
         ) : (
           <>
-            {/* Cart items */}
+          
             <Stack spacing={2.5}>
               {items.map((item) => {
                 const subtotal = item.prize * item.quantity;
@@ -201,7 +201,7 @@ export default function CartPage() {
                       },
                     }}
                   >
-                    {/* Image */}
+             
                     <CardMedia
                       component="img"
                       image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.image}`}
@@ -216,7 +216,7 @@ export default function CartPage() {
                       }}
                     />
 
-                    {/* Content */}
+                
                     <CardContent
                       sx={{
                         flexGrow: 1,
@@ -255,7 +255,7 @@ export default function CartPage() {
                         </Stack>
                       </Box>
 
-                      {/* Quantity controls */}
+                   
                       <Stack
                         direction="row"
                         alignItems="center"
@@ -296,7 +296,7 @@ export default function CartPage() {
                           </IconButton>
                         </Stack>
 
-                        {/* Remove from cart button (explicit) */}
+                       
                         <Button
                           size="small"
                           startIcon={<DeleteIcon />}
@@ -318,8 +318,7 @@ export default function CartPage() {
               })}
             </Stack>
 
-            {/* Summary & actions */}
-            <Box
+         <Box
               mt={4}
               p={3}
               bgcolor="#ffffff"
@@ -361,8 +360,7 @@ export default function CartPage() {
                 <Button
                   variant="contained"
                   color="primary"
-                  sx={{ px: 4, borderRadius: "999px", textTransform: "none" }}
-                  // onClick={handleCheckout} // hook this up when you add Stripe / order API
+                  
                 >
                   Checkout
                 </Button>

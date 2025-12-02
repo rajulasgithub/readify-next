@@ -1,17 +1,15 @@
 "use client";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import api from "@/src/components/api";
-
+import api from "@/utils/api";
 
 interface User {
   email: string;
   role: string;
-  firstName:string,
-  lastName:string,
-  phone:Number,
-  createdAt?:boolean
+  firstName: string;
+  lastName: string;
+  phone: Number;
+  createdAt?: boolean;
 }
-
 
 interface AuthState {
   user: User | null;
@@ -36,24 +34,24 @@ interface LoginFormData {
 export interface ApiResponse {
   success: boolean;
   message: string;
-  accessToken: string;
+  accessToken?: string; 
   data: User;
 }
 
 
-
-// REGISTER USER
 export const registerUser = createAsyncThunk<
-  ApiResponse,           
-  RegisterFormData,       
-  { rejectValue: string } 
+  ApiResponse,
+  RegisterFormData,
+  { rejectValue: string }
 >("auth/registerUser", async (formData, { rejectWithValue }) => {
   try {
     const { data } = await api.post<ApiResponse>("/api/user/register", formData);
     return data;
   } catch (err: any) {
     console.log(" FULL ERROR:", err.response);
-    return rejectWithValue(err.response?.data?.message || "Something went wrong");
+    return rejectWithValue(
+      err.response?.data?.message || "Something went wrong"
+    );
   }
 });
 
@@ -64,14 +62,16 @@ export const loginUser = createAsyncThunk<
   { rejectValue: string }
 >("auth/loginUser", async (formData, { rejectWithValue }) => {
   try {
+   
     const { data } = await api.post<ApiResponse>("/api/user/login", formData);
     return data;
   } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Invalid credentials");
+    return rejectWithValue(
+      err.response?.data?.message || "Invalid credentials"
+    );
   }
 });
 
-// --- Slice ---
 const initialState: AuthState = {
   user: null,
   loading: false,
@@ -93,10 +93,13 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
-        state.loading = false;
-        state.user = action.payload.data;
-      })
+      .addCase(
+        registerUser.fulfilled,
+        (state, action: PayloadAction<ApiResponse>) => {
+          state.loading = false;
+          state.user = action.payload.data;
+        }
+      )
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? "Something went wrong";
@@ -107,10 +110,13 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
-        state.loading = false;
-        state.user = action.payload.data;
-      })
+      .addCase(
+        loginUser.fulfilled,
+        (state, action: PayloadAction<ApiResponse>) => {
+          state.loading = false;
+          state.user = action.payload.data; 
+        }
+      )
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? "Something went wrong";

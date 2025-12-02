@@ -18,8 +18,8 @@ import {
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useRouter } from "next/navigation";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store";
-import { fetchSellerBooks, clearSellerBooks } from "@/src/Redux/store/adminSlice";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { fetchSellerBooks, clearSellerBooks } from "@/src/redux/slices/adminSlice";
 
 const ViewStore: React.FC = () => {
   const params = useParams<{ id: string }>();
@@ -45,7 +45,7 @@ const ViewStore: React.FC = () => {
   const formatCurrency = (value: number | undefined) =>
     `₹${(value || 0).toLocaleString("en-IN")}`;
 
-  // Loading State
+
   if (loading)
     return (
       <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
@@ -53,7 +53,6 @@ const ViewStore: React.FC = () => {
       </Box>
     );
 
-  // Error State
   if (error)
     return (
       <Box sx={{ py: 2 }}>
@@ -68,7 +67,7 @@ const ViewStore: React.FC = () => {
           Seller&apos;s Books
         </Typography>
 
-        {/* ⭐ No Books Found ⭐ */}
+        
         {(!sellerBooks || sellerBooks.length === 0) && (
           <Box
             sx={{
@@ -83,7 +82,7 @@ const ViewStore: React.FC = () => {
           </Box>
         )}
 
-        {/* ⭐ Books Found Table ⭐ */}
+      
         {sellerBooks && sellerBooks.length > 0 && (
           <Box sx={{ overflowX: "auto" }}>
             <Table size="small">

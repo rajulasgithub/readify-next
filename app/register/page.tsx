@@ -14,8 +14,8 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/Redux/store/store";
-import { registerUser } from "@/src/Redux/store/authSlice";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { registerUser } from "@/src/redux/slices/authSlice";
 import { useEffect } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -73,9 +73,7 @@ export default function RegisterPage() {
 
   if (registerUser.fulfilled.match(res)) {
     const payload = res.payload;
-    localStorage.setItem("accessToken",payload.accessToken)
-    localStorage.setItem("role",payload.data.role)
-    localStorage.setItem("email",payload.data.email)
+   
 
     switch (payload.data.role) {
       case "seller":

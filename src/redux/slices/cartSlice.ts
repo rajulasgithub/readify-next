@@ -1,24 +1,16 @@
 "use client";
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import api from "@/src/components/api";
+import api from "@/utils/api";
 
-// Cart item shape returned from getCartItems controller
-// {
-//   bookId: item.book._id,
-//   title: item.book.title,
-//   prize: item.book.prize,
-//   genre: item.book.genre,
-//   image: item.book.image,
-//   quantity: item.quantity
-// }
+
 
 export interface CartItem {
   bookId: string;
   title: string;
   prize: number;
   genre: string;
-  image: string; // if backend sends array, change to: string | string[]
+  image: string; 
   quantity: number;
 }
 
@@ -28,7 +20,7 @@ interface CartState {
   error: string | null;
   success: boolean;
 
-  // Optional derived data
+  
   totalQuantity: number;
   totalPrice: number;
 }
@@ -217,7 +209,7 @@ export const cartSlice = createSlice({
         state.success = false;
         state.error =
           (action.payload as string) || "Failed to fetch cart items";
-        // if error was "cart is empty", we likely set items = [] above
+       
         if (
           typeof action.payload === "string" &&
           action.payload.toLowerCase().includes("cart is empty")
@@ -237,7 +229,7 @@ export const cartSlice = createSlice({
       .addCase(addToCart.fulfilled, (state) => {
         state.loading = false;
         state.success = true;
-        // we don’t know new item details here; UI can refetch
+       
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;

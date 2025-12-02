@@ -23,9 +23,9 @@ import {
   fetchWishlist,
   removeFromWishlist,
   clearWishlist,
-} from "@/src/Redux/store/wishlistSlice";
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
-import { addToCart } from "@/src/Redux/store/cartSlice"; // 👈 add this
+} from "@/src/redux/slices/wishlistSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
+import { addToCart } from "@/src/redux/slices/cartSlice"; 
 
 export default function WishlistPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -51,7 +51,7 @@ export default function WishlistPage() {
   };
 
   const addToCartHandler = (id: string) => {
-    // ✅ Adjust payload if your cartSlice expects a different shape
+    
     dispatch(addToCart(id));
   };
 
@@ -75,7 +75,7 @@ export default function WishlistPage() {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* HEADER / HERO */}
+ 
         <Box
           sx={{
             maxWidth: "900px",
@@ -150,7 +150,6 @@ export default function WishlistPage() {
           </Box>
         </Box>
 
-        {/* ERROR MESSAGE */}
         {error && (
           <Box
             sx={{
@@ -170,7 +169,7 @@ export default function WishlistPage() {
           </Box>
         )}
 
-        {/* EMPTY STATE */}
+
         {!hasItems && !error && (
           <Box
             sx={{
@@ -226,7 +225,7 @@ export default function WishlistPage() {
           </Box>
         )}
 
-        {/* WISHLIST GRID */}
+
         {hasItems && (
           <>
             <Box
@@ -266,7 +265,7 @@ export default function WishlistPage() {
                         transition: "all 0.25s ease",
                       }}
                     >
-                      {/* IMAGE + TAG + DELETE */}
+              
                       <Box sx={{ position: "relative", p: 2, pb: 0 }}>
                         {item.genre && (
                           <Chip
@@ -337,7 +336,7 @@ export default function WishlistPage() {
                         </Typography>
                       </CardContent>
 
-                      {/* ACTIONS */}
+               
                       <Box
                         sx={{
                           display: "flex",
@@ -383,7 +382,7 @@ export default function WishlistPage() {
                             },
                             flexGrow: 1,
                           }}
-                          // TODO: hook to your book details page, e.g. router.push(`/viewonebook/${item.bookId}`)
+                
                         >
                           View Details
                         </Button>
@@ -394,7 +393,7 @@ export default function WishlistPage() {
               </Box>
             </Box>
 
-            {/* PAGINATION */}
+       
             <Box mt={2} mb={4} display="flex" justifyContent="center">
               <Pagination
                 count={totalPageCount}

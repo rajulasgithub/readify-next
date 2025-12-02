@@ -17,8 +17,8 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchDashboardStats } from "@/src/Redux/store/adminSlice";
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
+import { fetchDashboardStats } from "@/src/redux/slices/adminSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
 import AdminStatsChart from "./adminstatechart/page";
 
 const AdminDashboard: React.FC = () => {
@@ -63,7 +63,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* HEADER */}
+      
         <Box
           sx={{
             mb: 4,
@@ -109,7 +109,6 @@ const AdminDashboard: React.FC = () => {
           </Stack>
         </Box>
 
-        {/* SUMMARY CARDS ROW */}
         <Box
           sx={{
             display: "flex",
@@ -172,7 +171,7 @@ const AdminDashboard: React.FC = () => {
           )}
         </Box>
 
-        {/* ACTION CARDS: VIEW SELLERS / CUSTOMERS */}
+       
         <Box
           sx={{
             display: "flex",
@@ -180,7 +179,7 @@ const AdminDashboard: React.FC = () => {
             gap: 3,
           }}
         >
-          {/* Sellers card */}
+        
           <Card
             elevation={0}
             sx={{
@@ -233,7 +232,6 @@ const AdminDashboard: React.FC = () => {
             </Button>
           </Card>
 
-          {/* Customers card */}
           <Card
             elevation={0}
             sx={{

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
-import type { RootState } from "@/src/Redux/store/store";
+import type { RootState } from "@/src/redux/store";
 import { Box, Card, CardHeader, CardContent } from "@mui/material";
 import {
   BarChart,
@@ -26,7 +26,7 @@ const AdminStatsChart: React.FC = () => {
   ];
 
   const colors = ["#4F46E5", "#22C55E", "#06B6D4", "#F97316"]; 
-  // purple, green, sky, orange
+
 
   return (
     <Card

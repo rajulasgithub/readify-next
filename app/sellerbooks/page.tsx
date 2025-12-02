@@ -17,8 +17,8 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
-import { fetchBooks, Book } from "@/src/Redux/store/bookSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
+import { fetchBooks, Book } from "@/src/redux/slices/bookSlice";
 import Searchfield from "@/src/components/Searchfield";
 
 export default function ViewSellerBooks() {
@@ -33,7 +33,7 @@ export default function ViewSellerBooks() {
   const limit = 8;
   const [search, setSearch] = useState("");
 
-  // ✅ Fetch books whenever page OR search changes
+ 
   useEffect(() => {
     const res = dispatch(
       fetchBooks({
@@ -43,7 +43,7 @@ export default function ViewSellerBooks() {
       }) as any
     );
     console.log(res);
-  }, [page, search, dispatch]); // 👈 search added here
+  }, [page, search, dispatch]);
 
   const handlePageChange = (_: any, value: number) => setPage(value);
 
@@ -54,19 +54,19 @@ export default function ViewSellerBooks() {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        {/* Search bar */}
+ 
         <Box sx={{ mb: 3 }}>
           <Searchfield
             value={search}
             onChange={(val) => {
               setSearch(val);
-              setPage(1); // reset to first page on new search
+              setPage(1);
             }}
             placeholder="Search books..."
           />
         </Box>
 
-        {/* Heading */}
+      
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             My Books
@@ -76,7 +76,7 @@ export default function ViewSellerBooks() {
           </Typography>
         </Box>
 
-        {/* Books Cards */}
+    
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress />
@@ -173,7 +173,7 @@ export default function ViewSellerBooks() {
           </Box>
         )}
 
-        {/* Pagination */}
+       
         {totalPages > 1 && (
           <Stack alignItems="center" sx={{ pb: 4 }}>
             <Pagination

@@ -1,4 +1,4 @@
-// app/viewonebook/[id]/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -17,11 +17,11 @@ import { useRouter, useParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { addToCart } from "@/src/Redux/store/cartSlice";
-import { addToWishlist } from "@/src/Redux/store/wishlistSlice";
+import { addToCart } from "@/src/redux/slices/cartSlice";
+import { addToWishlist } from "@/src/redux/slices/wishlistSlice";
 
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
-import { fetchSingleBook, deleteBook } from "@/src/Redux/store/bookSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
+import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
 
 export default function ViewOneBook() {
   const dispatch = useDispatch<AppDispatch>();
@@ -36,12 +36,12 @@ export default function ViewOneBook() {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [role, setRole] = useState<string | null>(null);
 
-  // Get user role
+
   useEffect(() => {
     setRole(localStorage.getItem("role"));
   }, []);
 
-  // Fetch book details
+
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleBook(id));
@@ -56,12 +56,12 @@ export default function ViewOneBook() {
     ? singleBook.image[0]
     : singleBook.image;
 
-  // DELETE BOOK (used by seller & admin)
+  
   const confirmDelete = async () => {
     await dispatch(deleteBook(id));
     setOpenConfirm(false);
 
-    // Redirect based on role
+    
     if (role === "seller") {
       router.push("/sellerbooks");
     } else if (role === "customer") {
@@ -71,7 +71,6 @@ export default function ViewOneBook() {
     }
   };
 
-  // ADD TO CART (customer)
   const handleAddToCart = async () => {
     const result = await dispatch(addToCart(id));
     if (addToCart.fulfilled.match(result)) {
@@ -81,7 +80,7 @@ export default function ViewOneBook() {
     }
   };
 
-  // ADD TO WISHLIST (customer)
+
   const handleAddToWishlist = async () => {
     const result = await dispatch(addToWishlist(id));
     if (addToWishlist.fulfilled.match(result)) {
@@ -122,9 +121,8 @@ export default function ViewOneBook() {
         Price: ₹{singleBook.prize}
       </Typography>
 
-      {/* Role-based buttons */}
       <Stack direction="row" spacing={2} mt={3}>
-        {/* Customer buttons */}
+      
         {role === "customer" && (
           <>
             <Button variant="contained" color="primary" onClick={handleAddToCart}>
@@ -136,7 +134,7 @@ export default function ViewOneBook() {
           </>
         )}
 
-        {/* Seller buttons */}
+      
         {role === "seller" && (
           <>
             <Button
@@ -156,7 +154,6 @@ export default function ViewOneBook() {
           </>
         )}
 
-        {/* Admin button: only Delete */}
         {role === "admin" && (
           <Button
             variant="contained"
@@ -168,7 +165,7 @@ export default function ViewOneBook() {
         )}
       </Stack>
 
-      {/* Delete Confirmation Dialog (shared by seller & admin) */}
+   
       <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
         <DialogTitle>Are you sure you want to delete this book?</DialogTitle>
         <DialogActions>

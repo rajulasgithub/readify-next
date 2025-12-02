@@ -104,7 +104,7 @@ const Home: React.FC = () => {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* HERO SECTION */}
+   
         <Box
           sx={{
             maxWidth: "900px",
@@ -123,7 +123,7 @@ const Home: React.FC = () => {
               mt: 1,
             }}
           >
-            {/* LEFT SIDE TEXT */}
+          
             <Box sx={{ flex: 1, width: "100%" }}>
               <Typography
                 variant="overline"
@@ -194,7 +194,7 @@ const Home: React.FC = () => {
               </Stack>
             </Box>
 
-            {/* RIGHT SIDE IMAGE CARD */}
+            
             <Box
               sx={{
                 flex: 1,
@@ -254,7 +254,7 @@ const Home: React.FC = () => {
           </Box>
         </Box>
 
-        {/* CATEGORY + TITLE ROW */}
+       
         <Box sx={{ mb: 2 }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -291,7 +291,7 @@ const Home: React.FC = () => {
           </Stack>
         </Box>
 
-        {/* BOOK CARDS GRID (FLEX) */}
+       
         <Box
           sx={{
             display: "flex",

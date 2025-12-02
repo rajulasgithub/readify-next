@@ -15,20 +15,21 @@ import {
   CircularProgress,
 } from "@mui/material";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import FavoriteIcon from "@mui/icons-material/Favorite"; // ❤️ filled icon
+import FavoriteIcon from "@mui/icons-material/Favorite"; 
 import { useEffect, useState, MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/src/Redux/store/store";
-import { fetchBooks, Book } from "@/src/Redux/store/bookSlice";
+import { AppDispatch, RootState } from "@/src/redux/store";
+import { fetchBooks, Book } from "@/src/redux/slices/bookSlice";
 import {
   addToWishlist,
   removeFromWishlist,
   fetchWishlist,
-} from "@/src/Redux/store/wishlistSlice";
+} from "@/src/redux/slices/wishlistSlice";
 import Searchfield from "@/src/components/Searchfield";
 import { toast } from "react-toastify";
+
 
 export default function ViewBooks() {
   const router = useRouter();
@@ -45,26 +46,25 @@ export default function ViewBooks() {
   const [page, setPage] = useState(1);
   const limit = 15;
 
-  // 🔹 What user is typing
+
   const [searchInput, setSearchInput] = useState("");
-  // 🔹 Actual search value used for API
+ 
   const [search, setSearch] = useState("");
 
-  // 👉 Load wishlist once (so icons know if item is already wishlisted)
   useEffect(() => {
   dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
 }, [dispatch]);
-  // 🔹 Debounce search input (runs 400–500ms after user stops typing)
+ 
   useEffect(() => {
     const timeout = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1); // reset to first page when search changes
+      setPage(1); 
     }, 500);
 
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  // 🔹 Fetch books whenever page or debounced search changes
+
   useEffect(() => {
     dispatch(
       fetchBooks({
@@ -81,11 +81,11 @@ export default function ViewBooks() {
     router.push(`/viewonebook/${id}`);
   };
 
-  // ✅ Check if a book is already in wishlist
+ 
   const isInWishlist = (bookId: string) =>
     wishlistItems?.some((item) => item.bookId === bookId);
 
-  // ✅ Handle wishlist click (toggle add/remove)
+
   const handleWishlistClick = async (
     e: MouseEvent<HTMLButtonElement>,
     bookId: string
@@ -113,7 +113,7 @@ export default function ViewBooks() {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        {/* Heading */}
+      
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Browse Books
@@ -123,7 +123,7 @@ export default function ViewBooks() {
           </Typography>
         </Box>
 
-        {/* Search bar */}
+   
         <Box sx={{ mb: 4 }}>
           <Searchfield
             value={searchInput}
@@ -134,7 +134,7 @@ export default function ViewBooks() {
           />
         </Box>
 
-        {/* Books Cards */}
+      
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress />
@@ -206,7 +206,7 @@ export default function ViewBooks() {
                         height: 170,
                         width: "100%",
                         objectFit: "contain",
-                        // backgroundColor: "#f3f4f6", // keep or remove as you like
+                       
                       }}
                     />
                   </Box>
@@ -269,7 +269,7 @@ export default function ViewBooks() {
           </Box>
         )}
 
-        {/* Pagination from backend */}
+ 
         {totalPages > 1 && (
           <Stack alignItems="center" sx={{ pb: 4 }}>
             <Pagination

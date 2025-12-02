@@ -26,13 +26,13 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// normal nav items (without Categories)
+
 const navItems: { label: string; href: string }[] = [
   { label: "About", href: "/about" },
   { label: "Register", href: "/register" },
 ];
 
-// your category list (show these in 3 columns)
+
 const categories = [
   "Fiction",
   "Non-Fiction",
@@ -53,7 +53,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
-  // state for Categories menu
+
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const isCatMenuOpen = Boolean(catAnchorEl);
 
@@ -65,20 +65,20 @@ export default function Navbar() {
     setMobileOpen((prev) => !prev);
   };
 
-  // open categories menu
+
   const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) => {
     setCatAnchorEl(event.currentTarget);
   };
 
-  // close categories menu
+
   const handleCategoriesClose = () => {
     setCatAnchorEl(null);
   };
 
-  // when user clicks a category
+
   const handleCategorySelect = (cat: string) => {
     setCatAnchorEl(null);
-    // navigate however you want, example:
+ 
     router.push(`/categories?name=${encodeURIComponent(cat)}`);
   };
 
@@ -101,7 +101,7 @@ export default function Navbar() {
       <Divider sx={{ mb: 2 }} />
 
       <List>
-        {/* For mobile: just go to /categories page */}
+      
         <ListItem>
           <Link
             href="/categories"
@@ -167,7 +167,7 @@ export default function Navbar() {
             px: { xs: 2, md: 5 },
           }}
         >
-          {/* Logo */}
+     
           <Link href="/" style={{ textDecoration: "none" }}>
             <Typography
               variant="h6"
@@ -182,7 +182,7 @@ export default function Navbar() {
             </Typography>
           </Link>
 
-          {/* Desktop Nav */}
+          
           <Stack
             direction="row"
             spacing={3}
@@ -191,7 +191,7 @@ export default function Navbar() {
               alignItems: "center",
             }}
           >
-            {/* Categories dropdown trigger */}
+           
             <Typography
               onClick={handleCategoriesClick}
               sx={{
@@ -205,7 +205,7 @@ export default function Navbar() {
               Categories
             </Typography>
 
-            {/* Normal nav items */}
+         
             {navItems.map((item) => (
               <Link
                 key={item.label}
@@ -255,7 +255,7 @@ export default function Navbar() {
             </Link>
           </Stack>
 
-          {/* Mobile Menu Button */}
+        
           <IconButton
             sx={{ display: { xs: "flex", md: "none" } }}
             onClick={handleDrawerToggle}
@@ -265,7 +265,7 @@ export default function Navbar() {
         </Toolbar>
       </AppBar>
 
-      {/* Categories dropdown menu (desktop) */}
+    
       <Menu
         anchorEl={catAnchorEl}
         open={isCatMenuOpen}
@@ -307,7 +307,7 @@ export default function Navbar() {
         </Box>
       </Menu>
 
-      {/* Mobile Drawer */}
+
       <Drawer
         anchor="left"
         open={mobileOpen}

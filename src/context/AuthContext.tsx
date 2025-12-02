@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 
-// ---------- TYPES ----------
+
 interface AuthContextType {
   token: string | null;
   role: string | null;
@@ -10,16 +10,15 @@ interface AuthContextType {
   logoutUser: () => void;
 }
 
-// Create context with type
+
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ---------- PROVIDER ----------
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
 
-  // Load from localStorage on first render
   useEffect(() => {
     const savedToken = localStorage.getItem("accessToken");
     const savedRole = localStorage.getItem("role");
@@ -30,7 +29,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  // Save login data
+
   const loginUser = (tokenValue: string, roleValue: string, emailValue: string) => {
     setToken(tokenValue);
     setRole(roleValue);
@@ -41,7 +40,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("email", emailValue);
   };
 
-  // Clear login data
+
   const logoutUser = () => {
     setToken(null);
     setRole(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import api from "@/src/components/api";
+import api from "@/utils/api";
 
 
 export interface Book {
@@ -30,7 +30,7 @@ interface BookState {
   totalPages: number;
   currentPage: number;
 
-  singleBookLoading: boolean;   // for single book
+  singleBookLoading: boolean;   
   singleBookError: string | null;
 }
 
@@ -90,7 +90,7 @@ export const fetchBooks = createAsyncThunk<
         params: {
           page,
           limit,
-          // only send if value exists
+        
           ...(search ? { search } : {}),
         },
         headers: { Authorization: `Bearer ${token}` },
@@ -120,7 +120,7 @@ export const fetchSingleBook = createAsyncThunk<Book, string, { rejectValue: str
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return res.data.data; // backend: { data: Book }
+      return res.data.data; 
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch book");
     }
@@ -140,7 +140,7 @@ export const deleteBook = createAsyncThunk<string, string, { rejectValue: string
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return id; // return deleted book id
+      return id;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Failed to delete book");
     }
@@ -264,8 +264,8 @@ export const bookSlice = createSlice({
   })
   .addCase(updateBook.fulfilled, (state, action: PayloadAction<Book>) => {
     state.loading = false;
-    state.singleBook = action.payload; // update singleBook view
-    // Optionally update books array if present
+    state.singleBook = action.payload;
+  
     const index = state.books.findIndex(b => b._id === action.payload._id);
     if (index !== -1) state.books[index] = action.payload;
   })
