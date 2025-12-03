@@ -16,8 +16,11 @@ import * as yup from "yup";
 
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
-import { loginUser } from "@/src/redux/slices/authSlice";
+import { loginUserThunk } from "@/src/redux/slices/authSlice";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext"; 
+import Cookies from "js-cookie";
+
 
 type LoginFormInputs = {
   email: string;
@@ -38,6 +41,7 @@ const schema = yup.object({
 export default function LoginPage() {
   const router = useRouter()
   const dispatch = useDispatch<AppDispatch>();
+   const { loginUser } = useAuth();
    
    
   const { user, loading, error } = useSelector(
@@ -61,8 +65,21 @@ export default function LoginPage() {
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
   try {
   
-    const payload = await dispatch(loginUser(data)).unwrap();
+    const payload = await dispatch(loginUserThunk(data)).unwrap();
+    // const tokenFromCookie = Cookies.get("accessToken") ?? "";
+    // const roleFromCookie = Cookies.get("role") ?? "";
+    // const emailFromCookie = Cookies.get("email") ?? "";
 
+    // loginUser(tokenFromCookie, roleFromCookie, emailFromCookie);
+
+  loginUser(
+  payload.accessToken ?? "",
+  payload.data.role ?? "",
+  payload.data.email ?? "",
+  payload.data.firstName ?? "",
+  payload.data.lastName ?? "",
+  String(payload.data.phone ?? "")   
+);
     switch (payload.data.role) {
       case "seller":
         router.push("/sellerdashboard"); 
@@ -75,9 +92,7 @@ export default function LoginPage() {
         break;
       default:
         router.push("/"); 
-    }
-
-    
+    } 
   } catch (err) {
     console.error("Login failed:", err);
   }
@@ -190,7 +205,7 @@ export default function LoginPage() {
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-              onClick={() => (window.location.href = "/signup")}
+              onClick={() => (window.location.href = "/register")}
             >
               Sign up
             </span>

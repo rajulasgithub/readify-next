@@ -2,7 +2,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
-
+import Cookies from "js-cookie";
 
 
 export interface CartItem {
@@ -35,7 +35,10 @@ const initialState: CartState = {
 };
 
 
-const getToken = () => localStorage.getItem("accessToken");
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return Cookies.get("accessToken") || null;
+};
 
 
 const recalcTotals = (state: CartState) => {

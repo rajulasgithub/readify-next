@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -10,35 +10,49 @@ import {
   TextField,
   Button,
   Stack,
+  Avatar,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+
 import { useSelector } from "react-redux";
-import { RootState } from "@/src/redux/store";
+import type { RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import api from "@/utils/api";
 import { toast } from "react-toastify";
 
-type EditProfileForm = {
-  name: string;
-  email: string;
-  phone: string;
-};
+// ✅ Schema first
+const schema = yup
+  .object({
+    name: yup.string().required("Name is required"),
+    email: yup
+      .string()
+      .email("Invalid email")
+      .required("Email is required"),
+    phone: yup
+      .string()
+      .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
+      .required("Phone number is required"),
+    // optional description
+    description: yup
+      .string()
+      .max(300, "Description can be max 300 characters")
+      .optional(),
+  })
+  .required();
 
-const schema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  email: yup.string().email("Invalid email").required("Email is required"),
-  phone: yup
-    .string()
-    .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
-    .required("Phone number is required"),
-});
+// ✅ Infer the TS type directly from schema
+type EditProfileForm = yup.InferType<typeof schema>;
 
 export default function EditProfilePage() {
   const router = useRouter();
-
   const { user } = useSelector((state: RootState) => state.auth);
+
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    (user as any)?.avatar || (user as any)?.profileImage || null
+  );
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const {
     register,
@@ -48,22 +62,45 @@ export default function EditProfilePage() {
   } = useForm<EditProfileForm>({
     resolver: yupResolver(schema),
     defaultValues: {
-      name: user?.firstName || "",
+      // Name: try full name, fallback to firstName
+      name:
+        (user as any)?.name ||
+        (user?.firstName && user?.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user?.firstName || ""),
       email: user?.email || "",
-   
+      phone: user?.phone ? String(user.phone) : "",
+      description: (user as any)?.description || "",
     },
   });
 
-  
+  // Sync with Redux user on mount / change
   useEffect(() => {
     if (user) {
       reset({
-        name: user.firstName || "",
+        name:
+          (user as any)?.name ||
+          (user?.firstName && user?.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user?.firstName || ""),
         email: user.email || "",
-       
+        phone: user?.phone ? String(user.phone) : "",
+        description: (user as any)?.description || "",
       });
+
+      setPhotoPreview(
+        (user as any)?.avatar || (user as any)?.profileImage || null
+      );
     }
   }, [user, reset]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const url = URL.createObjectURL(file);
+    setPhotoPreview(url);
+  };
 
   const onSubmit = async (data: EditProfileForm) => {
     try {
@@ -78,25 +115,25 @@ export default function EditProfilePage() {
         return;
       }
 
-     
-      const res = await api.put(
-        "/api/users/update-profile",
-        {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("email", data.email);
+      formData.append("phone", data.phone);
+      formData.append("description", data.description ?? "");
+
+      if (photoFile) {
+        // 👇 make sure backend expects "avatar"
+        formData.append("avatar", photoFile);
+      }
+
+      await api.put("/api/users/update-profile", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      });
 
       toast.success("Profile updated successfully");
-
-    
-
       router.push("/profile");
     } catch (err: any) {
       const msg =
@@ -105,7 +142,7 @@ export default function EditProfilePage() {
     }
   };
 
- 
+  // If user is not logged in
   if (!user) {
     return (
       <Box
@@ -171,6 +208,40 @@ export default function EditProfilePage() {
           }}
         >
           <CardContent sx={{ p: 4 }}>
+            {/* Avatar + Upload */}
+            <Stack spacing={2} alignItems="center" mb={3}>
+              <Avatar
+                src={photoPreview || undefined}
+                sx={{
+                  width: 96,
+                  height: 96,
+                  fontSize: 32,
+                  bgcolor: "#c57a45",
+                }}
+              >
+                {user?.firstName?.[0]?.toUpperCase() ||
+                  user?.email?.[0]?.toUpperCase()}
+              </Avatar>
+
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{
+                  borderRadius: "999px",
+                  textTransform: "none",
+                  px: 3,
+                }}
+              >
+                Change Photo
+                <input
+                  hidden
+                  accept="image/*"
+                  type="file"
+                  onChange={handlePhotoChange}
+                />
+              </Button>
+            </Stack>
+
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <Stack spacing={3}>
                 <TextField
@@ -196,6 +267,16 @@ export default function EditProfilePage() {
                   {...register("phone")}
                   error={!!errors.phone}
                   helperText={errors.phone?.message}
+                />
+
+                <TextField
+                  label="Description / About"
+                  multiline
+                  rows={4}
+                  fullWidth
+                  {...register("description")}
+                  error={!!errors.description}
+                  helperText={errors.description?.message}
                 />
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">

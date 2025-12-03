@@ -18,11 +18,12 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useSelector } from "react-redux";
 import { RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext";
 
 export default function UserProfilePage() {
   const router = useRouter();
 
-  const { user } = useSelector((state: RootState) => state.auth);
+  // 🔹 wishlist & cart still from Redux
   const { totalItems: wishlistCount = 0 } = useSelector(
     (state: RootState) => state.wishlist
   );
@@ -30,24 +31,25 @@ export default function UserProfilePage() {
     (state: RootState) => state.cart
   );
 
-  const userName = user?.firstName || "Reaer";
-  const userEmail = user?.email || "Not provided";
-  const userPhone = user?.phone || "Not provided";
-  const userRole = user?.role || "Customer";
- 
+  // 🔹 user details from AuthContext
+  const { firstName, lastName, email, phone, logoutUser } = useAuth();
+
+  const userName =
+    firstName || lastName ? `${firstName ?? ""} ${lastName ?? ""}`.trim() : "Reader";
+  const userEmail = email || "";
+  const userPhone = phone || "";
+
+
+  const handleLogout = () => {
+    logoutUser();
+    router.push("/login");
+  };
 
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          sx={{ mb: 4, color: "#111827" }}
-        >
-          My Profile
-        </Typography>
-
        
+
         <Box
           sx={{
             display: "flex",
@@ -55,7 +57,7 @@ export default function UserProfilePage() {
             gap: 3,
           }}
         >
-        
+          
           <Card
             sx={{
               flex: "0 0 330px",
@@ -83,23 +85,10 @@ export default function UserProfilePage() {
                   {userName}
                 </Typography>
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#6b7280", mb: 1 }}
-                >
+                <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
                   {userEmail}
                 </Typography>
 
-                <Chip
-                  label={userRole}
-                  size="small"
-                  sx={{
-                    bgcolor: "#fff7f0",
-                    color: "#c57a45",
-                    fontWeight: 600,
-                    mb: 2,
-                  }}
-                />
 
                 <Divider sx={{ width: "100%", my: 1 }} />
 
@@ -107,15 +96,23 @@ export default function UserProfilePage() {
                   <Typography variant="subtitle2" sx={{ color: "#6b7280" }}>
                     Phone
                   </Typography>
-                
-                  <Typography variant="subtitle2" sx={{ color: "#6b7280" }}>
-                    Member Since
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#111827", mb: 1.5 }}
+                  >
+                    {userPhone}
                   </Typography>
-                
+
+                  
+          
                 </Box>
 
                 <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                  <Button variant="outlined" sx={{ textTransform: "none" }}>
+                  <Button
+                    variant="outlined"
+                    sx={{ textTransform: "none" }}
+                    onClick={() => router.push("/editprofile")}
+                  >
                     Edit Profile
                   </Button>
 
@@ -123,6 +120,7 @@ export default function UserProfilePage() {
                     variant="outlined"
                     color="error"
                     sx={{ textTransform: "none" }}
+                    onClick={handleLogout}
                   >
                     Logout
                   </Button>
@@ -142,7 +140,7 @@ export default function UserProfilePage() {
                   flexWrap: "wrap",
                 }}
               >
-             
+              
                 <Card
                   sx={{
                     flex: "1 1 250px",
@@ -177,7 +175,7 @@ export default function UserProfilePage() {
                   </CardContent>
                 </Card>
 
-               
+                {/* Cart card */}
                 <Card
                   sx={{
                     flex: "1 1 250px",
@@ -213,6 +211,7 @@ export default function UserProfilePage() {
                 </Card>
               </Box>
 
+              {/* Orders */}
               <Card
                 sx={{
                   borderRadius: 3,
@@ -267,7 +266,7 @@ export default function UserProfilePage() {
                 </CardContent>
               </Card>
 
-            
+              {/* Quick actions */}
               <Card
                 sx={{
                   borderRadius: 3,

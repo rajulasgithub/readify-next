@@ -2,6 +2,8 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
+import Cookies from "js-cookie";
+
 
 
 export interface Book {
@@ -47,11 +49,17 @@ const initialState: BookState = {
 };
 
 
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return Cookies.get("accessToken") || null;
+};
+
+
 export const addBook = createAsyncThunk(
   "books/addBook",
   async (formData: FormData, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = getToken()
       console.log(token)
       const res = await api.post("/api/books/addbook", formData, {
         headers: {
@@ -83,7 +91,7 @@ export const fetchBooks = createAsyncThunk<
   "books/fetchBooks",
   async ({ page, limit, search }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token =  getToken();
       if (!token) return rejectWithValue("No token found");
 
       const res = await api.get("/api/books/viewbooks", {
@@ -113,7 +121,7 @@ export const fetchSingleBook = createAsyncThunk<Book, string, { rejectValue: str
   "books/fetchSingleBook",
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token =  getToken()
       if (!token) return rejectWithValue("No token found");
 
       const res = await api.get(`/api/books/viewbook/${id}`, {
@@ -133,7 +141,7 @@ export const deleteBook = createAsyncThunk<string, string, { rejectValue: string
   "books/deleteBook",
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token =  getToken()
       if (!token) return rejectWithValue("No token found");
 
       await api.patch(`/api/books/deletetbook/${id}`,{}, {
@@ -157,7 +165,7 @@ export const updateBook = createAsyncThunk<Book, UpdateBookParams, { rejectValue
   "books/updateBook",
   async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token =  getToken()
       if (!token) return rejectWithValue("No token found");
 
       const res = await api.patch(`/api/books/updatebook/${id}`, formData, {

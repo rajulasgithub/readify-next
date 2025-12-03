@@ -21,17 +21,10 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import SearchIcon from "@mui/icons-material/Search";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-
-const navItems: { label: string; href: string }[] = [
-  { label: "About", href: "/about" },
-  { label: "Register", href: "/register" },
-];
-
+import { useAuth } from "@/src/context/AuthContext"; // 👈 auth context
 
 const categories = [
   "Fiction",
@@ -53,9 +46,14 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
-
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const isCatMenuOpen = Boolean(catAnchorEl);
+
+  // 🔐 Auth
+  const { role, logoutUser } = useAuth();
+  const isLoggedIn = !!role;
+  const isCustomer = role === "customer";
+  const isSeller = role === "seller";
 
   useEffect(() => {
     setMounted(true);
@@ -65,21 +63,22 @@ export default function Navbar() {
     setMobileOpen((prev) => !prev);
   };
 
-
   const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) => {
     setCatAnchorEl(event.currentTarget);
   };
-
 
   const handleCategoriesClose = () => {
     setCatAnchorEl(null);
   };
 
-
   const handleCategorySelect = (cat: string) => {
     setCatAnchorEl(null);
- 
     router.push(`/categories?name=${encodeURIComponent(cat)}`);
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    router.push("/login");
   };
 
   const drawer = (
@@ -101,49 +100,184 @@ export default function Navbar() {
       <Divider sx={{ mb: 2 }} />
 
       <List>
-      
-        <ListItem>
-          <Link
-            href="/categories"
-            style={{ textDecoration: "none", width: "100%" }}
-          >
-            <ListItemText
-              primary="Categories"
-              primaryTypographyProps={{
-                sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-              }}
-            />
-          </Link>
-        </ListItem>
+        {/* 🧑‍💻 CUSTOMER MENU (mobile) */}
+        {isCustomer && (
+          <>
+            <ListItem>
+              <Link
+                href="/categories"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Categories"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
 
-        {navItems.map((item) => (
-          <ListItem key={item.label}>
-            <Link
-              href={item.href}
-              style={{ textDecoration: "none", width: "100%" }}
-            >
+            <ListItem>
+              <Link
+                href="/about"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="About"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <ListItem>
+              <Link
+                href="/wishlist"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Wishlist"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <ListItem>
+              <Link
+                href="/cart"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Cart"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <ListItem>
+              <Link
+                href="/profile"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Profile"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <Divider sx={{ my: 2 }} />
+
+            <ListItem onClick={handleLogout} sx={{ cursor: "pointer" }}>
               <ListItemText
-                primary={item.label}
+                primary="Logout"
                 primaryTypographyProps={{
-                  sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  sx: { fontSize: 16, fontWeight: 600, color: "#b91c1c" },
                 }}
               />
-            </Link>
-          </ListItem>
-        ))}
+            </ListItem>
+          </>
+        )}
 
-        <Divider sx={{ my: 2 }} />
+        {/* 🧑‍🏫 SELLER MENU (mobile) */}
+        {isSeller && (
+          <>
+            <ListItem>
+              <Link
+                href="/about"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="About"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
 
-        <ListItem>
-          <Link href="/signin" style={{ textDecoration: "none", width: "100%" }}>
-            <ListItemText
-              primary="Sign In"
-              primaryTypographyProps={{
-                sx: { fontSize: 16, fontWeight: 600, color: "#c57a45" },
-              }}
-            />
-          </Link>
-        </ListItem>
+            <ListItem>
+              <Link
+                href="/profile"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Profile"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <Divider sx={{ my: 2 }} />
+
+            <ListItem onClick={handleLogout} sx={{ cursor: "pointer" }}>
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{
+                  sx: { fontSize: 16, fontWeight: 600, color: "#b91c1c" },
+                }}
+              />
+            </ListItem>
+          </>
+        )}
+
+        {/* 🧍 NOT LOGGED IN (mobile) */}
+        {!isLoggedIn && (
+          <>
+            <ListItem>
+              <Link
+                href="/about"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="About"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <ListItem>
+              <Link
+                href="/register"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Register"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+
+            <Divider sx={{ my: 2 }} />
+
+            <ListItem>
+              <Link
+                href="/login"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                <ListItemText
+                  primary="Sign In"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 600, color: "#c57a45" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+          </>
+        )}
       </List>
     </Box>
   );
@@ -167,7 +301,7 @@ export default function Navbar() {
             px: { xs: 2, md: 5 },
           }}
         >
-     
+          {/* Logo */}
           <Link href="/" style={{ textDecoration: "none" }}>
             <Typography
               variant="h6"
@@ -182,7 +316,7 @@ export default function Navbar() {
             </Typography>
           </Link>
 
-          
+          {/* Desktop menu */}
           <Stack
             direction="row"
             spacing={3}
@@ -191,28 +325,24 @@ export default function Navbar() {
               alignItems: "center",
             }}
           >
-           
-            <Typography
-              onClick={handleCategoriesClick}
-              sx={{
-                color: "#4b5563",
-                fontSize: 15,
-                fontWeight: 500,
-                cursor: "pointer",
-                "&:hover": { color: "#111827" },
-              }}
-            >
-              Categories
-            </Typography>
-
-         
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                style={{ textDecoration: "none" }}
-              >
+            {/* 🧑‍💻 CUSTOMER (desktop) */}
+            {isCustomer && (
+              <>
+                <Link href="/viewbooks" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                   books
+                  </Typography>
+                </Link>
                 <Typography
+                  onClick={handleCategoriesClick}
                   sx={{
                     color: "#4b5563",
                     fontSize: 15,
@@ -221,41 +351,137 @@ export default function Navbar() {
                     "&:hover": { color: "#111827" },
                   }}
                 >
-                  {item.label}
+                  Categories
                 </Typography>
-              </Link>
-            ))}
 
-            <IconButton onClick={() => router.push("/wishlist")}>
-              <FavoriteBorderIcon sx={{ color: "#c57a45" }} />
-            </IconButton>
+                <Link href="/about" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                    About
+                  </Typography>
+                </Link>
 
-            <IconButton onClick={() => router.push("/cart")}>
-              <ShoppingCartOutlinedIcon sx={{ color: "#4b5563" }} />
-            </IconButton>
+                <IconButton onClick={() => router.push("/wishlist")}>
+                  <FavoriteBorderIcon sx={{ color: "#c57a45" }} />
+                </IconButton>
 
-            <IconButton>
-              <PersonOutlineIcon sx={{ color: "#4b5563" }} />
-            </IconButton>
+                <IconButton onClick={() => router.push("/cart")}>
+                  <ShoppingCartOutlinedIcon sx={{ color: "#4b5563" }} />
+                </IconButton>
 
-            <Link href="/login" style={{ textDecoration: "none" }}>
-              <Button
-                variant="contained"
-                sx={{
-                  ml: 1,
-                  borderRadius: "999px",
-                  textTransform: "none",
-                  bgcolor: "#c57a45",
-                  px: 3,
-                  "&:hover": { bgcolor: "#b36a36" },
-                }}
-              >
-                Sign In
-              </Button>
-            </Link>
+                <IconButton onClick={() => router.push("/customerprofile")}>
+                  <PersonOutlineIcon sx={{ color: "#4b5563" }} />
+                </IconButton>
+
+                <Button
+                  onClick={handleLogout}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: 14,
+                    ml: 1,
+                    color: "#b91c1c",
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+
+            {/* 🧑‍🏫 SELLER (desktop) */}
+            {isSeller && (
+              <>
+
+             
+                <Link href="/about" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                    About
+                  </Typography>
+                </Link>
+
+                <IconButton onClick={() => router.push("/profile")}>
+                  <PersonOutlineIcon sx={{ color: "#4b5563" }} />
+                </IconButton>
+
+                <Button
+                  onClick={handleLogout}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: 14,
+                    ml: 1,
+                    color: "#b91c1c",
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+
+            {/* 🧍 NOT LOGGED IN (desktop) */}
+            {!isLoggedIn && (
+              <>
+                <Link href="/about" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                    About
+                  </Typography>
+                </Link>
+
+                <Link href="/register" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                      Register
+                  </Typography>
+                </Link>
+
+                <Link href="/login" style={{ textDecoration: "none" }}>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      ml: 1,
+                      borderRadius: "999px",
+                      textTransform: "none",
+                      bgcolor: "#c57a45",
+                      px: 3,
+                      "&:hover": { bgcolor: "#b36a36" },
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </Stack>
 
-        
+          {/* Mobile menu icon */}
           <IconButton
             sx={{ display: { xs: "flex", md: "none" } }}
             onClick={handleDrawerToggle}
@@ -265,7 +491,7 @@ export default function Navbar() {
         </Toolbar>
       </AppBar>
 
-    
+      {/* Categories dropdown for desktop customer */}
       <Menu
         anchorEl={catAnchorEl}
         open={isCatMenuOpen}
@@ -307,7 +533,7 @@ export default function Navbar() {
         </Box>
       </Menu>
 
-
+      {/* Mobile drawer */}
       <Drawer
         anchor="left"
         open={mobileOpen}

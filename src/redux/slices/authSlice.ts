@@ -7,7 +7,7 @@ interface User {
   role: string;
   firstName: string;
   lastName: string;
-  phone: Number;
+  phone: number;
   createdAt?: boolean;
 }
 
@@ -56,7 +56,7 @@ export const registerUser = createAsyncThunk<
 });
 
 // LOGIN USER
-export const loginUser = createAsyncThunk<
+export const loginUserThunk = createAsyncThunk<
   ApiResponse,
   LoginFormData,
   { rejectValue: string }
@@ -106,18 +106,18 @@ const authSlice = createSlice({
       })
 
       // LOGIN
-      .addCase(loginUser.pending, (state) => {
+      .addCase(loginUserThunk.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(
-        loginUser.fulfilled,
+        loginUserThunk.fulfilled,
         (state, action: PayloadAction<ApiResponse>) => {
           state.loading = false;
           state.user = action.payload.data; 
         }
       )
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(loginUserThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload ?? "Something went wrong";
       });

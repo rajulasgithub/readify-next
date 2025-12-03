@@ -1,6 +1,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
+import Cookies from "js-cookie";
 
 
 export interface DashboardStats {
@@ -64,7 +65,7 @@ interface AdminState {
 
 const getToken = () => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("accessToken");
+  return Cookies.get("accessToken") || null;
 };
 
 

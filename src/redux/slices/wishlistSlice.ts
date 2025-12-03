@@ -2,25 +2,10 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
+import Cookies from "js-cookie";
 
-/*
-getAllWishList returns each item mapped as:
 
-{
-  bookId: item.book._id,
-  title: item.book.title,
-  description: item.book.description,
-  excerpt: item.book.excerpt,
-  page_count: item.book.page_count,
-  publish_date: item.book.publish_date,
-  author: item.book.author,
-  genre: item.book.genre,
-  language: item.book.language,
-  prize: item.book.prize,
-  category: item.book.category,
-  image: item.book.image,
-}
-*/
+
 
 export interface WishlistItem {
   bookId: string;
@@ -43,7 +28,7 @@ interface WishlistState {
   error: string | null;
   success: boolean;
 
-  // ⭐ NEW Pagination fields
+  
   totalPages: number;
   currentPage: number;
    totalItems: number; 
@@ -56,18 +41,20 @@ const initialState: WishlistState = {
   error: null,
   success: false,
 
-  // ⭐ Initialize pagination
   totalPages: 1,
   currentPage: 1,
   totalItems: 0,   
 };
 
-// helper for token
-const getToken = () => localStorage.getItem("accessToken");
 
-// --------------------
-// 1️⃣ Get all wishlist items
-// --------------------
+
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return Cookies.get("accessToken") || null;
+};
+
+
+
 interface FetchWishlistResponse {
   items: WishlistItem[];
   totalPages: number;
@@ -85,7 +72,7 @@ export const fetchWishlist = createAsyncThunk<
 
     const res = await api.get("/api/wishlist/getallwishlistitem", {
       headers: { Authorization: `Bearer ${token}` },
-      params: { page, limit }    // ⭐ send params here
+      params: { page, limit }   
     });
 
     return {
@@ -100,9 +87,7 @@ export const fetchWishlist = createAsyncThunk<
   }
 });
 
-// --------------------
-// Add to wishlist
-// --------------------
+
 export const addToWishlist = createAsyncThunk<
   void,
   string,
@@ -124,9 +109,7 @@ export const addToWishlist = createAsyncThunk<
   }
 });
 
-// --------------------
-// Remove wishlist item
-// --------------------
+
 export const removeFromWishlist = createAsyncThunk<
   string,
   string,
@@ -148,9 +131,7 @@ export const removeFromWishlist = createAsyncThunk<
   }
 });
 
-// --------------------
-// Clear wishlist
-// --------------------
+
 export const clearWishlist = createAsyncThunk<
   void,
   void,
@@ -170,9 +151,7 @@ export const clearWishlist = createAsyncThunk<
   }
 });
 
-// --------------------
-// Slice
-// --------------------
+
 export const wishlistSlice = createSlice({
   name: "wishlist",
   initialState,

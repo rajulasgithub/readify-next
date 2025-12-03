@@ -8,6 +8,7 @@ import {
   Paper,
   Stack,
   Select,
+  Box,
 } from "@mui/material";
 
 import { useForm, Controller } from "react-hook-form";
@@ -16,10 +17,10 @@ import * as yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
 import { registerUser } from "@/src/redux/slices/authSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { useRouter } from "next/navigation";
-
+import Cookies from "js-cookie";
 
 type SignupFormData = {
   firstName: string;
@@ -37,23 +38,35 @@ const schema = yup.object().shape({
   email: yup.string().email("Invalid email").required("Email is required"),
   countryCode: yup.string().required("Country code is required"),
   phone: yup
-  .string()
-  .required("Phone number is required")
-  .matches(/^[0-9]{10}$/, "Phone number must be 10 digits"),
-  password: yup.string().min(6, "Minimum 6 characters").required("Password is required"),
+    .string()
+    .required("Phone number is required")
+    .matches(/^[0-9]{10}$/, "Phone number must be 10 digits"),
+  password: yup.string().required("Password is required"),
   role: yup.string().required("Please select a role"),
 });
 
 export default function RegisterPage() {
-  const router = useRouter()
- const { loginUser } = useAuth();
+  const router = useRouter();
+  const { loginUser } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading, error } = useSelector((state: RootState) => state.auth);
+  const { user, loading, error } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  const [password, setPassword] = useState("");
+
+  // ✔ Password validation checks
+  const isLengthValid = password.length >= 6;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[@$!%*?&]/.test(password);
+
+  // show rules only after user starts typing
+  const showPasswordRules = password.length > 0;
 
   useEffect(() => {
-    if (error) {
-      console.log(" REGISTER ERROR FROM REDUX:", error);
-    }
+    if (error) console.log(" REGISTER ERROR:", error);
   }, [error]);
 
   const {
@@ -64,39 +77,51 @@ export default function RegisterPage() {
   } = useForm<SignupFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      countryCode: "+91", 
+      countryCode: "+91",
     },
   });
 
- const onSubmit = async (data: SignupFormData) => {
-  const res = await dispatch(registerUser(data));
+  const onSubmit = async (data: SignupFormData) => {
+    const res = await dispatch(registerUser(data)).unwrap();;
 
-  if (registerUser.fulfilled.match(res)) {
-    const payload = res.payload;
-   
 
-    switch (payload.data.role) {
-      case "seller":
-        router.push("/sellerdashboard"); 
-        break;
-      case "customer":
-        router.push("/viewbooks");
-        break;
-      case "admin":
-        router.push("/admindashboard"); 
-        break;
-      default:
-        router.push("/"); 
-    }
-  } else {
-    console.log("Registration failed:", res);
-  }
-};
+      // const tokenFromCookie = Cookies.get("accessToken") ?? "";
+      // const roleFromCookie = Cookies.get("role") ?? "";
+      // const emailFromCookie = Cookies.get("email") ?? "";
 
-  
+    loginUser(
+      res.accessToken ?? "",
+      res.data.role ?? "",
+      res.data.email ?? "",
+      res.data.firstName ?? "",
+      res.data.lastName ?? "",
+      String(res.data.phone ?? "")   
+    );
+      switch (res.data.role) {
+        case "seller":
+          router.push("/sellerdashboard");
+          break;
+        case "customer":
+          router.push("/viewbooks");
+          break;
+        case "admin":
+          router.push("/admindashboard");
+          break;
+        default:
+          router.push("/");
+      }
+    
+  };
+
+  // ✅ keep RHF + local state in sync for password
+  const {
+    ref: passwordRef,
+    onChange: passwordOnChange,
+    ...passwordField
+  } = register("password");
 
   return (
-    <Container maxWidth="sm" >
+    <Container maxWidth="sm">
       <Paper
         elevation={0}
         sx={{
@@ -167,36 +192,94 @@ export default function RegisterPage() {
               fullWidth
             />
 
-          <Stack direction="row" spacing={1}>
-        <Controller
-          name="countryCode"
-          control={control}
-          render={({ field }) => (
-            <Select {...field} fullWidth>
-              <MenuItem value="+91">+91</MenuItem>
-              <MenuItem value="+1">+1</MenuItem>
-              <MenuItem value="+44">+44</MenuItem>
-            </Select>
-          )}
-        />
+            <Stack direction="row" spacing={1}>
+              <Controller
+                name="countryCode"
+                control={control}
+                render={({ field }) => (
+                  <Select {...field} fullWidth>
+                    <MenuItem value="+91">+91</MenuItem>
+                    <MenuItem value="+1">+1</MenuItem>
+                    <MenuItem value="+44">+44</MenuItem>
+                  </Select>
+                )}
+              />
 
-        <TextField
-          label="Phone Number"
-          {...register("phone")}
-          error={!!errors.phone}
-          helperText={errors.phone?.message}
-          fullWidth
-        />
-      </Stack>
+              <TextField
+                label="Phone Number"
+                {...register("phone")}
+                error={!!errors.phone}
+                helperText={errors.phone?.message}
+                fullWidth
+              />
+            </Stack>
 
-            <TextField
-              type="password"
-              label="Password"
-              {...register("password")}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              fullWidth
-            />
+            {/* PASSWORD INPUT WITH LIVE CHECKS */}
+            <Box>
+              <TextField
+                type="password"
+                label="Password"
+                fullWidth
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                inputRef={passwordRef}
+                {...passwordField}
+                onChange={(e) => {
+                  passwordOnChange(e);       // update react-hook-form
+                  setPassword(e.target.value); // update local state
+                }}
+              />
+
+              {/* Live Password Rules – only after typing */}
+              {showPasswordRules && (
+                <Box sx={{ mt: 1, ml: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      color: isLengthValid ? "green" : "red",
+                    }}
+                  >
+                    {isLengthValid ? "✔ " : ""}Minimum 6 characters
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      color: hasUppercase ? "green" : "red",
+                    }}
+                  >
+                    {hasUppercase ? "✔ " : ""}At least one uppercase letter
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      color: hasLowercase ? "green" : "red",
+                    }}
+                  >
+                    {hasLowercase ? "✔ " : ""}At least one lowercase letter
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      color: hasNumber ? "green" : "red",
+                    }}
+                  >
+                    {hasNumber ? "✔ " : ""}At least one number
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      color: hasSpecial ? "green" : "red",
+                    }}
+                  >
+                    {hasSpecial ? "✔ " : ""}At least one special character (@$!%*?&)
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
             <TextField
               select
