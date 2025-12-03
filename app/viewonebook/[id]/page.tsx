@@ -22,8 +22,10 @@ import { addToWishlist } from "@/src/redux/slices/wishlistSlice";
 
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
+import { useAuth } from "@/src/context/AuthContext";
 
 export default function ViewOneBook() {
+  const {role } = useAuth()
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -34,13 +36,10 @@ export default function ViewOneBook() {
   );
 
   const [openConfirm, setOpenConfirm] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
 
 
-  useEffect(() => {
-    setRole(localStorage.getItem("role"));
-  }, []);
 
+  
 
   useEffect(() => {
     if (id) {
@@ -85,6 +84,7 @@ export default function ViewOneBook() {
     const result = await dispatch(addToWishlist(id));
     if (addToWishlist.fulfilled.match(result)) {
       toast.success("Added to wishlist! ❤️");
+      router.push("/cart");
     } else {
       toast.error(result.payload || "Failed to add to wishlist.");
     }

@@ -16,41 +16,55 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
-import { useSelector } from "react-redux";
-import type { RootState } from "@/src/redux/store";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
-import api from "@/utils/api";
 import { toast } from "react-toastify";
+import { updateProfileThunk } from "@/src/redux/slices/authSlice";
 
-// ✅ Schema first
 const schema = yup
   .object({
-    name: yup.string().required("Name is required"),
+    firstName: yup.string().required("First name is required"),
+    lastName: yup.string().required("Last name is required"),
     email: yup
       .string()
       .email("Invalid email")
       .required("Email is required"),
     phone: yup
       .string()
-      .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
+      .transform((value) => value.replace(/\s/g, "")) // remove spaces
+      .matches(
+        /^\+?[0-9]{10,15}$/,
+        "Enter a valid phone number with country code"
+      )
       .required("Phone number is required"),
-    // optional description
-    description: yup
+    bio: yup
       .string()
-      .max(300, "Description can be max 300 characters")
+      .max(300, "Bio can be max 300 characters")
       .optional(),
   })
   .required();
 
-// ✅ Infer the TS type directly from schema
 type EditProfileForm = yup.InferType<typeof schema>;
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { user, loading } = useSelector((state: RootState) => state.auth);
+
+  // 👇 Build full URL for previously saved image
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  const initialImageUrl =
+    user?.image && backendUrl
+      ? `${backendUrl}/${user.image}`
+      : user?.image
+      ? user.image
+      : null;
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(
-    (user as any)?.avatar || (user as any)?.profileImage || null
+    initialImageUrl
   );
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
@@ -62,87 +76,73 @@ export default function EditProfilePage() {
   } = useForm<EditProfileForm>({
     resolver: yupResolver(schema),
     defaultValues: {
-      // Name: try full name, fallback to firstName
-      name:
-        (user as any)?.name ||
-        (user?.firstName && user?.lastName
-          ? `${user.firstName} ${user.lastName}`
-          : user?.firstName || ""),
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
       email: user?.email || "",
       phone: user?.phone ? String(user.phone) : "",
-      description: (user as any)?.description || "",
+      bio: (user as any)?.bio || "",
     },
   });
 
-  // Sync with Redux user on mount / change
+  // 🔄 Sync with Redux user whenever it changes
   useEffect(() => {
     if (user) {
       reset({
-        name:
-          (user as any)?.name ||
-          (user?.firstName && user?.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user?.firstName || ""),
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
         email: user.email || "",
-        phone: user?.phone ? String(user.phone) : "",
-        description: (user as any)?.description || "",
+        phone: user.fullPhone ? String(user.fullPhone) : "",
+        bio: (user as any)?.bio || "",
       });
 
-      setPhotoPreview(
-        (user as any)?.avatar || (user as any)?.profileImage || null
-      );
+      const imgUrl =
+        user.image && backendUrl
+          ? `${backendUrl}/${user.image}`
+          : user.image
+          ? user.image
+          : null;
+
+      setPhotoPreview(imgUrl);
     }
-  }, [user, reset]);
+  }, [user, reset, backendUrl]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoFile(file);
+
+    // 👇 Show instant preview of newly selected image
     const url = URL.createObjectURL(file);
     setPhotoPreview(url);
   };
 
   const onSubmit = async (data: EditProfileForm) => {
     try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("accessToken")
-          : null;
-
-      if (!token) {
-        toast.error("You are not logged in");
-        router.push("/login");
-        return;
-      }
-
       const formData = new FormData();
-      formData.append("name", data.name);
+      formData.append("firstName", data.firstName);
+      formData.append("lastName", data.lastName);
       formData.append("email", data.email);
       formData.append("phone", data.phone);
-      formData.append("description", data.description ?? "");
+      formData.append("bio", data.bio ?? "");
 
       if (photoFile) {
-        // 👇 make sure backend expects "avatar"
-        formData.append("avatar", photoFile);
+        formData.append("image", photoFile);
       }
 
-      await api.put("/api/users/update-profile", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await dispatch(updateProfileThunk(formData)).unwrap();
 
       toast.success("Profile updated successfully");
-      router.push("/profile");
+      router.push("/customerprofile");
     } catch (err: any) {
       const msg =
-        err?.response?.data?.message || "Failed to update profile. Try again.";
+        typeof err === "string"
+          ? err
+          : err?.response?.data?.message ||
+            "Failed to update profile. Try again.";
       toast.error(msg);
     }
   };
 
-  // If user is not logged in
   if (!user) {
     return (
       <Box
@@ -244,13 +244,22 @@ export default function EditProfilePage() {
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <Stack spacing={3}>
-                <TextField
-                  label="Name"
-                  fullWidth
-                  {...register("name")}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <TextField
+                    label="First Name"
+                    fullWidth
+                    {...register("firstName")}
+                    error={!!errors.firstName}
+                    helperText={errors.firstName?.message}
+                  />
+                  <TextField
+                    label="Last Name"
+                    fullWidth
+                    {...register("lastName")}
+                    error={!!errors.lastName}
+                    helperText={errors.lastName?.message}
+                  />
+                </Stack>
 
                 <TextField
                   label="Email"
@@ -270,13 +279,13 @@ export default function EditProfilePage() {
                 />
 
                 <TextField
-                  label="Description / About"
+                  label="Bio / About"
                   multiline
                   rows={4}
                   fullWidth
-                  {...register("description")}
-                  error={!!errors.description}
-                  helperText={errors.description?.message}
+                  {...register("bio")}
+                  error={!!errors.bio}
+                  helperText={errors.bio?.message}
                 />
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
@@ -288,7 +297,7 @@ export default function EditProfilePage() {
                       borderRadius: "999px",
                       px: 3,
                     }}
-                    onClick={() => router.push("/profile")}
+                    onClick={() => router.push("/customerprofile")}
                   >
                     Cancel
                   </Button>
@@ -296,7 +305,7 @@ export default function EditProfilePage() {
                   <Button
                     type="submit"
                     variant="contained"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || loading}
                     sx={{
                       textTransform: "none",
                       borderRadius: "999px",
@@ -305,7 +314,7 @@ export default function EditProfilePage() {
                       "&:hover": { bgcolor: "#b36a36" },
                     }}
                   >
-                    {isSubmitting ? "Saving..." : "Save Changes"}
+                    {isSubmitting || loading ? "Saving..." : "Save Changes"}
                   </Button>
                 </Stack>
               </Stack>

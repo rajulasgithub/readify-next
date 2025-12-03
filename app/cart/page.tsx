@@ -18,6 +18,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import Link from "next/link";
+
 
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -357,13 +359,13 @@ export default function CartPage() {
               <Stack direction="row" spacing={2} justifyContent="flex-end">
               
 
-                <Button
-                  variant="contained"
-                  color="primary"
-                  
-                >
+
+              <Link href="/checkout">
+                <Button variant="contained" color="primary">
                   Checkout
                 </Button>
+              </Link>
+
               </Stack>
             </Box>
           </>

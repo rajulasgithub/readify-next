@@ -1,327 +1,351 @@
-// "use client";
+"use client";
 
-// import {
-//   Box,
-//   Container,
-//   Typography,
-//   Card,
-//   CardMedia,
-//   CardContent,
-//   IconButton,
-//   Button,
-//   Stack,
-//   Chip,
-//   Pagination,
-// } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  Card,
+  CardContent,
+  Stack,
+  Chip,
+  Divider,
+  CircularProgress,
+  Grid,
+  CardMedia,
+  Button,
+} from "@mui/material";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
-// import DeleteIcon from "@mui/icons-material/Delete";
-// import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { cancelOrderThunk, fetchUserOrdersThunk } from "@/src/redux/slices/orderSlice";
 
-// import { useEffect, useState } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import {
-//   fetchWishlist,
-//   removeFromWishlist,
-//   clearWishlist,
-// } from "@/src/Redux/store/wishlistSlice";
-// import { AppDispatch, RootState } from "@/src/Redux/store/store";
-// import { useRouter } from "next/navigation";
 
-// export default function WishlistPage() {
-//   const dispatch = useDispatch<AppDispatch>();
-//   const router = useRouter();
+type OrderItem = {
+  _id: string;
+  quantity: number;
+  price: number;
+  status: "ordered" | "cancelled" | "shipped" | "delivered";
+  book?: {
+    _id: string;
+    title?: string;
+    author?: string;
+    prize?: number;
+    price?: number;
+    image?: string;
+  };
+};
 
-//   // 👇 pagination state
-//   const [page, setPage] = useState(1);
-//   const limit = 6; // how many items per page
+type Order = {
+  _id: string;
+  items: OrderItem[];
+  totalQty: number;
+  totalAmount: number;
+  status: string;
+  paymentMethod: string;
+  createdAt: string;
+  address?: any;
+};
 
-//   const { items, loading, error, totalPages, totalItems } = useSelector(
-//     (state: RootState) => state.wishlist
-//   );
+type FlattenedOrderItem = OrderItem & {
+  orderId: string;
+  orderStatus: Order["status"];
+  paymentMethod: string;
+  createdAt: string;
+  orderTotalAmount: number;
+  address?: Order["address"];
+};
 
-//   // 👇 load wishlist whenever page changes
-//   useEffect(() => {
-//     dispatch(fetchWishlist({ page, limit }));
-//   }, [dispatch, page, limit]);
+export default function UserOrdersPage() {
+  const dispatch = useDispatch<AppDispatch>();
 
-//   const removeHandler = (id: string) => {
-//     dispatch(removeFromWishlist(id));
-//   };
+  const { userOrders, userOrdersLoading, userOrdersError } = useSelector(
+    (state: RootState) => state.orders
+  );
 
-//   const clearHandler = () => {
-//     dispatch(clearWishlist());
-//   };
+  const [cancelLoadingItem, setCancelLoadingItem] = useState<string | null>(null);
 
-//   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
-//     setPage(value);
-//   };
+  useEffect(() => {
+    dispatch(fetchUserOrdersThunk());
+  }, [dispatch]);
 
-//   if (loading) {
-//     return (
-//       <Box
-//         sx={{
-//           minHeight: "60vh",
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "center",
-//         }}
-//       >
-//         <Typography variant="h6" color="text.secondary">
-//           Loading your wishlist...
-//         </Typography>
-//       </Box>
-//     );
-//   }
+  const orders: Order[] = userOrders || [];
+  const loading = userOrdersLoading;
+  const error = userOrdersError;
 
-//   return (
-//     <Box
-//       sx={{
-//         minHeight: "100vh",
-//         bgcolor: "#f5f7fb",
-//         py: 6,
-//       }}
-//     >
-//       <Container maxWidth="md">
-//         {/* Header */}
-//         <Box
-//           sx={{
-//             mb: 4,
-//             display: "flex",
-//             alignItems: "center",
-//             justifyContent: "space-between",
-//             gap: 2,
-//           }}
-//         >
-//           <Box>
-//             <Stack direction="row" spacing={1} alignItems="center">
-//               <FavoriteBorderIcon sx={{ color: "#c57a45" }} />
-//               <Typography variant="h4" fontWeight={700}>
-//                 My Wishlist
-//               </Typography>
-//             </Stack>
-//             <Stack direction="row" spacing={1} mt={1}>
-//               <Chip
-//                 label={`${totalItems ?? items.length} item${
-//                   (totalItems ?? items.length) !== 1 ? "s" : ""
-//                 } saved`}
-//                 size="small"
-//                 sx={{ bgcolor: "#fff7f0", color: "#c57a45", fontWeight: 500 }}
-//               />
-//               {totalPages && totalPages > 1 && (
-//                 <Chip
-//                   label={`Page ${page} of ${totalPages}`}
-//                   size="small"
-//                   sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
-//                 />
-//               )}
-//             </Stack>
-//           </Box>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ordered":
+        return "info";
+      case "delivered":
+        return "success";
+      case "cancelled":
+        return "error";
+      case "shipped":
+        return "warning";
+      default:
+        return "default";
+    }
+  };
 
-//           {items.length > 0 && (
-//             <Button
-//               variant="outlined"
-//               color="error"
-//               sx={{
-//                 borderRadius: "999px",
-//                 textTransform: "none",
-//                 px: 3,
-//               }}
-//               onClick={clearHandler}
-//             >
-//               Clear Wishlist
-//             </Button>
-//           )}
-//         </Box>
+  const formatDate = (iso: string) => {
+    if (!iso) return "";
+    return new Date(iso).toLocaleString();
+  };
 
-//         {error && (
-//           <Typography color="error" mb={2}>
-//             {error}
-//           </Typography>
-//         )}
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-//         {/* Empty State */}
-//         {items.length === 0 ? (
-//           <Box
-//             sx={{
-//               mt: 6,
-//               p: 4,
-//               bgcolor: "#ffffff",
-//               borderRadius: 4,
-//               boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-//               textAlign: "center",
-//             }}
-//           >
-//             <Typography variant="h6" fontWeight={600} mb={1}>
-//               Your wishlist is empty
-//             </Typography>
-//             <Typography color="text.secondary" mb={3}>
-//               Start exploring books and tap the ❤️ icon to save your favourites
-//               here.
-//             </Typography>
-//             <Button
-//               variant="contained"
-//               sx={{
-//                 bgcolor: "#c57a45",
-//                 textTransform: "none",
-//                 borderRadius: "999px",
-//                 px: 4,
-//                 "&:hover": { bgcolor: "#b36a36" },
-//               }}
-//               onClick={() => router.push("/browse")}
-//             >
-//               Browse Books
-//             </Button>
-//           </Box>
-//         ) : (
-//           <>
-//             {/* Wishlist items */}
-//             <Stack spacing={2.5}>
-//               {items.map((item) => (
-//                 <Card
-//                   key={item.bookId}
-//                   sx={{
-//                     display: "flex",
-//                     alignItems: "stretch",
-//                     p: 2,
-//                     borderRadius: 3,
-//                     boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-//                     bgcolor: "#ffffff",
-//                     position: "relative",
-//                     overflow: "hidden",
-//                     "&::before": {
-//                       content: '""',
-//                       position: "absolute",
-//                       inset: 0,
-//                       background:
-//                         "linear-gradient(135deg, rgba(197,122,69,0.06), transparent)",
-//                       pointerEvents: "none",
-//                     },
-//                   }}
-//                 >
-//                   <CardMedia
-//                     component="img"
-//                     image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.image}`}
-//                     alt={item.title}
-//                     sx={{
-//                       width: 110,
-//                       height: 150,
-//                       borderRadius: 2,
-//                       objectFit: "cover",
-//                       mr: 2,
-//                       flexShrink: 0,
-//                     }}
-//                   />
+  const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
+    order.items.map((item) => ({
+      ...item,
+      orderId: order._id,
+      orderStatus: order.status,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      orderTotalAmount: order.totalAmount,
+      address: order.address,
+    }))
+  );
 
-//                   <CardContent
-//                     sx={{
-//                       flexGrow: 1,
-//                       display: "flex",
-//                       flexDirection: "column",
-//                       justifyContent: "space-between",
-//                       zIndex: 1,
-//                     }}
-//                   >
-//                     <Box>
-//                       <Typography
-//                         variant="subtitle1"
-//                         fontWeight={700}
-//                         sx={{ mb: 0.5 }}
-//                         noWrap
-//                       >
-//                         {item.title}
-//                       </Typography>
-//                       <Typography
-//                         variant="body2"
-//                         color="text.secondary"
-//                         sx={{ mb: 0.5 }}
-//                         noWrap
-//                       >
-//                         {item.author}
-//                       </Typography>
+  // 🔥 ITEM-LEVEL CANCEL HANDLER
+  const handleCancelOrderItem = async (orderId: string, itemId: string) => {
+    const ask = window.confirm("Cancel this item?");
+    if (!ask) return;
 
-//                       <Stack direction="row" spacing={1} flexWrap="wrap">
-//                         {Array.isArray(item.genre) ? (
-//                           item.genre.map((g: string) => (
-//                             <Chip
-//                               key={g}
-//                               label={g}
-//                               size="small"
-//                               sx={{
-//                                 bgcolor: "#f3e7dd",
-//                                 color: "#7a4a26",
-//                                 fontSize: "0.7rem",
-//                               }}
-//                             />
-//                           ))
-//                         ) : (
-//                           <Chip
-//                             label={item.genre}
-//                             size="small"
-//                             sx={{
-//                               bgcolor: "#f3e7dd",
-//                               color: "#7a4a26",
-//                               fontSize: "0.7rem",
-//                             }}
-//                           />
-//                         )}
-//                       </Stack>
-//                     </Box>
+    try {
+      setCancelLoadingItem(itemId); // loading per item
+      await dispatch(
+        cancelOrderThunk({ orderId, itemId })
+      ).unwrap();
+    } catch (err) {
+      console.error("Failed to cancel item", err);
+    } finally {
+      setCancelLoadingItem(null);
+    }
+  };
 
-//                     <Stack
-//                       direction="row"
-//                       alignItems="center"
-//                       justifyContent="space-between"
-//                       mt={2}
-//                     >
-//                       <Typography variant="h6" fontWeight={700}>
-//                         ₹{item.prize}
-//                       </Typography>
-//                     </Stack>
-//                   </CardContent>
+  return (
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f5f7fb", py: 3 }}>
+      <Container maxWidth="lg">
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={2.5}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              bgcolor: "#c57a45",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+            }}
+          >
+            <ShoppingBagOutlinedIcon fontSize="small" />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              My Orders
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#6b7280" }}>
+              Each card shows a single ordered book.
+            </Typography>
+          </Box>
+        </Stack>
 
-//                   {/* Remove Button */}
-//                   <Box
-//                     sx={{
-//                       display: "flex",
-//                       alignItems: "flex-start",
-//                       justifyContent: "flex-end",
-//                       pr: 1,
-//                       pt: 1,
-//                       zIndex: 1,
-//                     }}
-//                   >
-//                     <IconButton
-//                       color="error"
-//                       onClick={() => removeHandler(item.bookId)}
-//                       sx={{
-//                         bgcolor: "#ffebee",
-//                         "&:hover": { bgcolor: "#ffcdd2" },
-//                       }}
-//                     >
-//                       <DeleteIcon fontSize="small" />
-//                     </IconButton>
-//                   </Box>
-//                 </Card>
-//               ))}
-//             </Stack>
+        {loading && (
+          <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
+            <CircularProgress />
+          </Box>
+        )}
 
-//             {/* Pagination */}
-//             {totalPages && totalPages > 1 && (
-//               <Box mt={4} display="flex" justifyContent="center">
-//                 <Pagination
-//                   page={page}
-//                   count={totalPages}
-//                   onChange={handlePageChange}
-//                   shape="rounded"
-//                   color="primary"
-//                   siblingCount={1}
-//                   boundaryCount={1}
-//                 />
-//               </Box>
-//             )}
-//           </>
-//         )}
-//       </Container>
-//     </Box>
-//   );
-// }
+        {!loading && error && (
+          <Box sx={{ py: 5, textAlign: "center" }}>
+            <Typography color="error">{error}</Typography>
+          </Box>
+        )}
+
+        {!loading && !error && itemCards.length === 0 && (
+          <Box sx={{ py: 5, textAlign: "center" }}>
+            <Typography variant="h6" fontWeight={600}>
+              No orders found.
+            </Typography>
+          </Box>
+        )}
+
+        {!loading && !error && itemCards.length > 0 && (
+          <Grid container spacing={2}>
+            {itemCards.map((item) => {
+              const title = item.book?.title || "Book";
+              const author = item.book?.author || "";
+              const unitPrice =
+                item.price ?? item.book?.price ?? item.book?.prize ?? 0;
+              const lineTotal = unitPrice * (item.quantity || 1);
+
+              const imageUrl = item.book?.image
+                ? `${backendUrl}/${item.book.image}`
+                : "/images/book-placeholder.png";
+
+              const isCancelling = cancelLoadingItem === item._id;
+
+              const disableCancel =
+                item.status === "cancelled" ||
+                item.status === "shipped" ||
+                item.status === "delivered";
+
+              return (
+                <Grid item xs={12} sm={6} md={3} key={item._id}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      borderRadius: 2.5,
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
+                      bgcolor: "#ffffff",
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      image={imageUrl}
+                      alt={title}
+                      sx={{
+                        height: 170,
+                        objectFit: "contain",
+                        bgcolor: "#f9fafb",
+                        p: 1.2,
+                      }}
+                    />
+
+                    <CardContent sx={{ p: 1.75, flexGrow: 1 }}>
+                      <Stack spacing={0.3} mb={0.75}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={700}
+                          sx={{
+                            fontSize: 13.5,
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: 2,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {title}
+                        </Typography>
+                        {author && (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "#6b7280", fontSize: 12.5 }}
+                          >
+                            by {author}
+                          </Typography>
+                        )}
+                      </Stack>
+
+                      {/* 🔥 Item status chip */}
+                      <Chip
+                        label={item.status.toUpperCase()}
+                        size="small"
+                        color={getStatusColor(item.status)}
+                        sx={{
+                          fontSize: 9,
+                          fontWeight: 600,
+                          height: 20,
+                          mb: 1,
+                        }}
+                      />
+
+                      <Stack direction="row" spacing={0.75} mb={0.75}>
+                        <Chip
+                          label={item.paymentMethod.toUpperCase()}
+                          size="small"
+                          sx={{
+                            bgcolor: "#ecfdf3",
+                            fontSize: 9,
+                            fontWeight: 600,
+                            height: 20,
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "#9ca3af", fontSize: 11 }}
+                        >
+                          Order #{item.orderId.slice(-6)} •{" "}
+                          {formatDate(item.createdAt)}
+                        </Typography>
+                      </Stack>
+
+                      <Stack spacing={0.4} mb={1}>
+                        <Stack direction="row" spacing={0.75}>
+                          <LocalShippingOutlinedIcon
+                            sx={{ fontSize: 15, color: "#9ca3af" }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#9ca3af", fontSize: 11 }}
+                          >
+                            Qty: <b>{item.quantity}</b> • ₹{unitPrice}/book
+                          </Typography>
+                        </Stack>
+                      </Stack>
+
+                      <Divider sx={{ my: 1 }} />
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        mb={0.5}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#6b7280", fontSize: 12.5 }}
+                        >
+                          Line Total
+                        </Typography>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={800}
+                          sx={{ fontSize: 14 }}
+                        >
+                          ₹{lineTotal}
+                        </Typography>
+                      </Stack>
+
+                      {/* ITEM CANCEL BUTTON */}
+                      <Box mt={1.2} display="flex" justifyContent="flex-end">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          disabled={disableCancel || isCancelling}
+                          onClick={() =>
+                            handleCancelOrderItem(item.orderId, item._id)
+                          }
+                          sx={{
+                            textTransform: "none",
+                            fontSize: 12,
+                            borderRadius: 999,
+                            px: 1.5,
+                            py: 0.2,
+                          }}
+                        >
+                          {isCancelling
+                            ? "Cancelling..."
+                            : item.status === "cancelled"
+                            ? "Cancelled"
+                            : "Cancel Item"}
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Container>
+    </Box>
+  );
+}

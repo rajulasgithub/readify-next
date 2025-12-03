@@ -46,7 +46,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (savedFirstName) setFirstName(savedFirstName);
     if (savedLastName) setLastName(savedLastName);
     if (savedPhone) setPhone(savedPhone);
-    console.log(savedToken,savedRole,savedEmail,savedFirstName,savedLastName,savedToken)
   }, []);
 
   const loginUser = (

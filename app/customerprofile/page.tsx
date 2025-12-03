@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   Box,
   Container,
@@ -10,20 +11,23 @@ import {
   Avatar,
   Button,
   Divider,
-  Chip,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import { useSelector } from "react-redux";
-import { RootState } from "@/src/redux/store";
+
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
+import { fetchProfileThunk } from "@/src/redux/slices/authSlice";
 
 export default function UserProfilePage() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
 
-  // 🔹 wishlist & cart still from Redux
+  // 🔹 Redux state
+  const { user, loading } = useSelector((state: RootState) => state.auth);
   const { totalItems: wishlistCount = 0 } = useSelector(
     (state: RootState) => state.wishlist
   );
@@ -31,24 +35,42 @@ export default function UserProfilePage() {
     (state: RootState) => state.cart
   );
 
-  // 🔹 user details from AuthContext
-  const { firstName, lastName, email, phone, logoutUser } = useAuth();
+  // 🔹 AuthContext just for logout (token/cookie cleanup)
+  const { logoutUser } = useAuth();
+
+  // 🔹 Fetch latest profile from backend on mount
+  useEffect(() => {
+    dispatch(fetchProfileThunk());
+  }, [dispatch]);
 
   const userName =
-    firstName || lastName ? `${firstName ?? ""} ${lastName ?? ""}`.trim() : "Reader";
-  const userEmail = email || "";
-  const userPhone = phone || "";
+    user && (user.firstName || user.lastName)
+      ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+      : "Reader";
 
+  const userEmail = user?.email ?? "";
+  const userPhone = user?.fullPhone ? String(user.fullPhone) : "";
+  const imageUrl = user?.image
+  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${user.image}`
+  : undefined;
 
   const handleLogout = () => {
-    logoutUser();
+    logoutUser(); 
     router.push("/login");
   };
 
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-       
+        {/* Optional: small loading text */}
+        {loading && (
+          <Typography
+            variant="body2"
+            sx={{ mb: 2, color: "#6b7280", textAlign: "center" }}
+          >
+            Loading your profile...
+          </Typography>
+        )}
 
         <Box
           sx={{
@@ -57,7 +79,7 @@ export default function UserProfilePage() {
             gap: 3,
           }}
         >
-          
+          {/* Left: Profile card */}
           <Card
             sx={{
               flex: "0 0 330px",
@@ -70,6 +92,7 @@ export default function UserProfilePage() {
             <CardContent>
               <Stack alignItems="center" spacing={2}>
                 <Avatar
+                  src={imageUrl}
                   sx={{
                     width: 90,
                     height: 90,
@@ -85,29 +108,29 @@ export default function UserProfilePage() {
                   {userName}
                 </Typography>
 
-                <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
+                <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.5 }}>
                   {userEmail}
                 </Typography>
+                <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
+                  {userPhone}
+                </Typography>
 
-
-                <Divider sx={{ width: "100%", my: 1 }} />
-
-                <Box sx={{ width: "100%" }}>
-                  <Typography variant="subtitle2" sx={{ color: "#6b7280" }}>
-                    Phone
-                  </Typography>
+                {user?.bio && (
                   <Typography
                     variant="body2"
-                    sx={{ color: "#111827", mb: 1.5 }}
+                    sx={{
+                      color: "#4b5563",
+                      textAlign: "center",
+                      mt: 1,
+                    }}
                   >
-                    {userPhone}
+                    {user.bio}
                   </Typography>
+                )}
 
-                  
-          
-                </Box>
+                <Divider sx={{ width: "100%", my: 2 }} />
 
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+                <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
                   <Button
                     variant="outlined"
                     sx={{ textTransform: "none" }}
@@ -129,10 +152,10 @@ export default function UserProfilePage() {
             </CardContent>
           </Card>
 
-        
+          {/* Right: Stats + actions */}
           <Box sx={{ flex: 1 }}>
             <Stack spacing={3}>
-        
+              {/* Stats cards */}
               <Box
                 sx={{
                   display: "flex",
@@ -140,7 +163,7 @@ export default function UserProfilePage() {
                   flexWrap: "wrap",
                 }}
               >
-              
+                {/* Wishlist card */}
                 <Card
                   sx={{
                     flex: "1 1 250px",
