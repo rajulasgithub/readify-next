@@ -14,26 +14,35 @@ import {
   Grid,
   CardMedia,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Rating,
+  TextField,
 } from "@mui/material";
+
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
+
 import { cancelOrderThunk, fetchUserOrdersThunk } from "@/src/redux/slices/orderSlice";
 
+// ⭐ ADD THIS IMPORT
+import { addReview } from "@/src/redux/slices/bookSlice";
 
 type OrderItem = {
   _id: string;
   quantity: number;
-  price: number;
   status: "ordered" | "cancelled" | "shipped" | "delivered";
   book?: {
     _id: string;
     title?: string;
     author?: string;
     prize?: number;
-    price?: number;
+   
     image?: string;
   };
 };
@@ -61,9 +70,16 @@ type FlattenedOrderItem = OrderItem & {
 export default function UserOrdersPage() {
   const dispatch = useDispatch<AppDispatch>();
 
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState<number | null>(null); // start with null
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewBookId, setReviewBookId] = useState<string | null>(null);
+
   const { userOrders, userOrdersLoading, userOrdersError } = useSelector(
     (state: RootState) => state.orders
   );
+    console.log(userOrders)
+
 
   const [cancelLoadingItem, setCancelLoadingItem] = useState<string | null>(null);
 
@@ -99,6 +115,7 @@ export default function UserOrdersPage() {
 
   const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
     order.items.map((item) => ({
+      
       ...item,
       orderId: order._id,
       orderStatus: order.status,
@@ -109,16 +126,13 @@ export default function UserOrdersPage() {
     }))
   );
 
-  // 🔥 ITEM-LEVEL CANCEL HANDLER
   const handleCancelOrderItem = async (orderId: string, itemId: string) => {
     const ask = window.confirm("Cancel this item?");
     if (!ask) return;
 
     try {
-      setCancelLoadingItem(itemId); // loading per item
-      await dispatch(
-        cancelOrderThunk({ orderId, itemId })
-      ).unwrap();
+      setCancelLoadingItem(itemId);
+      await dispatch(cancelOrderThunk({ orderId, itemId })).unwrap();
     } catch (err) {
       console.error("Failed to cancel item", err);
     } finally {
@@ -129,6 +143,7 @@ export default function UserOrdersPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5f7fb", py: 3 }}>
       <Container maxWidth="lg">
+        {/* HEADER */}
         <Stack direction="row" alignItems="center" spacing={1.5} mb={2.5}>
           <Box
             sx={{
@@ -154,18 +169,21 @@ export default function UserOrdersPage() {
           </Box>
         </Stack>
 
+        {/* LOADING */}
         {loading && (
           <Box sx={{ py: 8, display: "flex", justifyContent: "center" }}>
             <CircularProgress />
           </Box>
         )}
 
+        {/* ERROR */}
         {!loading && error && (
           <Box sx={{ py: 5, textAlign: "center" }}>
             <Typography color="error">{error}</Typography>
           </Box>
         )}
 
+        {/* EMPTY */}
         {!loading && !error && itemCards.length === 0 && (
           <Box sx={{ py: 5, textAlign: "center" }}>
             <Typography variant="h6" fontWeight={600}>
@@ -174,13 +192,15 @@ export default function UserOrdersPage() {
           </Box>
         )}
 
+        {/* ORDER LIST */}
         {!loading && !error && itemCards.length > 0 && (
           <Grid container spacing={2}>
             {itemCards.map((item) => {
+          
               const title = item.book?.title || "Book";
               const author = item.book?.author || "";
               const unitPrice =
-                item.price ?? item.book?.price ?? item.book?.prize ?? 0;
+                item.book?.price ?? 0;
               const lineTotal = unitPrice * (item.quantity || 1);
 
               const imageUrl = item.book?.image
@@ -244,7 +264,6 @@ export default function UserOrdersPage() {
                         )}
                       </Stack>
 
-                      {/* 🔥 Item status chip */}
                       <Chip
                         label={item.status.toUpperCase()}
                         size="small"
@@ -313,8 +332,36 @@ export default function UserOrdersPage() {
                         </Typography>
                       </Stack>
 
-                      {/* ITEM CANCEL BUTTON */}
-                      <Box mt={1.2} display="flex" justifyContent="flex-end">
+                      {/* BUTTONS */}
+                      <Box
+                        mt={1.2}
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        {/* ⭐ ADD REVIEW BUTTON */}
+                        {item.status === "delivered" && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 12,
+                              borderRadius: 999,
+                              px: 1.8,
+                              py: 0.3,
+                            }}
+                            onClick={() => {
+                              setReviewBookId(item.book?._id || "");
+                              setReviewOpen(true);
+                            }}
+                          >
+                            Add Review
+                          </Button>
+                        )}
+
+                        {/* CANCEL ITEM */}
                         <Button
                           size="small"
                           variant="outlined"
@@ -343,6 +390,70 @@ export default function UserOrdersPage() {
                 </Grid>
               );
             })}
+
+            {/* ⭐ REVIEW MODAL */}
+            <Dialog open={reviewOpen} onClose={() => setReviewOpen(false)} fullWidth maxWidth="sm">
+              <DialogTitle>Add Your Review</DialogTitle>
+              <DialogContent dividers>
+                <Stack spacing={2} mt={1}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Rate this Book
+                  </Typography>
+
+                 <Rating
+  value={reviewRating}
+  onChange={(_, value) => setReviewRating(value)} // value is number | null
+  size="large"
+/>
+                  <TextField
+                    label="Write your review"
+                    multiline
+                    rows={4}
+                    fullWidth
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                  />
+                </Stack>
+              </DialogContent>
+
+              <DialogActions>
+                <Button onClick={() => setReviewOpen(false)}>Cancel</Button>
+
+                {/* ⭐ DISPATCHING THE THUNK HERE */}
+                <Button
+  variant="contained"
+  onClick={async () => {
+    if (!reviewBookId || reviewRating === null) {
+      alert("Please give a rating");
+      return;
+    }
+
+    try {
+      await dispatch(
+        addReview({
+          bookId: reviewBookId,
+          rating: reviewRating,
+          comment: reviewComment,
+        })
+      ).unwrap();
+     console.log("id",reviewBookId)
+     console.log("rating",reviewRating)
+      alert("Review submitted!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit review");
+    }
+
+    setReviewOpen(false);
+    setReviewRating(null);
+    setReviewComment("");
+    setReviewBookId(null);
+  }}
+>
+  Submit Review
+</Button>
+              </DialogActions>
+            </Dialog>
           </Grid>
         )}
       </Container>

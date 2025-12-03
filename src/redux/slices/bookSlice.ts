@@ -21,6 +21,17 @@ export interface Book {
   prize: number;
   category: "Academic" | "Fiction" | "Non-Fiction" | "Comics" | "Children" | "Poetry";
   is_deleted?: boolean;
+   reviews?: Review[];
+  avgRating?: number;
+  totalReviews?: number;
+}
+
+export interface Review {
+  _id?: string;
+  user: string;
+  rating: number;
+  comment?: string;
+  createdAt?: string;
 }
 
 interface BookState {
@@ -34,6 +45,7 @@ interface BookState {
 
   singleBookLoading: boolean;   
   singleBookError: string | null;
+  
 }
 
 const initialState: BookState = {
@@ -92,7 +104,8 @@ export const fetchBooks = createAsyncThunk<
   async ({ page, limit, search }, { rejectWithValue }) => {
     try {
       const token =  getToken();
-      if (!token) return rejectWithValue("No token found");
+      console.log(token)
+      if (!token) return rejectWithValue("No token ound");
 
       const res = await api.get("/api/books/viewbooks", {
         params: {
@@ -185,6 +198,59 @@ export const updateBook = createAsyncThunk<Book, UpdateBookParams, { rejectValue
 
 
 
+// reviewbook
+
+interface AddReviewParams {
+  bookId: string;
+  rating: number;
+  comment?: string;
+}
+
+export const addReview = createAsyncThunk<
+  Book,
+  AddReviewParams,
+  { rejectValue: string }
+>(
+  "books/addReview",
+  async ({ bookId, rating, comment }, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      if (!token) return rejectWithValue("No token found");
+
+      const res = await api.post(
+        `/api/books/review/${bookId}`,
+        { rating, comment },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log(res)
+      return res.data.data; 
+    } catch (err: any) {
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to add review"
+      );
+    }
+  }
+);
+
+
+// fetch review
+
+export const fetchReviews = createAsyncThunk<
+  Review[],
+  string,
+  { rejectValue: string }
+>("books/fetchReviews", async (bookId, { rejectWithValue }) => {
+  try {
+    const res = await api.get(`/api/books/${bookId}/reviews`);
+    return res.data.reviews;
+  } catch (err: any) {
+    return rejectWithValue(
+      err.response?.data?.message || "Failed to fetch reviews"
+    );
+  }
+});
 
 
 
@@ -280,6 +346,44 @@ export const bookSlice = createSlice({
   .addCase(updateBook.rejected, (state, action) => {
     state.loading = false;
     state.error = action.payload || "Failed to update book";
+  });
+
+
+  //  ADD REVIEW
+builder
+  .addCase(addReview.pending, (state) => {
+    state.loading = true;
+    state.error = null;
+  })
+  .addCase(addReview.fulfilled, (state, action: PayloadAction<Book>) => {
+    state.loading = false;
+    state.singleBook = action.payload;
+
+    // Update in book list too
+    const index = state.books.findIndex(b => b._id === action.payload._id);
+    if (index !== -1) state.books[index] = action.payload;
+  })
+  .addCase(addReview.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload || "Failed to add review";
+  });
+
+
+//  FETCH REVIEWS
+builder
+  .addCase(fetchReviews.pending, (state) => {
+    state.loading = true;
+  })
+  .addCase(fetchReviews.fulfilled, (state, action) => {
+    state.loading = false;
+
+    if (state.singleBook) {
+      state.singleBook.reviews = action.payload;
+    }
+  })
+  .addCase(fetchReviews.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload || "Failed to fetch reviews";
   });
 
    
