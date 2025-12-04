@@ -116,7 +116,7 @@ export const fetchBooks = createAsyncThunk<
         },
         headers: { Authorization: `Bearer ${token}` },
       });
-
+console.log(res)
       return {
         books: res.data.data,
         totalPages: res.data.pagination.totalPages,

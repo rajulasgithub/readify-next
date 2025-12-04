@@ -44,7 +44,7 @@ export default function ViewBooks() {
   );
 
   const [page, setPage] = useState(1);
-  const limit = 15;
+  const limit = 8;
 
 
   const [searchInput, setSearchInput] = useState("");

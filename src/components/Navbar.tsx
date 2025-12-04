@@ -100,7 +100,7 @@ export default function Navbar() {
       <Divider sx={{ mb: 2 }} />
 
       <List>
-        {/* 🧑‍💻 CUSTOMER MENU (mobile) */}
+        
         {isCustomer && (
           <>
             <ListItem>
@@ -152,6 +152,20 @@ export default function Navbar() {
               >
                 <ListItemText
                   primary="Cart"
+                  primaryTypographyProps={{
+                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
+                  }}
+                />
+              </Link>
+            </ListItem>
+            <ListItem>
+              <Link
+                href="/vieworders"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
+                
+                <ListItemText
+                  primary="Orders"
                   primaryTypographyProps={{
                     sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
                   }}
@@ -338,7 +352,7 @@ export default function Navbar() {
                       "&:hover": { color: "#111827" },
                     }}
                   >
-                   books
+                   Books
                   </Typography>
                 </Link>
                 <Typography
@@ -367,6 +381,7 @@ export default function Navbar() {
                     About
                   </Typography>
                 </Link>
+               
 
                 <IconButton onClick={() => router.push("/wishlist")}>
                   <FavoriteBorderIcon sx={{ color: "#c57a45" }} />

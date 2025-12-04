@@ -21,7 +21,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import Link from "next/link";
 
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchCartItems,
@@ -33,16 +33,18 @@ import { AppDispatch, RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 
 export default function CartPage() {
+   const [page, setPage] = useState(1);
+  const limit = 2; 
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
-  const { items, loading, error, totalPrice, totalQuantity } = useSelector(
+  const { items, loading, error, totalPrice, totalQuantity,pagination } = useSelector(
     (state: RootState) => state.cart
   );
 
   useEffect(() => {
-    dispatch(fetchCartItems());
-  }, [dispatch]);
+    dispatch(fetchCartItems({ page, limit }));
+  }, [dispatch, page]);
 
   const increaseQty = (id: string, quantity: number) => {
     dispatch(updateCartQuantity({ bookId: id, quantity: quantity + 1 }));
@@ -78,6 +80,14 @@ export default function CartPage() {
     );
   }
 
+ const handleNextPage = () => {
+    if (page < (pagination?.totalPages || 1)) setPage(page + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
   return (
     <Box
       sx={{
@@ -106,7 +116,7 @@ export default function CartPage() {
             </Stack>
             <Stack direction="row" spacing={1} mt={1}>
               <Chip
-                label={`${totalQuantity} item${
+                label={`${items.length} item${
                   totalQuantity !== 1 ? "s" : ""
                 } in cart`}
                 size="small"
@@ -270,6 +280,7 @@ export default function CartPage() {
                             onClick={() =>
                               decreaseQty(item.bookId, item.quantity)
                             }
+                            disabled={item.quantity === 1}
                             sx={{
                               borderRadius: "999px",
                               bgcolor: "#f3f4f6",
@@ -303,6 +314,7 @@ export default function CartPage() {
                           size="small"
                           startIcon={<DeleteIcon />}
                           onClick={() => removeItemHandler(item.bookId)}
+                          
                           sx={{
                             textTransform: "none",
                             color: "#b91c1c",
@@ -340,7 +352,7 @@ export default function CartPage() {
                     Total Items
                   </Typography>
                   <Typography variant="h6" fontWeight={700}>
-                    {totalQuantity}
+                    {items.length}
                   </Typography>
                 </Box>
 
@@ -371,6 +383,26 @@ export default function CartPage() {
           </>
         )}
       </Container>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
+  <Button
+    variant="outlined"
+    disabled={page === 1}
+    onClick={handlePrevPage}
+  >
+    Previous
+  </Button>
+  <Typography sx={{ alignSelf: "center" }}>
+    Page {page} of {pagination?.totalPages || 1}
+  </Typography>
+  <Button
+    variant="outlined"
+    disabled={page === (pagination?.totalPages || 1)}
+    onClick={handleNextPage}
+  >
+    Next
+  </Button>
+</Box>
+
     </Box>
   );
 }

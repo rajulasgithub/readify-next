@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,16 +15,17 @@ import {
 import { useRouter, useParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
 import { addToCart } from "@/src/redux/slices/cartSlice";
-import { addToWishlist } from "@/src/redux/slices/wishlistSlice";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/src/redux/slices/wishlistSlice";
 
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
 export default function ViewOneBook() {
-  const {role } = useAuth()
+  const { role } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -35,15 +35,16 @@ export default function ViewOneBook() {
     (state: RootState) => state.books
   );
 
+  const { items: wishlistItems } = useSelector(
+    (state: RootState) => state.wishlist
+  );
+
   const [openConfirm, setOpenConfirm] = useState(false);
-
-
-
-  
 
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleBook(id));
+      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // fetch wishlist to check status
     }
   }, [id, dispatch]);
 
@@ -55,16 +56,14 @@ export default function ViewOneBook() {
     ? singleBook.image[0]
     : singleBook.image;
 
-  
   const confirmDelete = async () => {
     await dispatch(deleteBook(id));
     setOpenConfirm(false);
 
-    
     if (role === "seller") {
       router.push("/sellerbooks");
     } else if (role === "customer") {
-      router.push("/viewbooks"); 
+      router.push("/viewbooks");
     } else {
       router.push("/admin");
     }
@@ -79,16 +78,47 @@ export default function ViewOneBook() {
     }
   };
 
+ const isInWishlist = wishlistItems?.some((item) => item.bookId === id);
 
-  const handleAddToWishlist = async () => {
-    const result = await dispatch(addToWishlist(id));
+  const handleWishlistToggle = async () => {
+  if (isInWishlist) {
+    // remove from wishlist
+    const result = await dispatch(removeFromWishlist(id) as any);
+    if (removeFromWishlist.fulfilled.match(result)) {
+      toast.info(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Removed from wishlist </span>
+          <FavoriteBorderIcon
+            style={{ cursor: "pointer", color: "#c57a45" }}
+            onClick={() => router.push("/wishlist")}
+          />
+        </div>,
+        { autoClose: 5000 }
+      );
+      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // refresh wishlist
+    } else {
+      toast.error(result.payload || "Failed to remove from wishlist.");
+    }
+  } else {
+    // add to wishlist
+    const result = await dispatch(addToWishlist(id) as any);
     if (addToWishlist.fulfilled.match(result)) {
-      toast.success("Added to wishlist! ❤️");
-      router.push("/cart");
+      toast.success(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Added to wishlist </span>
+          <FavoriteBorderIcon
+            style={{ cursor: "pointer", color: "#c57a45" }}
+            onClick={() => router.push("/wishlist")}
+          />
+        </div>,
+        { autoClose: 5000 }
+      );
+      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // refresh wishlist
     } else {
       toast.error(result.payload || "Failed to add to wishlist.");
     }
-  };
+  }
+};
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -122,19 +152,33 @@ export default function ViewOneBook() {
       </Typography>
 
       <Stack direction="row" spacing={2} mt={3}>
-      
         {role === "customer" && (
           <>
             <Button variant="contained" color="primary" onClick={handleAddToCart}>
               Add to Cart
             </Button>
-            <Button variant="outlined" color="primary" onClick={handleAddToWishlist}>
-              Add to Wishlist
-            </Button>
+           <Button
+  variant={isInWishlist ? "outlined" : "contained"}
+  color={isInWishlist ? "secondary" : "primary"}
+  onClick={handleWishlistToggle}
+  sx={{
+  
+   
+    cursor: "pointer",
+    backgroundColor: isInWishlist ? "#fff" : undefined,
+    borderColor: isInWishlist ? "#c57a45" : undefined,
+    color: isInWishlist ? "#c57a45" : undefined,
+    "&:hover": {
+      backgroundColor: isInWishlist ? "#f9f5f2" : undefined,
+      borderColor: "#c57a45",
+    },
+  }}
+>
+  {isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+</Button>
           </>
         )}
 
-      
         {role === "seller" && (
           <>
             <Button
@@ -165,7 +209,6 @@ export default function ViewOneBook() {
         )}
       </Stack>
 
-   
       <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
         <DialogTitle>Are you sure you want to delete this book?</DialogTitle>
         <DialogActions>

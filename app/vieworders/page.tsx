@@ -37,14 +37,13 @@ type OrderItem = {
   _id: string;
   quantity: number;
   status: "ordered" | "cancelled" | "shipped" | "delivered";
-  book?: {
-    _id: string;
-    title?: string;
-    author?: string;
-    prize?: number;
-   
-    image?: string;
-  };
+ book?: {
+  _id: string;
+  title?: string;
+  author?: string;
+  price?: number;
+  image?: string[];        // <-- FIXED: array
+};
 };
 
 type Order = {
@@ -78,7 +77,7 @@ export default function UserOrdersPage() {
   const { userOrders, userOrdersLoading, userOrdersError } = useSelector(
     (state: RootState) => state.orders
   );
-    console.log(userOrders)
+    
 
 
   const [cancelLoadingItem, setCancelLoadingItem] = useState<string | null>(null);
@@ -113,19 +112,22 @@ export default function UserOrdersPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
-    order.items.map((item) => ({
-      
-      ...item,
-      orderId: order._id,
-      orderStatus: order.status,
-      paymentMethod: order.paymentMethod,
-      createdAt: order.createdAt,
-      orderTotalAmount: order.totalAmount,
-      address: order.address,
-    }))
-  );
+ const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
+  order.items.map((item) => ({
+    ...item,
+    // FIX: Convert string book => object with _id
+    book: typeof item.book === "string"
+      ? { _id: item.book }
+      : item.book,
 
+    orderId: order._id,
+    orderStatus: order.status,
+    paymentMethod: order.paymentMethod,
+    createdAt: order.createdAt,
+    orderTotalAmount: order.totalAmount,
+    address: order.address,
+  }))
+);
   const handleCancelOrderItem = async (orderId: string, itemId: string) => {
     const ask = window.confirm("Cancel this item?");
     if (!ask) return;
@@ -196,6 +198,7 @@ export default function UserOrdersPage() {
         {!loading && !error && itemCards.length > 0 && (
           <Grid container spacing={2}>
             {itemCards.map((item) => {
+              console.log("Item book:", item.book);
           
               const title = item.book?.title || "Book";
               const author = item.book?.author || "";
@@ -203,10 +206,9 @@ export default function UserOrdersPage() {
                 item.book?.price ?? 0;
               const lineTotal = unitPrice * (item.quantity || 1);
 
-              const imageUrl = item.book?.image
-                ? `${backendUrl}/${item.book.image}`
-                : "/images/book-placeholder.png";
-
+              const imageUrl = item.book?.image?.length
+  ? `${backendUrl}/${item.book.image[0]}`
+  : "/images/book-placeholder.png";
               const isCancelling = cancelLoadingItem === item._id;
 
               const disableCancel =
@@ -353,8 +355,12 @@ export default function UserOrdersPage() {
                               py: 0.3,
                             }}
                             onClick={() => {
-                              setReviewBookId(item.book?._id || "");
-                              setReviewOpen(true);
+                              if (!item.book?._id) {
+  alert("Book ID not found — cannot add review");
+  return;
+}
+setReviewBookId(item.book._id);
+setReviewOpen(true);
                             }}
                           >
                             Add Review
@@ -439,9 +445,9 @@ export default function UserOrdersPage() {
      console.log("id",reviewBookId)
      console.log("rating",reviewRating)
       alert("Review submitted!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to submit review");
+    } catch (err: any) {
+     console.error("REVIEW ERROR >>>", err?.message);
+    alert(err?.message || "Failed to submit review");
     }
 
     setReviewOpen(false);

@@ -21,6 +21,8 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 import { fetchProfileThunk } from "@/src/redux/slices/authSlice";
+import { fetchCartItems } from "@/src/redux/slices/cartSlice";
+import { fetchWishlist } from "@/src/redux/slices/wishlistSlice";
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -28,12 +30,13 @@ export default function UserProfilePage() {
 
   // 🔹 Redux state
   const { user, loading } = useSelector((state: RootState) => state.auth);
-  const { totalItems: wishlistCount = 0 } = useSelector(
-    (state: RootState) => state.wishlist
-  );
-  const { totalQuantity: cartItems = 0 } = useSelector(
-    (state: RootState) => state.cart
-  );
+  const wishlistCount = useSelector(
+  (state: RootState) => state.wishlist.items.length
+);
+
+const cartCount = useSelector(
+  (state: RootState) => state.cart.items.length
+);
 
   // 🔹 AuthContext just for logout (token/cookie cleanup)
   const { logoutUser } = useAuth();
@@ -41,6 +44,8 @@ export default function UserProfilePage() {
   // 🔹 Fetch latest profile from backend on mount
   useEffect(() => {
     dispatch(fetchProfileThunk());
+ dispatch(fetchWishlist({ page: 1, limit: 100 }));
+  dispatch(fetchWishlist({ page: 1, limit: 100 })); 
   }, [dispatch]);
 
   const userName =
@@ -226,7 +231,7 @@ export default function UserProfilePage() {
                           Cart Items
                         </Typography>
                         <Typography variant="h6" fontWeight={700}>
-                          {cartItems}
+                          {cartCount}
                         </Typography>
                       </Box>
                     </Stack>
@@ -281,7 +286,7 @@ export default function UserProfilePage() {
                         px: 3,
                         "&:hover": { bgcolor: "#b36a36" },
                       }}
-                      onClick={() => router.push("/orders")}
+                      onClick={() => router.push("/vieworders")}
                     >
                       View Orders
                     </Button>
@@ -335,6 +340,7 @@ export default function UserProfilePage() {
           </Box>
         </Box>
       </Container>
+      
     </Box>
   );
 }

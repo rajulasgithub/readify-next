@@ -19,6 +19,9 @@ import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlin
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { ToastContainer, toast } from "react-toastify";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import { useRouter } from "next/navigation";
 import {
   fetchWishlist,
   removeFromWishlist,
@@ -28,6 +31,7 @@ import { AppDispatch, RootState } from "@/src/redux/store";
 import { addToCart } from "@/src/redux/slices/cartSlice"; 
 
 export default function WishlistPage() {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
   const { items, loading, error, totalPages } = useSelector(
@@ -53,6 +57,18 @@ export default function WishlistPage() {
   const addToCartHandler = (id: string) => {
     
     dispatch(addToCart(id));
+     toast(
+  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <span>Added to cart!</span>
+    <ShoppingCartIcon
+      onClick={() => router.push("/cart")}
+      style={{ cursor: "pointer", color: "#1976d2" }} // color & pointer
+    />
+  </div>,
+  {
+    autoClose: 5000,
+  }
+);
   };
 
   if (loading) {
@@ -74,6 +90,18 @@ export default function WishlistPage() {
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+      <ToastContainer
+  position="top-right"
+  autoClose={3000}
+  hideProgressBar={false}
+  newestOnTop={false}
+  closeOnClick
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="light"
+/>
       <Container maxWidth="lg" sx={{ py: 4 }}>
  
         <Box
@@ -366,26 +394,26 @@ export default function WishlistPage() {
                           Add to Cart
                         </Button>
 
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          sx={{
-                            borderRadius: "999px",
-                            textTransform: "none",
-                            borderColor: "#e5e7eb",
-                            color: "text.primary",
-                            fontSize: 13,
-                            px: 2.5,
-                            "&:hover": {
-                              borderColor: "#c57a45",
-                              bgcolor: "rgba(197,122,69,0.04)",
-                            },
-                            flexGrow: 1,
-                          }}
-                
-                        >
-                          View Details
-                        </Button>
+                      <Button
+  variant="outlined"
+  size="small"
+  sx={{
+    borderRadius: "999px",
+    textTransform: "none",
+    borderColor: "#e5e7eb",
+    color: "text.primary",
+    fontSize: 13,
+    px: 2.5,
+    "&:hover": {
+      borderColor: "#c57a45",
+      bgcolor: "rgba(197,122,69,0.04)",
+    },
+    flexGrow: 1,
+  }}
+  onClick={() => router.push(`/viewonebook/${item.bookId}`)}
+>
+  View Details
+</Button>
                       </Box>
                     </Card>
                   </Box>

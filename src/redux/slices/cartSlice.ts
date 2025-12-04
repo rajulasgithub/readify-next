@@ -23,6 +23,11 @@ interface CartState {
   
   totalQuantity: number;
   totalPrice: number;
+  pagination?: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
 
 const initialState: CartState = {
@@ -32,6 +37,7 @@ const initialState: CartState = {
   success: false,
   totalQuantity: 0,
   totalPrice: 0,
+  
 };
 
 
@@ -57,32 +63,27 @@ const recalcTotals = (state: CartState) => {
 
 
 export const fetchCartItems = createAsyncThunk<
-  CartItem[],
-  void,
+  { items: CartItem[]; totalItems: number; totalPages: number; currentPage: number },
+  { page: number; limit: number },
   { rejectValue: string }
->("cart/fetchCartItems", async (_, { rejectWithValue }) => {
+>("cart/fetchCartItems", async ({ page, limit }, { rejectWithValue }) => {
   try {
     const token = getToken();
     if (!token) return rejectWithValue("No token found");
 
     const res = await api.get("/api/cart/getallcartitems", {
       headers: { Authorization: `Bearer ${token}` },
+      params: { page, limit }, 
     });
 
-    return res.data.data || [];
+    return {
+      items: res.data.data || [],
+      totalItems: res.data.pagination?.totalItems || 0,
+      totalPages: res.data.pagination?.totalPages || 1,
+      currentPage: res.data.pagination?.currentPage || page,
+    };
   } catch (err: any) {
-   
-    if (
-      err.response?.status === 400 &&
-      typeof err.response?.data?.message === "string" &&
-      err.response.data.message.toLowerCase().includes("cart is empty")
-    ) {
-      return [] as CartItem[];
-    }
-
-    return rejectWithValue(
-      err.response?.data?.message || "Failed to fetch cart items"
-    );
+    return rejectWithValue(err.response?.data?.message || "Failed to fetch cart items");
   }
 });
 
@@ -198,15 +199,30 @@ export const cartSlice = createSlice({
         state.error = null;
         state.success = false;
       })
-      .addCase(
-        fetchCartItems.fulfilled,
-        (state, action: PayloadAction<CartItem[]>) => {
-          state.loading = false;
-          state.items = action.payload;
-          state.success = true;
-          recalcTotals(state);
-        }
-      )
+     .addCase(
+  fetchCartItems.fulfilled,
+  (state, action: PayloadAction<{
+    items: CartItem[];
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  }>) => {
+    state.loading = false;
+    state.items = action.payload.items;
+    state.totalQuantity = action.payload.items.length; // or sum of quantities if needed
+    state.totalPrice = action.payload.items.reduce(
+      (acc, item) => acc + item.prize * item.quantity,
+      0
+    );
+    state.pagination = {
+      totalItems: action.payload.totalItems,
+      totalPages: action.payload.totalPages,
+      currentPage: action.payload.currentPage,
+    };
+    state.success = true;
+  }
+)
+
       .addCase(fetchCartItems.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
@@ -289,7 +305,7 @@ export const cartSlice = createSlice({
     // UPDATE QUANTITY
     builder
       .addCase(updateCartQuantity.pending, (state) => {
-        state.loading = true;
+        // state.loading = true;
         state.error = null;
         state.success = false;
       })
