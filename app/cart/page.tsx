@@ -13,6 +13,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  Pagination
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -28,6 +29,7 @@ import {
   removeCartItem,
   updateCartQuantity,
   clearCart,
+  
 } from "@/src/redux/slices/cartSlice";
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
@@ -38,12 +40,14 @@ export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
-  const { items, loading, error, totalPrice, totalQuantity,pagination } = useSelector(
-    (state: RootState) => state.cart
-  );
+  const { items, loading, error, totalPrice, totalQuantity, pagination } =
+  useSelector((state: RootState) => state.cart);
+
+  const totalPageCount = pagination?.totalPages || 1;
 
   useEffect(() => {
     dispatch(fetchCartItems({ page, limit }));
+ 
   }, [dispatch, page]);
 
   const increaseQty = (id: string, quantity: number) => {
@@ -383,25 +387,38 @@ export default function CartPage() {
           </>
         )}
       </Container>
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4, gap: 2 }}>
-  <Button
-    variant="outlined"
-    disabled={page === 1}
-    onClick={handlePrevPage}
-  >
-    Previous
-  </Button>
-  <Typography sx={{ alignSelf: "center" }}>
-    Page {page} of {pagination?.totalPages || 1}
-  </Typography>
-  <Button
-    variant="outlined"
-    disabled={page === (pagination?.totalPages || 1)}
-    onClick={handleNextPage}
-  >
-    Next
-  </Button>
-</Box>
+        <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          mt: 4,
+        }}
+      >
+        <Pagination
+          count={totalPageCount}
+          page={page}
+          onChange={(_, value) => setPage(value)}
+          shape="rounded"
+          size="medium"
+          sx={{
+            "& .MuiPaginationItem-root": {
+              borderRadius: "10px",
+              fontWeight: 600,
+              color: "#0369a1",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#e0f2fe !important",
+              color: "#0369a1",
+              borderRadius: "12px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            },
+            "& .MuiPaginationItem-root:hover": {
+              backgroundColor: "#bae6fd",
+            },
+          }}
+        />
+      </Box>
 
     </Box>
   );
