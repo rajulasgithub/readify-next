@@ -1,31 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Container,
   Typography,
   Card,
-  CardContent,
-  CardHeader,
-  Chip,
   Stack,
   Button,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
 } from "@mui/material";
 
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import CurrencyRupeeOutlinedIcon from "@mui/icons-material/CurrencyRupeeOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useRouter } from "next/navigation";
-import SellerSalesChart from "../sellersaleschart/page";
+
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { fetchSellerStats } from "@/src/redux/slices/authSlice";
 
 type StatCard = {
   id: number;
@@ -35,101 +28,68 @@ type StatCard = {
   icon: React.ReactNode;
 };
 
-type SellerBook = {
-  id: string;
-  title: string;
-  price: string;
-  status: "Active" | "Out of Stock" | "Draft";
-  category: string;
-};
-
-type SellerOrder = {
-  id: string;
-  customer: string;
-  book: string;
-  amount: string;
-  status: "Pending" | "Completed" | "Cancelled";
-  date: string;
-};
-
-const stats: StatCard[] = [
-  {
-    id: 1,
-    label: "My Books",
-    value: "18",
-    helper: "2 drafts | 3 out of stock",
-    icon: <LibraryBooksIcon />,
-  },
-  {
-    id: 2,
-    label: "Total Orders",
-    value: "52",
-    helper: "8 new this week",
-    icon: <ShoppingBagOutlinedIcon />,
-  },
-  {
-    id: 3,
-    label: "Revenue",
-    value: "₹38,450",
-    helper: "Last 30 days",
-    icon: <CurrencyRupeeOutlinedIcon />,
-  },
-];
-
-const myBooks: SellerBook[] = [
-  {
-    id: "b1",
-    title: "The Silent Library",
-    price: "₹399",
-    status: "Active",
-    category: "Fiction",
-  },
-  {
-    id: "b2",
-    title: "Love Beyond Words",
-    price: "₹220",
-    status: "Active",
-    category: "Romance",
-  },
-  {
-    id: "b3",
-    title: "The Art of Calm",
-    price: "₹350",
-    status: "Out of Stock",
-    category: "Self-help",
-  },
-  {
-    id: "b4",
-    title: "Future Unlocked",
-    price: "₹330",
-    status: "Draft",
-    category: "Non-fiction",
-  },
-];
-
-
 const SellerDashboard: React.FC = () => {
-    const router = useRouter()
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+
+  // Fetch seller stats once when mounted
+  useEffect(() => {
+    dispatch(fetchSellerStats());
+  }, [dispatch]);
+
+  // Read seller stats from auth slice
+  const { sellerStats, sellerStatsLoading } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  // Demo fallback numbers used only if sellerStats is null
+  const demo = {
+    totalBooks: 18,
+    totalOrders: 52,
+    totalRevenue: 38450,
+  };
+
+  const stats: StatCard[] = [
+    {
+      id: 1,
+      label: "My Books",
+      value: sellerStatsLoading
+        ? "Loading..."
+        : `${sellerStats?.totalBooks ?? demo.totalBooks}`,
+      helper: "2 drafts | 3 out of stock",
+      icon: <LibraryBooksIcon />,
+    },
+    {
+      id: 2,
+      label: "Total Orders",
+      value: sellerStatsLoading
+        ? "Loading..."
+        : `${sellerStats?.totalOrders ?? demo.totalOrders}`,
+      helper: "8 new this week",
+      icon: <ShoppingBagOutlinedIcon />,
+    },
+    {
+      id: 3,
+      label: "Revenue",
+      value: sellerStatsLoading
+        ? "Loading..."
+        : `₹${(sellerStats?.totalRevenue ?? demo.totalRevenue).toLocaleString()}`,
+      helper: "Last 30 days",
+      icon: <CurrencyRupeeOutlinedIcon />,
+    },
+  ];
 
   const handleAddBook = () => {
-   router.push('/addbook')
+    router.push("/addbook");
   };
 
-  const handleEditBook = (bookId: string) => {
-    router.push(`/updatebook/${bookId}`)
-    
-  };
-
-  
   const handleManageOrders = () => {
-    console.log("Go to orders page");
-    
+    router.push("/sellerorders");
   };
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-  
         <Box
           sx={{
             mb: 4,
@@ -196,7 +156,6 @@ const SellerDashboard: React.FC = () => {
           </Stack>
         </Box>
 
-       
         <Box
           sx={{
             display: "flex",
@@ -238,26 +197,20 @@ const SellerDashboard: React.FC = () => {
                   >
                     {stat.icon}
                   </Box>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "text.secondary" }}
-                  >
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Overview
                   </Typography>
                 </Stack>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "text.secondary", mb: 0.5 }}
-                >
+
+                <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
                   {stat.label}
                 </Typography>
+
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
                   {stat.value}
                 </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "text.secondary" }}
-                >
+
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {stat.helper}
                 </Typography>
               </Card>
@@ -265,8 +218,8 @@ const SellerDashboard: React.FC = () => {
           ))}
         </Box>
 
-     
-     
+        {/* You can add other dashboard sections below (book list, chart, etc.) */}
+
       </Container>
     </Box>
   );

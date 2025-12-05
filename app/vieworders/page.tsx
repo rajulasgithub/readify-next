@@ -298,99 +298,73 @@ export default function UserOrdersPage() {
                         </Typography>
                       </Stack>
 
-                      <Stack spacing={0.4} mb={1}>
-                        <Stack direction="row" spacing={0.75}>
-                          <LocalShippingOutlinedIcon
-                            sx={{ fontSize: 15, color: "#9ca3af" }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: "#9ca3af", fontSize: 11 }}
-                          >
-                            Qty: <b>{item.quantity}</b> • ₹{unitPrice}/book
-                          </Typography>
-                        </Stack>
-                      </Stack>
+                     
 
-                      <Divider sx={{ my: 1 }} />
-
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        mb={0.5}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "#6b7280", fontSize: 12.5 }}
-                        >
-                          Line Total
-                        </Typography>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight={800}
-                          sx={{ fontSize: 14 }}
-                        >
-                          ₹{lineTotal}
-                        </Typography>
-                      </Stack>
+                    
 
                       {/* BUTTONS */}
-                      <Box
-                        mt={1.2}
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        {/* ⭐ ADD REVIEW BUTTON */}
-                        {item.status === "delivered" && (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="primary"
-                            sx={{
-                              textTransform: "none",
-                              fontSize: 12,
-                              borderRadius: 999,
-                              px: 1.8,
-                              py: 0.3,
-                            }}
-                            onClick={() => {
-                              if (!item.book?._id) {
-  alert("Book ID not found — cannot add review");
-  return;
-}
-setReviewBookId(item.book._id);
-setReviewOpen(true);
-                            }}
-                          >
-                            Add Review
-                          </Button>
-                        )}
+                    {/* BUTTONS */}
+<Box
+  mt={1.2}
+  display="flex"
+  justifyContent="space-between"
+  alignItems="center"
+>
+  {/* ⭐ ADD REVIEW BUTTON */}
+  {item.status === "delivered" && (
+    <Button
+      size="small"
+      variant="contained"
+      color="primary"
+      sx={{
+        textTransform: "none",
+        fontSize: 12,
+        borderRadius: 999,
+        px: 1.8,
+        py: 0.3,
+      }}
+      onClick={() => {
+        if (!item.book?._id) {
+          alert("Book ID not found — cannot add review");
+          return;
+        }
+        setReviewBookId(item.book._id);
+        setReviewOpen(true);
+      }}
+    >
+      Add Review
+    </Button>
+  )}
 
-                        {/* CANCEL ITEM */}
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="error"
-                          disabled={disableCancel || isCancelling}
-                          onClick={() =>
-                            handleCancelOrderItem(item.orderId, item._id)
-                          }
-                          sx={{
-                            textTransform: "none",
-                            fontSize: 12,
-                            borderRadius: 999,
-                            px: 1.5,
-                            py: 0.2,
-                          }}
-                        >
-                          {isCancelling
-                            ? "Cancelling..."
-                            : item.status === "cancelled"
-                            ? "Cancelled"
-                            : "Cancel Item"}
-                        </Button>
-                      </Box>
+  {/* CANCEL ITEM: only render when item is NOT already cancelled */}
+  {item.status !== "cancelled" && (
+    <Button
+      size="small"
+      variant="outlined"
+      color="error"
+      disabled={
+        isCancelling ||
+        item.status === "shipped" ||
+        item.status === "delivered"
+      }
+      onClick={() => handleCancelOrderItem(item.orderId, item._id)}
+      sx={{
+        textTransform: "none",
+        fontSize: 12,
+        borderRadius: 999,
+        px: 1.5,
+        py: 0.2,
+      }}
+    >
+      {isCancelling
+        ? "Cancelling..."
+        : item.status === "cancelled"
+        ? "Cancelled"
+        : "Cancel Item"}
+    </Button>
+  )}
+</Box>
+
                     </CardContent>
                   </Card>
                 </Grid>

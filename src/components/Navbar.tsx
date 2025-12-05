@@ -427,8 +427,22 @@ export default function Navbar() {
                     About
                   </Typography>
                 </Link>
+             
+                <Link href="/sellerbooks" style={{ textDecoration: "none" }}>
+                  <Typography
+                    sx={{
+                      color: "#4b5563",
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#111827" },
+                    }}
+                  >
+                    books
+                  </Typography>
+                </Link>
 
-                <IconButton onClick={() => router.push("/profile")}>
+                <IconButton onClick={() => router.push("/sellerprofile")}>
                   <PersonOutlineIcon sx={{ color: "#4b5563" }} />
                 </IconButton>
 

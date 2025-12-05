@@ -3,11 +3,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
+import type { AxiosResponse } from "axios";
 
-// ---- Types ----
+/* ------------------------- Types / Interfaces ------------------------- */
 
 export interface OrderAddress {
-  _id: string; // required for updates
+  _id: string;
   fullName: string;
   phone: string;
   addressLine1: string;
@@ -23,6 +24,8 @@ export interface OrderItem {
   quantity: number;
   orderedAt?: string;
   price: number;
+  status?: string;
+  cancelledAt?: string | null;
 }
 
 export interface Order {
@@ -65,30 +68,25 @@ interface OrderDetailResponse {
   order: Order;
 }
 
-// ---- Slice State ----
+/* ------------------------- Slice state ------------------------- */
 
 interface OrdersState {
-  // place order
   placing: boolean;
   placeError: string | null;
   lastPlacedMessage: string | null;
 
-  // user orders
   userOrders: Order[];
   userOrdersLoading: boolean;
   userOrdersError: string | null;
 
-  // seller orders
   sellerOrders: Order[];
   sellerOrdersLoading: boolean;
   sellerOrdersError: string | null;
 
-  // seller order details
   selectedSellerOrder: Order | null;
   selectedSellerOrderLoading: boolean;
   selectedSellerOrderError: string | null;
 
-  // addresses
   savedAddresses: OrderAddress[] | null;
   addressLoading: boolean;
   addressError: string | null;
@@ -116,9 +114,10 @@ const initialState: OrdersState = {
   addressError: null,
 };
 
-// ---------- ADDRESS THUNKS ----------
+/* ------------------------- THUNKS ------------------------- */
 
-// Fetch all addresses
+/* ---------- ADDRESS THUNKS ---------- */
+
 export const fetchAddressThunk = createAsyncThunk<
   { addresses: OrderAddress[] },
   void,
@@ -132,42 +131,73 @@ export const fetchAddressThunk = createAsyncThunk<
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return { addresses: data.addresses }; // must match type
+    return { addresses: data.addresses };
   } catch (err: any) {
-    return rejectWithValue(
-      err?.response?.data?.message || "Failed to fetch addresses"
-    );
+    return rejectWithValue(err?.response?.data?.message || "Failed to fetch addresses");
   }
 });
 
-// Save or update an address
 export const saveAddressThunk = createAsyncThunk<
   { addresses: OrderAddress[] },
   { addressId?: string; updatedAddress: OrderAddress },
   { rejectValue: string }
->(
-  "orders/saveAddress",
-  async ({ addressId, updatedAddress }, { rejectWithValue }) => {
-    try {
-      const token = Cookies.get("accessToken");
-      if (!token) return rejectWithValue("No token found");
+>("orders/saveAddress", async ({ addressId, updatedAddress }, { rejectWithValue }) => {
+  try {
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.patch(
-        "/api/orders/updateaddress",
-        { addressId, updatedAddress },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const { data } = await api.patch("/api/orders/updateaddress", { addressId, updatedAddress }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      return { addresses: data.addresses }; // all addresses in descending order
-    } catch (err: any) {
-      return rejectWithValue(
-        err?.response?.data?.message || "Failed to save address"
-      );
-    }
+    return { addresses: data.addresses };
+  } catch (err: any) {
+    return rejectWithValue(err?.response?.data?.message || "Failed to save address");
   }
-);
+});
 
-// ---------- PLACE ORDER ----------
+export const addAddressThunk = createAsyncThunk<
+  { addresses: OrderAddress[] },
+  { newAddress: Omit<OrderAddress, "_id"> },
+  { rejectValue: string }
+>("orders/addAddress", async ({ newAddress }, { rejectWithValue }) => {
+  try {
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
+
+    const { data } = await api.post("/api/orders/addaddress", newAddress, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return { addresses: data.addresses };
+  } catch (err: any) {
+    return rejectWithValue(err?.response?.data?.message || "Failed to add address");
+  }
+});
+
+export const deleteAddressThunk = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: string }
+>("orders/deleteAddress", async (addressId, { rejectWithValue }) => {
+  try {
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
+
+    const { data } = await api.delete(`/api/orders/deleteaddress/${addressId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Expect backend to return { success: true, deletedId: addressId } or similar
+    // But return the id so reducers can remove it locally
+    return addressId;
+  } catch (err: any) {
+    return rejectWithValue(err?.response?.data?.message || "Failed to delete address");
+  }
+});
+
+/* ---------- PLACE ORDER ---------- */
+
 export const placeOrderThunk = createAsyncThunk<
   PlaceOrderResponse,
   PlaceOrderPayload,
@@ -187,7 +217,8 @@ export const placeOrderThunk = createAsyncThunk<
   }
 });
 
-// ---------- FETCH USER ORDERS ----------
+/* ---------- FETCH USER ORDERS ---------- */
+
 export const fetchUserOrdersThunk = createAsyncThunk<
   OrdersListResponse,
   void,
@@ -207,21 +238,35 @@ export const fetchUserOrdersThunk = createAsyncThunk<
   }
 });
 
-// ---------- FETCH SELLER ORDERS ----------
+/* ---------- FETCH SELLER ORDERS (uses your controller) ---------- */
+/**
+ * Controller requires auth (req.userData) and returns:
+ * { message: "...", orders: [...] }
+ */
 export const fetchSellerOrdersThunk = createAsyncThunk<
   OrdersListResponse,
   void,
   { rejectValue: string }
 >("orders/fetchSellerOrders", async (_, { rejectWithValue }) => {
   try {
-    const { data } = await api.get("/api/order/seller");
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
+
+    // NOTE: your controller route in the example was likely "/api/order/seller" or similar.
+    // Using "/api/order/seller" to match previous usage — update to exact route if different.
+    const { data } = await api.get("/api/orders/sellerorder", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  console.log(data)
+    // Expect { message, orders }
     return data;
   } catch (err: any) {
     return rejectWithValue(err?.response?.data?.message || "Failed to fetch seller orders");
   }
 });
 
-// ---------- CANCEL ORDER ITEM ----------
+/* ---------- CANCEL ORDER ITEM ---------- */
+
 export const cancelOrderThunk = createAsyncThunk<
   OrderDetailResponse,
   { orderId: string; itemId: string },
@@ -231,11 +276,9 @@ export const cancelOrderThunk = createAsyncThunk<
     const token = Cookies.get("accessToken");
     if (!token) return rejectWithValue("No token found");
 
-    const { data } = await api.patch(
-      `/api/orders/cancelorder/${orderId}/${itemId}`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const { data } = await api.patch(`/api/orders/cancelorder/${orderId}/${itemId}`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     return data;
   } catch (err: any) {
@@ -243,21 +286,30 @@ export const cancelOrderThunk = createAsyncThunk<
   }
 });
 
-// ---------- FETCH SELLER ORDER DETAILS ----------
+/* ---------- FETCH SELLER ORDER DETAILS ---------- */
+
 export const fetchSellerOrderDetailsThunk = createAsyncThunk<
   OrderDetailResponse,
   string,
   { rejectValue: string }
 >("orders/fetchSellerOrderDetails", async (orderId, { rejectWithValue }) => {
   try {
-    const { data } = await api.get(`/api/order/seller/${orderId}`);
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
+
+    const { data } = await api.get(`/api/orders/sellerorderdetail/${orderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(data)
+
     return data;
   } catch (err: any) {
     return rejectWithValue(err?.response?.data?.message || "Failed to fetch order details");
   }
 });
 
-// ----------- SLICE -----------
+/* ------------------------- Slice ------------------------- */
+
 const ordersSlice = createSlice({
   name: "orders",
   initialState,
@@ -281,11 +333,12 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchAddressThunk.fulfilled, (state, action) => {
         state.addressLoading = false;
-        state.savedAddresses = action.payload.addresses;
+        state.savedAddresses = Array.isArray(action.payload?.addresses) ? action.payload.addresses : [];
       })
       .addCase(fetchAddressThunk.rejected, (state, action) => {
         state.addressLoading = false;
         state.addressError = action.payload || "Failed to fetch addresses";
+        state.savedAddresses = state.savedAddresses ?? [];
       });
 
     // ---------- SAVE / UPDATE ADDRESS ----------
@@ -315,10 +368,9 @@ const ordersSlice = createSlice({
         state.lastPlacedMessage = action.payload.message;
 
         if (action.payload.order) {
-          // Add order address to savedAddresses if not already present
           const orderAddress = action.payload.order.address;
           if (state.savedAddresses) {
-            const exists = state.savedAddresses.find(a => a._id === orderAddress._id);
+            const exists = state.savedAddresses.find((a) => a._id === orderAddress._id);
             if (!exists) state.savedAddresses.unshift(orderAddress);
           } else {
             state.savedAddresses = [orderAddress];
@@ -340,11 +392,10 @@ const ordersSlice = createSlice({
         state.userOrdersLoading = false;
         state.userOrders = action.payload.orders;
 
-        // Optional: update savedAddresses from latest order
         if (action.payload.orders.length > 0) {
           const latestAddress = action.payload.orders[0].address;
           if (state.savedAddresses) {
-            const exists = state.savedAddresses.find(a => a._id === latestAddress._id);
+            const exists = state.savedAddresses.find((a) => a._id === latestAddress._id);
             if (!exists) state.savedAddresses.unshift(latestAddress);
           } else {
             state.savedAddresses = [latestAddress];
@@ -374,8 +425,8 @@ const ordersSlice = createSlice({
     // ---------- CANCEL ORDER ----------
     builder.addCase(cancelOrderThunk.fulfilled, (state, action) => {
       const updated = action.payload.order;
-      state.userOrders = state.userOrders.map(o => o._id === updated._id ? updated : o);
-      state.sellerOrders = state.sellerOrders.map(o => o._id === updated._id ? updated : o);
+      state.userOrders = state.userOrders.map((o) => (o._id === updated._id ? updated : o));
+      state.sellerOrders = state.sellerOrders.map((o) => (o._id === updated._id ? updated : o));
       if (state.selectedSellerOrder?._id === updated._id) {
         state.selectedSellerOrder = updated;
       }
@@ -394,6 +445,42 @@ const ordersSlice = createSlice({
       .addCase(fetchSellerOrderDetailsThunk.rejected, (state, action) => {
         state.selectedSellerOrderLoading = false;
         state.selectedSellerOrderError = action.payload || "Failed to fetch order details";
+      });
+
+    // ---------- ADD ADDRESS ----------
+    builder
+      .addCase(addAddressThunk.pending, (state) => {
+        state.addressLoading = true;
+        state.addressError = null;
+      })
+      .addCase(addAddressThunk.fulfilled, (state, action) => {
+        state.addressLoading = false;
+        state.savedAddresses = action.payload.addresses;
+      })
+      .addCase(addAddressThunk.rejected, (state, action) => {
+        state.addressLoading = false;
+        state.addressError = action.payload || "Failed to add address";
+      });
+
+    // ---------- DELETE ADDRESS ----------
+    builder
+      .addCase(deleteAddressThunk.pending, (state) => {
+        state.addressLoading = true;
+        state.addressError = null;
+      })
+      .addCase(deleteAddressThunk.fulfilled, (state, action: PayloadAction<string>) => {
+        state.addressLoading = false;
+        const deletedId = action.payload;
+        if (state.savedAddresses && Array.isArray(state.savedAddresses)) {
+          state.savedAddresses = state.savedAddresses.filter((a: any) => {
+            const id = a?._id ?? a?.id ?? a?.addressId ?? null;
+            return id !== deletedId;
+          });
+        }
+      })
+      .addCase(deleteAddressThunk.rejected, (state, action) => {
+        state.addressLoading = false;
+        state.addressError = action.payload || "Failed to delete address";
       });
   },
 });
