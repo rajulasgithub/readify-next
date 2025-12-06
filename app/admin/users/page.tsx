@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Avatar, // 🆕 Added
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
@@ -43,9 +44,8 @@ interface ConfirmDialogState {
 const AdminUsersList: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const role = searchParams.get("type"); 
+  const role = searchParams.get("type");
 
- 
   const initialPage = Number(searchParams.get("page")) || 1;
   const [page, setPage] = useState(initialPage);
 
@@ -62,16 +62,13 @@ const AdminUsersList: React.FC = () => {
 
   const [search, setSearch] = useState<string>("");
 
- 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     action: null,
     userId: null,
   });
 
-  
   const users = role === "seller" ? sellers : customers;
-
 
   useEffect(() => {
     if (!role) return;
@@ -80,7 +77,7 @@ const AdminUsersList: React.FC = () => {
       fetchUsers({
         type: role as "seller" | "customer",
         page,
-        limit: 2, 
+        limit: 2,
       })
     );
 
@@ -131,26 +128,22 @@ const AdminUsersList: React.FC = () => {
       return;
     }
 
-    const userId = confirmDialog.userId;
-    const action = confirmDialog.action;
-    const userRole = role as "seller" | "customer";
-
     try {
-      if (action === "block") {
+      if (confirmDialog.action === "block") {
         await dispatch(
-          toggleBlockUser({ userId, role: userRole })
+          toggleBlockUser({ userId: confirmDialog.userId, role })
         ).unwrap();
       }
 
-      if (action === "delete") {
+      if (confirmDialog.action === "delete") {
         await dispatch(
-          deleteUserThunk({ userId, role: userRole })
+          deleteUserThunk({ userId: confirmDialog.userId, role })
         ).unwrap();
       }
 
       await dispatch(
         fetchUsers({
-          type: userRole,
+          type: role as "seller" | "customer",
           page,
           limit: 2,
         })
@@ -181,8 +174,7 @@ const AdminUsersList: React.FC = () => {
             }
             subheader={
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                View all registered {role ?? ""}s, their order count and total
-                spend.
+                View all registered {role ?? ""}s, their order count and total spend.
               </Typography>
             }
           />
@@ -231,16 +223,13 @@ const AdminUsersList: React.FC = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>
                           Total Orders
                         </TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>Joined On</TableCell>
-                        <TableCell
-                          sx={{ fontWeight: 600 }}
-                          align="right"
-                        >
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>
                           Actions
                         </TableCell>
                       </TableRow>
@@ -257,24 +246,34 @@ const AdminUsersList: React.FC = () => {
                         filteredUsers.map((user) => (
                           <TableRow key={user._id} hover>
                             <TableCell>
-                              {user.firstName} {user.lastName}
+                              <Stack direction="row" spacing={2} alignItems="center">
+                                
+                                {/* 🆕 Round Image Added */}
+                              <Avatar
+  src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${user.image}`}
+  alt={user.firstName}
+  sx={{ width: 40, height: 40 }}
+/>
+
+                                <Typography>
+                                  {user.firstName} {user.lastName}
+                                </Typography>
+                              </Stack>
                             </TableCell>
+
                             <TableCell>{user.email}</TableCell>
+
                             <TableCell>
                               <Chip
                                 label={`${user.totalOrders || 0} orders`}
                                 size="small"
                               />
                             </TableCell>
+
                             <TableCell>{formatDate(user.createdAt)}</TableCell>
 
-                      
                             <TableCell align="right">
-                              <Stack
-                                direction="row"
-                                spacing={1}
-                                justifyContent="flex-end"
-                              >
+                              <Stack direction="row" spacing={1}>
                                 {role === "seller" && (
                                   <Chip
                                     label="View Store"
@@ -286,9 +285,7 @@ const AdminUsersList: React.FC = () => {
                                       fontWeight: 600,
                                     }}
                                     onClick={() =>
-                                      router.push(
-                                        `/admin/viewstore/${user._id}`
-                                      )
+                                      router.push(`/admin/viewstore/${user._id}`)
                                     }
                                   />
                                 )}
@@ -296,9 +293,9 @@ const AdminUsersList: React.FC = () => {
                                 <Button
                                   variant="outlined"
                                   size="small"
-                                  sx={{ textTransform: "none" }}
                                   onClick={() => openBlockDialog(user._id)}
                                   disabled={actionLoading}
+                                  sx={{ textTransform: "none" }}
                                 >
                                   {user.blocked ? "Unblock" : "Block"}
                                 </Button>
@@ -322,7 +319,6 @@ const AdminUsersList: React.FC = () => {
                   </Table>
                 </Box>
 
-          
                 <Stack sx={{ py: 3 }} alignItems="center">
                   <Pagination
                     count={pagination?.totalPages || 1}
@@ -335,11 +331,10 @@ const AdminUsersList: React.FC = () => {
               </>
             )}
 
+            {/* Confirm Dialog */}
             <Dialog open={confirmDialog.open} onClose={handleCloseDialog}>
-              <DialogTitle sx={{ fontWeight: 600 }}>
-                {confirmDialog.action === "delete"
-                  ? "Delete User"
-                  : "Block User"}
+              <DialogTitle>
+                {confirmDialog.action === "delete" ? "Delete User" : "Block User"}
               </DialogTitle>
 
               <DialogContent>
@@ -351,9 +346,7 @@ const AdminUsersList: React.FC = () => {
               </DialogContent>
 
               <DialogActions>
-                <Button onClick={handleCloseDialog} color="inherit">
-                  Cancel
-                </Button>
+                <Button onClick={handleCloseDialog}>Cancel</Button>
                 <Button
                   onClick={handleConfirmAction}
                   color="error"

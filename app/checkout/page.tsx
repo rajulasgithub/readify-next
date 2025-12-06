@@ -24,6 +24,7 @@ import { placeOrderThunk ,fetchAddressThunk} from "@/src/redux/slices/orderSlice
 import { useEffect,useState } from "react";
 
 import { saveAddressThunk } from "@/src/redux/slices/orderSlice";
+import { clearCart } from "@/src/redux/slices/cartSlice";
 
 
 // ✅ Address validation schema
@@ -189,6 +190,7 @@ const onSaveAddress = async (data: AddressForm) => {
       await dispatch(placeOrderThunk(payload)).unwrap();
 
       toast.success("Order placed successfully!");
+      dispatch(clearCart())
       router.push("/vieworders");
     } catch (err: any) {
       const msg =

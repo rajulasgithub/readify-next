@@ -13,6 +13,7 @@ interface User {
   image?: string;
   bio?: string;
   fullPhone: Number;
+  
 }
 
 interface SellerStats {
