@@ -23,27 +23,27 @@ import {
 } from "@mui/material";
 
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
 
-import { cancelOrderThunk, fetchUserOrdersThunk } from "@/src/redux/slices/orderSlice";
-
-// ⭐ ADD THIS IMPORT
+import {
+  updateOrderItemStatusThunk,
+  fetchUserOrdersThunk,
+} from "@/src/redux/slices/orderSlice";
 import { addReview } from "@/src/redux/slices/bookSlice";
 
 type OrderItem = {
   _id: string;
   quantity: number;
   status: "ordered" | "cancelled" | "shipped" | "delivered";
- book?: {
-  _id: string;
-  title?: string;
-  author?: string;
-  price?: number;
-  image?: string[];        // <-- FIXED: array
-};
+  book?: {
+    _id: string;
+    title?: string;
+    author?: string;
+    price?: number;
+    image?: string[];
+  };
 };
 
 type Order = {
@@ -70,17 +70,15 @@ export default function UserOrdersPage() {
   const dispatch = useDispatch<AppDispatch>();
 
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewRating, setReviewRating] = useState<number | null>(null); // start with null
+  const [reviewRating, setReviewRating] = useState<number | null>(null);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBookId, setReviewBookId] = useState<string | null>(null);
 
   const { userOrders, userOrdersLoading, userOrdersError } = useSelector(
     (state: RootState) => state.orders
   );
-    
 
-
-  const [cancelLoadingItem, setCancelLoadingItem] = useState<string | null>(null);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchUserOrdersThunk());
@@ -112,33 +110,34 @@ export default function UserOrdersPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
- const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
-  order.items.map((item) => ({
-    ...item,
-    // FIX: Convert string book => object with _id
-    book: typeof item.book === "string"
-      ? { _id: item.book }
-      : item.book,
+  const itemCards: FlattenedOrderItem[] = orders.flatMap((order) =>
+    order.items.map((item) => ({
+      ...item,
+      book:
+        typeof item.book === "string" ? { _id: item.book } : item.book,
+      orderId: order._id,
+      orderStatus: order.status,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      orderTotalAmount: order.totalAmount,
+      address: order.address,
+    }))
+  );
 
-    orderId: order._id,
-    orderStatus: order.status,
-    paymentMethod: order.paymentMethod,
-    createdAt: order.createdAt,
-    orderTotalAmount: order.totalAmount,
-    address: order.address,
-  }))
-);
   const handleCancelOrderItem = async (orderId: string, itemId: string) => {
-    const ask = window.confirm("Cancel this item?");
-    if (!ask) return;
+    const confirmCancel = window.confirm("Cancel this item?");
+    if (!confirmCancel) return;
 
     try {
-      setCancelLoadingItem(itemId);
-      await dispatch(cancelOrderThunk({ orderId, itemId })).unwrap();
+      setUpdatingItemId(itemId);
+      await dispatch(
+        updateOrderItemStatusThunk({ orderId, itemId, action: "cancelled" })
+      ).unwrap();
     } catch (err) {
       console.error("Failed to cancel item", err);
+      alert("Failed to cancel item");
     } finally {
-      setCancelLoadingItem(null);
+      setUpdatingItemId(null);
     }
   };
 
@@ -198,18 +197,17 @@ export default function UserOrdersPage() {
         {!loading && !error && itemCards.length > 0 && (
           <Grid container spacing={2}>
             {itemCards.map((item) => {
-              console.log("Item book:", item.book);
-          
               const title = item.book?.title || "Book";
               const author = item.book?.author || "";
-              const unitPrice =
-                item.book?.price ?? 0;
+              const unitPrice = item.book?.price ?? 0;
               const lineTotal = unitPrice * (item.quantity || 1);
 
-              const imageUrl = item.book?.image?.length
-  ? `${backendUrl}/${item.book.image[0]}`
-  : "/images/book-placeholder.png";
-              const isCancelling = cancelLoadingItem === item._id;
+              const imageUrl =
+                item.book?.image?.length > 0
+                  ? `${backendUrl}/${item.book.image[0]}`
+                  : "/images/book-placeholder.png";
+
+              const isCancelling = updatingItemId === item._id;
 
               const disableCancel =
                 item.status === "cancelled" ||
@@ -298,81 +296,80 @@ export default function UserOrdersPage() {
                         </Typography>
                       </Stack>
 
-                     
-
-                    
-
                       {/* BUTTONS */}
-                    {/* BUTTONS */}
-<Box
-  mt={1.2}
-  display="flex"
-  justifyContent="space-between"
-  alignItems="center"
->
-  {/* ⭐ ADD REVIEW BUTTON */}
-  {item.status === "delivered" && (
-    <Button
-      size="small"
-      variant="contained"
-      color="primary"
-      sx={{
-        textTransform: "none",
-        fontSize: 12,
-        borderRadius: 999,
-        px: 1.8,
-        py: 0.3,
-      }}
-      onClick={() => {
-        if (!item.book?._id) {
-          alert("Book ID not found — cannot add review");
-          return;
-        }
-        setReviewBookId(item.book._id);
-        setReviewOpen(true);
-      }}
-    >
-      Add Review
-    </Button>
-  )}
+                      <Box
+                        mt={1.2}
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        {/* ADD REVIEW BUTTON */}
+                        {item.status === "delivered" && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 12,
+                              borderRadius: 999,
+                              px: 1.8,
+                              py: 0.3,
+                            }}
+                            onClick={() => {
+                              if (!item.book?._id) {
+                                alert(
+                                  "Book ID not found — cannot add review"
+                                );
+                                return;
+                              }
+                              setReviewBookId(item.book._id);
+                              setReviewOpen(true);
+                            }}
+                          >
+                            Add Review
+                          </Button>
+                        )}
 
-  {/* CANCEL ITEM: only render when item is NOT already cancelled */}
-  {item.status !== "cancelled" && (
-    <Button
-      size="small"
-      variant="outlined"
-      color="error"
-      disabled={
-        isCancelling ||
-        item.status === "shipped" ||
-        item.status === "delivered"
-      }
-      onClick={() => handleCancelOrderItem(item.orderId, item._id)}
-      sx={{
-        textTransform: "none",
-        fontSize: 12,
-        borderRadius: 999,
-        px: 1.5,
-        py: 0.2,
-      }}
-    >
-      {isCancelling
-        ? "Cancelling..."
-        : item.status === "cancelled"
-        ? "Cancelled"
-        : "Cancel Item"}
-    </Button>
-  )}
-</Box>
-
+                        {/* CANCEL ITEM BUTTON */}
+                        {item.status !== "cancelled" && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            disabled={disableCancel || isCancelling}
+                            onClick={() =>
+                              handleCancelOrderItem(item.orderId, item._id)
+                            }
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 12,
+                              borderRadius: 999,
+                              px: 1.5,
+                              py: 0.2,
+                            }}
+                          >
+                            {isCancelling
+                              ? "Cancelling..."
+                              : item.status === "cancelled"
+                              ? "Cancelled"
+                              : "Cancel Item"}
+                          </Button>
+                        )}
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>
               );
             })}
 
-            {/* ⭐ REVIEW MODAL */}
-            <Dialog open={reviewOpen} onClose={() => setReviewOpen(false)} fullWidth maxWidth="sm">
+            {/* REVIEW MODAL */}
+            <Dialog
+              open={reviewOpen}
+              onClose={() => setReviewOpen(false)}
+              fullWidth
+              maxWidth="sm"
+            >
               <DialogTitle>Add Your Review</DialogTitle>
               <DialogContent dividers>
                 <Stack spacing={2} mt={1}>
@@ -380,11 +377,11 @@ export default function UserOrdersPage() {
                     Rate this Book
                   </Typography>
 
-                 <Rating
-  value={reviewRating}
-  onChange={(_, value) => setReviewRating(value)} // value is number | null
-  size="large"
-/>
+                  <Rating
+                    value={reviewRating}
+                    onChange={(_, value) => setReviewRating(value)}
+                    size="large"
+                  />
                   <TextField
                     label="Write your review"
                     multiline
@@ -398,40 +395,37 @@ export default function UserOrdersPage() {
 
               <DialogActions>
                 <Button onClick={() => setReviewOpen(false)}>Cancel</Button>
-
-                {/* ⭐ DISPATCHING THE THUNK HERE */}
                 <Button
-  variant="contained"
-  onClick={async () => {
-    if (!reviewBookId || reviewRating === null) {
-      alert("Please give a rating");
-      return;
-    }
+                  variant="contained"
+                  onClick={async () => {
+                    if (!reviewBookId || reviewRating === null) {
+                      alert("Please give a rating");
+                      return;
+                    }
 
-    try {
-      await dispatch(
-        addReview({
-          bookId: reviewBookId,
-          rating: reviewRating,
-          comment: reviewComment,
-        })
-      ).unwrap();
-     console.log("id",reviewBookId)
-     console.log("rating",reviewRating)
-      alert("Review submitted!");
-    } catch (err: any) {
-     console.error("REVIEW ERROR >>>", err?.message);
-    alert(err?.message || "Failed to submit review");
-    }
+                    try {
+                      await dispatch(
+                        addReview({
+                          bookId: reviewBookId,
+                          rating: reviewRating,
+                          comment: reviewComment,
+                        })
+                      ).unwrap();
 
-    setReviewOpen(false);
-    setReviewRating(null);
-    setReviewComment("");
-    setReviewBookId(null);
-  }}
->
-  Submit Review
-</Button>
+                      alert("Review submitted!");
+                    } catch (err: any) {
+                      console.error("REVIEW ERROR >>>", err?.message);
+                      alert(err?.message || "Failed to submit review");
+                    }
+
+                    setReviewOpen(false);
+                    setReviewRating(null);
+                    setReviewComment("");
+                    setReviewBookId(null);
+                  }}
+                >
+                  Submit Review
+                </Button>
               </DialogActions>
             </Dialog>
           </Grid>
