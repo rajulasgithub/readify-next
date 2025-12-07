@@ -16,6 +16,7 @@ import {
   Divider,
   Menu,
   MenuItem,
+  Badge,
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
@@ -24,7 +25,7 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/src/context/AuthContext"; // 👈 auth context
+import { useAuth } from "@/src/context/AuthContext";
 
 const categories = [
   "Fiction",
@@ -49,7 +50,6 @@ export default function Navbar() {
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const isCatMenuOpen = Boolean(catAnchorEl);
 
-  // 🔐 Auth
   const { role, logoutUser } = useAuth();
   const isLoggedIn = !!role;
   const isCustomer = role === "customer";
@@ -59,241 +59,95 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  const handleDrawerToggle = (): void => {
-    setMobileOpen((prev) => !prev);
-  };
-
-  const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleDrawerToggle = (): void => setMobileOpen((prev) => !prev);
+  const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) =>
     setCatAnchorEl(event.currentTarget);
-  };
-
-  const handleCategoriesClose = () => {
-    setCatAnchorEl(null);
-  };
-
+  const handleCategoriesClose = () => setCatAnchorEl(null);
   const handleCategorySelect = (cat: string) => {
     setCatAnchorEl(null);
     router.push(`/categories?name=${encodeURIComponent(cat)}`);
   };
-
   const handleLogout = () => {
     logoutUser();
     router.push("/login");
   };
 
   const drawer = (
-    <Box
-      onClick={handleDrawerToggle}
-      sx={{
-        textAlign: "center",
-        width: 260,
-        p: 2,
-      }}
-    >
+    <Box onClick={handleDrawerToggle} sx={{ width: 260, p: 2 }}>
       <Typography
-        variant="h6"
-        sx={{ my: 1, fontWeight: 700, color: "#111827" }}
+        variant="h5"
+        sx={{
+          my: 1,
+          fontWeight: 800,
+          color: "#111827",
+          letterSpacing: 1,
+        }}
       >
-        Readify
-      </Typography>
+        Readify </Typography>
 
       <Divider sx={{ mb: 2 }} />
 
       <List>
-        
         {isCustomer && (
           <>
-            <ListItem>
-              <Link
-                href="/categories"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Categories"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/categories" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Categories" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/about"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="About"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="About" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/wishlist"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Wishlist"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/wishlist" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Wishlist" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/cart"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Cart"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/cart" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Cart" />
             </ListItem>
-            <ListItem>
-              <Link
-                href="/vieworders"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                
-                <ListItemText
-                  primary="Orders"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/vieworders" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Orders" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/profile"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Profile"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/profile" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Profile" />
             </ListItem>
-
             <Divider sx={{ my: 2 }} />
-
-            <ListItem onClick={handleLogout} sx={{ cursor: "pointer" }}>
-              <ListItemText
-                primary="Logout"
-                primaryTypographyProps={{
-                  sx: { fontSize: 16, fontWeight: 600, color: "#b91c1c" },
-                }}
-              />
+            <ListItem onClick={handleLogout} sx={{ color: "#b91c1c", cursor: "pointer" }}>
+              <ListItemText primary="Logout" />
             </ListItem>
           </>
         )}
 
-        {/* 🧑‍🏫 SELLER MENU (mobile) */}
         {isSeller && (
           <>
-            <ListItem>
-              <Link
-                href="/about"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="About"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="About" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/profile"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Profile"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/profile" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Profile" />
             </ListItem>
-
             <Divider sx={{ my: 2 }} />
-
-            <ListItem onClick={handleLogout} sx={{ cursor: "pointer" }}>
-              <ListItemText
-                primary="Logout"
-                primaryTypographyProps={{
-                  sx: { fontSize: 16, fontWeight: 600, color: "#b91c1c" },
-                }}
-              />
+            <ListItem onClick={handleLogout} sx={{ color: "#b91c1c", cursor: "pointer" }}>
+              <ListItemText primary="Logout" />
             </ListItem>
           </>
         )}
 
-        {/* 🧍 NOT LOGGED IN (mobile) */}
         {!isLoggedIn && (
           <>
-            <ListItem>
-              <Link
-                href="/about"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="About"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="About" />
             </ListItem>
-
-            <ListItem>
-              <Link
-                href="/register"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Register"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 500, color: "#374151" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/register" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Register" />
             </ListItem>
-
             <Divider sx={{ my: 2 }} />
-
-            <ListItem>
-              <Link
-                href="/login"
-                style={{ textDecoration: "none", width: "100%" }}
-              >
-                <ListItemText
-                  primary="Sign In"
-                  primaryTypographyProps={{
-                    sx: { fontSize: 16, fontWeight: 600, color: "#c57a45" },
-                  }}
-                />
-              </Link>
+            <ListItem component={Link} href="/login" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Sign In" sx={{ color: "#c57a45" }} />
             </ListItem>
           </>
         )}
       </List>
     </Box>
+
+
   );
 
   if (!mounted) return null;
@@ -302,11 +156,8 @@ export default function Navbar() {
     <>
       <AppBar
         position="sticky"
-        elevation={0}
-        sx={{
-          bgcolor: "#ffffff",
-          borderBottom: "1px solid #e5e7eb",
-        }}
+        elevation={3}
+        sx={{ bgcolor: "#fff", borderBottom: "1px solid #e5e7eb" }}
       >
         <Toolbar
           sx={{
@@ -315,52 +166,58 @@ export default function Navbar() {
             px: { xs: 2, md: 5 },
           }}
         >
-          {/* Logo */}
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: 1,
-                color: "#111827",
-                cursor: "pointer",
-              }}
-            >
-              Readify
-            </Typography>
-          </Link>
+         <Link href="/">
+  <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
+ 
+    <Box
+      component="img"
+      src="/logo.jpg"
+      alt="Readify Logo"
+      sx={{ width: 32, height: 32 }}
+    />
+
+    {/* Site name */}
+    <Typography
+      variant="h6"
+      sx={{
+        fontWeight: 800,
+        letterSpacing: 2,
+        color: "#111827",
+      }}
+    >
+      Readify
+    </Typography>
+  </Box>
+</Link>
 
           {/* Desktop menu */}
           <Stack
             direction="row"
             spacing={3}
-            sx={{
-              display: { xs: "none", md: "flex" },
-              alignItems: "center",
-            }}
+            sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}
           >
-            {/* 🧑‍💻 CUSTOMER (desktop) */}
             {isCustomer && (
               <>
                 <Link href="/viewbooks" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
                   >
-                   Books
+                    Books
                   </Typography>
                 </Link>
+
                 <Typography
                   onClick={handleCategoriesClick}
                   sx={{
-                    color: "#4b5563",
-                    fontSize: 15,
                     fontWeight: 500,
+                    fontSize: 15,
+                    color: "#4b5563",
                     cursor: "pointer",
                     "&:hover": { color: "#111827" },
                   }}
@@ -371,9 +228,9 @@ export default function Navbar() {
                 <Link href="/about" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
@@ -381,18 +238,42 @@ export default function Navbar() {
                     About
                   </Typography>
                 </Link>
-               
 
-                <IconButton onClick={() => router.push("/wishlist")}>
-                  <FavoriteBorderIcon sx={{ color: "#c57a45" }} />
+                <IconButton
+                  sx={{
+                    color: "#c57a45",
+                    transition: "0.3s",
+                    "&:hover": { color: "#b36a36" },
+                  }}
+                  onClick={() => router.push("/wishlist")}
+                >
+                  <Badge badgeContent={0} color="error">
+                    <FavoriteBorderIcon />
+                  </Badge>
                 </IconButton>
 
-                <IconButton onClick={() => router.push("/cart")}>
-                  <ShoppingCartOutlinedIcon sx={{ color: "#4b5563" }} />
+                <IconButton
+                  sx={{
+                    color: "#4b5563",
+                    transition: "0.3s",
+                    "&:hover": { color: "#111827" },
+                  }}
+                  onClick={() => router.push("/cart")}
+                >
+                  <Badge badgeContent={0} color="primary">
+                    <ShoppingCartOutlinedIcon />
+                  </Badge>
                 </IconButton>
 
-                <IconButton onClick={() => router.push("/customerprofile")}>
-                  <PersonOutlineIcon sx={{ color: "#4b5563" }} />
+                <IconButton
+                  sx={{
+                    color: "#4b5563",
+                    transition: "0.3s",
+                    "&:hover": { color: "#111827" },
+                  }}
+                  onClick={() => router.push("/customerprofile")}
+                >
+                  <PersonOutlineIcon />
                 </IconButton>
 
                 <Button
@@ -402,6 +283,7 @@ export default function Navbar() {
                     fontSize: 14,
                     ml: 1,
                     color: "#b91c1c",
+                    "&:hover": { backgroundColor: "#fee2e2" },
                   }}
                 >
                   Logout
@@ -409,17 +291,14 @@ export default function Navbar() {
               </>
             )}
 
-            {/* 🧑‍🏫 SELLER (desktop) */}
             {isSeller && (
               <>
-
-             
                 <Link href="/about" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
@@ -427,23 +306,30 @@ export default function Navbar() {
                     About
                   </Typography>
                 </Link>
-             
+
                 <Link href="/sellerbooks" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
                   >
-                    books
+                    Books
                   </Typography>
                 </Link>
 
-                <IconButton onClick={() => router.push("/sellerprofile")}>
-                  <PersonOutlineIcon sx={{ color: "#4b5563" }} />
+                <IconButton
+                  sx={{
+                    color: "#4b5563",
+                    transition: "0.3s",
+                    "&:hover": { color: "#111827" },
+                  }}
+                  onClick={() => router.push("/sellerprofile")}
+                >
+                  <PersonOutlineIcon />
                 </IconButton>
 
                 <Button
@@ -453,6 +339,7 @@ export default function Navbar() {
                     fontSize: 14,
                     ml: 1,
                     color: "#b91c1c",
+                    "&:hover": { backgroundColor: "#fee2e2" },
                   }}
                 >
                   Logout
@@ -460,15 +347,14 @@ export default function Navbar() {
               </>
             )}
 
-            {/* 🧍 NOT LOGGED IN (desktop) */}
             {!isLoggedIn && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
@@ -480,14 +366,14 @@ export default function Navbar() {
                 <Link href="/register" style={{ textDecoration: "none" }}>
                   <Typography
                     sx={{
-                      color: "#4b5563",
-                      fontSize: 15,
                       fontWeight: 500,
+                      fontSize: 15,
+                      color: "#4b5563",
                       cursor: "pointer",
                       "&:hover": { color: "#111827" },
                     }}
                   >
-                      Register
+                    Register
                   </Typography>
                 </Link>
 
@@ -520,29 +406,25 @@ export default function Navbar() {
         </Toolbar>
       </AppBar>
 
-      {/* Categories dropdown for desktop customer */}
       <Menu
         anchorEl={catAnchorEl}
         open={isCatMenuOpen}
         onClose={handleCategoriesClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
-        MenuListProps={{ sx: { p: 0 } }}
         PaperProps={{
           sx: {
             mt: 1,
             p: 2,
             borderRadius: 2,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
           },
         }}
       >
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(2, minmax(0, 1fr))",
-              sm: "repeat(3, minmax(0, 1fr))",
-            },
+            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" },
             gap: 1,
             minWidth: 260,
           }}
@@ -554,6 +436,8 @@ export default function Navbar() {
               sx={{
                 borderRadius: 1,
                 fontSize: 14,
+                transition: "0.2s",
+                "&:hover": { backgroundColor: "#f3f4f6" },
               }}
             >
               {cat}
@@ -569,11 +453,13 @@ export default function Navbar() {
         onClose={handleDrawerToggle}
         sx={{
           display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": { width: 260 },
+          "& .MuiDrawer-paper": { width: 260, boxShadow: "2px 0 8px rgba(0,0,0,0.1)" },
         }}
       >
         {drawer}
       </Drawer>
     </>
+
+
   );
 }
