@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -12,8 +13,9 @@ import {
   Stack,
   Pagination,
   CircularProgress,
+  Fab,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 
@@ -31,18 +33,29 @@ export default function ViewSellerBooks() {
 
   const [page, setPage] = useState(1);
   const limit = 8;
+
+  // controlled input + debounced search value
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
- 
+  // debounce: wait 400ms after user stops typing to update `search`
   useEffect(() => {
-    const res = dispatch(
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1); // reset page on new search
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    dispatch(
       fetchBooks({
         page,
         limit,
-        search: search.trim() || undefined,
+        search: search || undefined,
       }) as any
     );
-    console.log(res);
   }, [page, search, dispatch]);
 
   const handlePageChange = (_: any, value: number) => setPage(value);
@@ -51,32 +64,24 @@ export default function ViewSellerBooks() {
     router.push(`/viewonebook/${id}`);
   };
 
+  const goToAdd = () => router.push("/addbook");
+
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
- 
-        <Box sx={{ mb: 3 }}>
+        {/* wrap in a form to prevent default submit (Enter) from reloading the page */}
+        <Box component="form" onSubmit={(e) => e.preventDefault()} sx={{ mb: 8 }}>
           <Searchfield
-            value={search}
+            value={searchInput}
             onChange={(val) => {
-              setSearch(val);
-              setPage(1);
+              setSearchInput(val); // update local controlled input
             }}
             placeholder="Search books..."
+            // If your Searchfield forwards inputProps you can pass onKeyDown to block Enter — this line is safe even if ignored:
+            inputProps={{ onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter") e.preventDefault(); } }}
           />
         </Box>
 
-      
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            My Books
-          </Typography>
-          <Typography sx={{ color: "text.secondary" }}>
-            Manage your uploaded books
-          </Typography>
-        </Box>
-
-    
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress />
@@ -92,10 +97,14 @@ export default function ViewSellerBooks() {
         ) : (
           <Box
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(1, 1fr)",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+                lg: "repeat(4, 1fr)",
+              },
               gap: 3,
-              justifyContent: "center",
               mb: 5,
             }}
           >
@@ -104,10 +113,12 @@ export default function ViewSellerBooks() {
                 key={book._id}
                 elevation={0}
                 sx={{
-                  width: 230,
                   borderRadius: 3,
                   bgcolor: "#ffffff",
                   overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 360,
                   "&:hover": {
                     boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
                     transform: "translateY(-4px)",
@@ -115,14 +126,23 @@ export default function ViewSellerBooks() {
                   transition: "all 0.25s ease",
                 }}
               >
-                <CardMedia
-                  component="img"
-                  image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
-                  alt={book.title}
-                  sx={{ borderRadius: 3, height: 170, objectFit: "cover" }}
-                />
+                <Box sx={{ position: "relative", pt: "130%" }}>
+                  <CardMedia
+                    component="img"
+                    image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
+                    alt={book.title}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
 
-                <CardContent sx={{ pt: 1, pb: 0 }}>
+                <CardContent sx={{ pt: 1, pb: 0, flexGrow: 1 }}>
                   <Typography
                     variant="body2"
                     sx={{ color: "text.secondary", mb: 0.5 }}
@@ -147,33 +167,33 @@ export default function ViewSellerBooks() {
                   </Typography>
                 </CardContent>
 
-                <CardActions sx={{ px: 2, pb: 2, pt: 1 }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    size="small"
-                    onClick={() => viewDetails(book._id)}
-                    sx={{
-                      borderRadius: "999px",
-                      textTransform: "none",
-                      borderColor: "#e5e7eb",
-                      color: "text.primary",
-                      fontSize: 13,
-                      "&:hover": {
-                        borderColor: "#c57a45",
-                        bgcolor: "rgba(197,122,69,0.04)",
-                      },
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </CardActions>
+              <CardActions sx={{ px: 2, pb: 2, pt: 1 }}>
+  <Button
+    fullWidth
+    variant="contained" // changed from outlined
+    size="small"
+    onClick={() => viewDetails(book._id)}
+    sx={{
+      borderRadius: "999px",
+      textTransform: "none",
+      bgcolor: "#c57a45", // main color
+      color: "#fff",
+      fontWeight: 600,
+      fontSize: 14,
+      "&:hover": {
+        bgcolor: "#b36a36", // slightly darker on hover
+      },
+      boxShadow: "0 4px 12px rgba(197,122,69,0.4)", // subtle shadow
+    }}
+  >
+    View Details
+  </Button>
+</CardActions>
               </Card>
             ))}
           </Box>
         )}
 
-       
         {totalPages > 1 && (
           <Stack alignItems="center" sx={{ pb: 4 }}>
             <Pagination
@@ -185,6 +205,21 @@ export default function ViewSellerBooks() {
           </Stack>
         )}
       </Container>
+
+      <Fab
+        color="primary"
+        aria-label="add"
+        onClick={goToAdd}
+        sx={{
+          position: "fixed",
+          right: { xs: 16, md: 32 },
+          bottom: { xs: 16, md: 32 },
+          bgcolor: "#c57a45",
+          "&:hover": { bgcolor: "#b36a36" },
+        }}
+      >
+        <AddIcon />
+      </Fab>
     </Box>
   );
 }

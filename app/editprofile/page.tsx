@@ -21,39 +21,34 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { updateProfileThunk } from "@/src/redux/slices/authSlice";
+import { useAuth } from "@/src/context/AuthContext";
 
 const schema = yup
   .object({
     firstName: yup.string().required("First name is required"),
     lastName: yup.string().required("Last name is required"),
-    email: yup
-      .string()
-      .email("Invalid email")
-      .required("Email is required"),
+    email: yup.string().email("Invalid email").required("Email is required"),
     phone: yup
       .string()
-      .transform((value) => value.replace(/\s/g, "")) // remove spaces
-      .matches(
-        /^\+?[0-9]{10,15}$/,
-        "Enter a valid phone number with country code"
-      )
+      .transform((value) => value.replace(/\s/g, ""))
+      .matches(/^\+?[0-9]{10,15}$/, "Enter a valid phone number with country code")
       .required("Phone number is required"),
-    bio: yup
-      .string()
-      .max(300, "Bio can be max 300 characters")
-      .optional(),
+    bio: yup.string().max(100, "Bio can be max 100 characters").optional(),
   })
   .required();
 
 type EditProfileForm = yup.InferType<typeof schema>;
 
 export default function EditProfilePage() {
+  const { role } = useAuth();
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
   const { user, loading } = useSelector((state: RootState) => state.auth);
 
-  // 👇 Build full URL for previously saved image
+  const [bioLength, setBioLength] = useState(user?.bio?.length || 0);
+
+  // Build full URL for previously saved image
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const initialImageUrl =
@@ -73,6 +68,7 @@ export default function EditProfilePage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
   } = useForm<EditProfileForm>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -84,7 +80,7 @@ export default function EditProfilePage() {
     },
   });
 
-  // 🔄 Sync with Redux user whenever it changes
+  // Sync with Redux user whenever it changes
   useEffect(() => {
     if (user) {
       reset({
@@ -94,6 +90,8 @@ export default function EditProfilePage() {
         phone: user.fullPhone ? String(user.fullPhone) : "",
         bio: (user as any)?.bio || "",
       });
+
+      setBioLength((user as any)?.bio?.length || 0);
 
       const imgUrl =
         user.image && backendUrl
@@ -111,7 +109,6 @@ export default function EditProfilePage() {
     if (!file) return;
     setPhotoFile(file);
 
-    // 👇 Show instant preview of newly selected image
     const url = URL.createObjectURL(file);
     setPhotoPreview(url);
   };
@@ -132,13 +129,25 @@ export default function EditProfilePage() {
       await dispatch(updateProfileThunk(formData)).unwrap();
 
       toast.success("Profile updated successfully");
-      router.push("/customerprofile");
+
+      switch (role) {
+        case "seller":
+          router.push("/sellerprofile");
+          break;
+        case "customer":
+          router.push("/customerprofile");
+          break;
+        case "admin":
+          router.push("/admindashboard");
+          break;
+        default:
+          router.push("/");
+      }
     } catch (err: any) {
       const msg =
         typeof err === "string"
           ? err
-          : err?.response?.data?.message ||
-            "Failed to update profile. Try again.";
+          : err?.response?.data?.message || "Failed to update profile. Try again.";
       toast.error(msg);
     }
   };
@@ -192,11 +201,7 @@ export default function EditProfilePage() {
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 6 }}>
       <Container maxWidth="sm">
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          sx={{ mb: 3, color: "#111827" }}
-        >
+        <Typography variant="h4" fontWeight={700} sx={{ mb: 3, color: "#111827" }}>
           Edit Profile
         </Typography>
 
@@ -219,8 +224,7 @@ export default function EditProfilePage() {
                   bgcolor: "#c57a45",
                 }}
               >
-                {user?.firstName?.[0]?.toUpperCase() ||
-                  user?.email?.[0]?.toUpperCase()}
+                {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
               </Avatar>
 
               <Button
@@ -233,12 +237,7 @@ export default function EditProfilePage() {
                 }}
               >
                 Change Photo
-                <input
-                  hidden
-                  accept="image/*"
-                  type="file"
-                  onChange={handlePhotoChange}
-                />
+                <input hidden accept="image/*" type="file" onChange={handlePhotoChange} />
               </Button>
             </Stack>
 
@@ -278,25 +277,28 @@ export default function EditProfilePage() {
                   helperText={errors.phone?.message}
                 />
 
-                <TextField
-                  label="Bio / About"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  {...register("bio")}
-                  error={!!errors.bio}
-                  helperText={errors.bio?.message}
-                />
+                {/* Bio with live character counter */}
+               <TextField
+  label="Bio / About"
+  multiline
+  rows={4}
+  fullWidth
+  {...register("bio")}
+  error={!!errors.bio}
+  helperText={errors.bio?.message || `${bioLength}/100`}
+  onChange={(e) => {
+    let val = e.target.value;
+    if (val.length > 100) val = val.slice(0, 100); // truncate at 100 chars
+    setBioLength(val.length);
+    setValue("bio", val); // update react-hook-form
+  }}
+/>
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     type="button"
                     variant="outlined"
-                    sx={{
-                      textTransform: "none",
-                      borderRadius: "999px",
-                      px: 3,
-                    }}
+                    sx={{ textTransform: "none", borderRadius: "999px", px: 3 }}
                     onClick={() => router.push("/customerprofile")}
                   >
                     Cancel

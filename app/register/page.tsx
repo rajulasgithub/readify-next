@@ -84,11 +84,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: SignupFormData) => {
     const res = await dispatch(registerUser(data)).unwrap();;
 
-
-      // const tokenFromCookie = Cookies.get("accessToken") ?? "";
-      // const roleFromCookie = Cookies.get("role") ?? "";
-      // const emailFromCookie = Cookies.get("email") ?? "";
-
+     console.log("REGISTER RESPONSE:", res);
+  
     loginUser(
       res.accessToken ?? "",
       res.data.role ?? "",
@@ -113,7 +110,7 @@ export default function RegisterPage() {
     
   };
 
-  // ✅ keep RHF + local state in sync for password
+ 
   const {
     ref: passwordRef,
     onChange: passwordOnChange,
@@ -129,6 +126,8 @@ export default function RegisterPage() {
           borderRadius: 4,
           border: "1px solid #e5e7eb",
           bgcolor: "#ffffff",
+          marginTop:'60px',
+          marginBottom:'60px'
         }}
       >
         <Typography
@@ -168,21 +167,32 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3}>
-            <TextField
-              label="First Name"
-              {...register("firstName")}
-              error={!!errors.firstName}
-              helperText={errors.firstName?.message}
-              fullWidth
-            />
+            
+          <TextField
+  label="First Name"
+  {...register("firstName")}
+  error={!!errors.firstName}
+  helperText={errors.firstName?.message}
+  fullWidth
+  inputProps={{ style: { textTransform: "uppercase" } }}
+  onChange={(e) => {
+    e.target.value = e.target.value.toUpperCase();
+    return register("firstName").onChange(e);
+  }}
+/>
 
-            <TextField
-              label="Last Name"
-              {...register("lastName")}
-              error={!!errors.lastName}
-              helperText={errors.lastName?.message}
-              fullWidth
-            />
+           <TextField
+  label="Last Name"
+  {...register("lastName")}
+  error={!!errors.lastName}
+  helperText={errors.lastName?.message}
+  fullWidth
+  inputProps={{ style: { textTransform: "uppercase" } }}
+  onChange={(e) => {
+    e.target.value = e.target.value.toUpperCase();
+    return register("lastName").onChange(e); // ✅ FIXED
+  }}
+/>
 
             <TextField
               label="Email Address"

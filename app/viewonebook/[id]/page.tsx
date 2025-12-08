@@ -11,14 +11,26 @@ import {
   Dialog,
   DialogTitle,
   DialogActions,
+  Box,
+  Chip,
+  Skeleton,
+  Divider,
 } from "@mui/material";
 import { useRouter, useParams } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 
 import { addToCart } from "@/src/redux/slices/cartSlice";
-import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/src/redux/slices/wishlistSlice";
+import {
+  addToWishlist,
+  fetchWishlist,
+  removeFromWishlist,
+} from "@/src/redux/slices/wishlistSlice";
 
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
@@ -40,6 +52,8 @@ export default function ViewOneBook() {
   );
 
   const [openConfirm, setOpenConfirm] = useState(false);
+  const [busyWishlist, setBusyWishlist] = useState(false);
+  const [busyCart, setBusyCart] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -48,13 +62,8 @@ export default function ViewOneBook() {
     }
   }, [id, dispatch]);
 
-  if (loading) return <Typography>Loading...</Typography>;
-  if (error) return <Typography color="error">{error}</Typography>;
-  if (!singleBook) return <Typography>No book found!</Typography>;
-
-  const bookImage = Array.isArray(singleBook.image)
-    ? singleBook.image[0]
-    : singleBook.image;
+  const book = singleBook || ({} as any);
+  const bookImage = Array.isArray(book.image) ? book.image?.[0] : book.image;
 
   const confirmDelete = async () => {
     await dispatch(deleteBook(id));
@@ -70,7 +79,11 @@ export default function ViewOneBook() {
   };
 
   const handleAddToCart = async () => {
+    if (!id) return;
+    setBusyCart(true);
     const result = await dispatch(addToCart(id));
+    setBusyCart(false);
+
     if (addToCart.fulfilled.match(result)) {
       toast.success("Book added to cart!");
     } else {
@@ -78,146 +91,244 @@ export default function ViewOneBook() {
     }
   };
 
- const isInWishlist = wishlistItems?.some((item) => item.bookId === id);
+  const isInWishlist = wishlistItems?.some((item) => item.bookId === id);
 
   const handleWishlistToggle = async () => {
-  if (isInWishlist) {
-    // remove from wishlist
-    const result = await dispatch(removeFromWishlist(id) as any);
-    if (removeFromWishlist.fulfilled.match(result)) {
-      toast.info(
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span>Removed from wishlist </span>
-          <FavoriteBorderIcon
-            style={{ cursor: "pointer", color: "#c57a45" }}
-            onClick={() => router.push("/wishlist")}
-          />
-        </div>,
-        { autoClose: 5000 }
-      );
-      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // refresh wishlist
+    if (!id) return;
+    setBusyWishlist(true);
+
+    if (isInWishlist) {
+      const result = await dispatch(removeFromWishlist(id) as any);
+      setBusyWishlist(false);
+      if (removeFromWishlist.fulfilled.match(result)) {
+        toast.info("Removed from wishlist");
+        dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
+      } else {
+        toast.error(result.payload || "Failed to remove from wishlist.");
+      }
     } else {
-      toast.error(result.payload || "Failed to remove from wishlist.");
+      const result = await dispatch(addToWishlist(id) as any);
+      setBusyWishlist(false);
+      if (addToWishlist.fulfilled.match(result)) {
+        toast.success("Added to wishlist");
+        dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
+      } else {
+        toast.error(result.payload || "Failed to add to wishlist.");
+      }
     }
-  } else {
-    // add to wishlist
-    const result = await dispatch(addToWishlist(id) as any);
-    if (addToWishlist.fulfilled.match(result)) {
-      toast.success(
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span>Added to wishlist </span>
-          <FavoriteBorderIcon
-            style={{ cursor: "pointer", color: "#c57a45" }}
-            onClick={() => router.push("/wishlist")}
-          />
-        </div>,
-        { autoClose: 5000 }
-      );
-      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // refresh wishlist
-    } else {
-      toast.error(result.payload || "Failed to add to wishlist.");
-    }
-  }
-};
+  };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <ToastContainer />
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#f8f8f8",
+        pt: 4,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4, minHeight: "70vh" }}>
+        <ToastContainer />
 
-      <Typography variant="h4" fontWeight="bold" mb={3}>
-        {singleBook.title}
-      </Typography>
-
-      <CardMedia
-        component="img"
-        image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${bookImage}`}
-        alt={singleBook.title}
-        sx={{
-          width: "100%",
-          height: 350,
-          borderRadius: 3,
-          objectFit: "cover",
-          mb: 3,
-        }}
-      />
-
-      <Typography variant="h6" gutterBottom>
-        Author: {singleBook.author}
-      </Typography>
-
-      <Typography variant="body1">{singleBook.description}</Typography>
-
-      <Typography mt={2} variant="h6">
-        Price: ₹{singleBook.prize}
-      </Typography>
-
-      <Stack direction="row" spacing={2} mt={3}>
-        {role === "customer" && (
-          <>
-            <Button variant="contained" color="primary" onClick={handleAddToCart}>
-              Add to Cart
-            </Button>
-           <Button
-  variant={isInWishlist ? "outlined" : "contained"}
-  color={isInWishlist ? "secondary" : "primary"}
-  onClick={handleWishlistToggle}
-  sx={{
-  
-   
-    cursor: "pointer",
-    backgroundColor: isInWishlist ? "#fff" : undefined,
-    borderColor: isInWishlist ? "#c57a45" : undefined,
-    color: isInWishlist ? "#c57a45" : undefined,
-    "&:hover": {
-      backgroundColor: isInWishlist ? "#f9f5f2" : undefined,
-      borderColor: "#c57a45",
-    },
-  }}
->
-  {isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-</Button>
-          </>
+        {loading ? (
+          <Skeleton variant="text" width="60%" height={40} sx={{ mb: 2 }} />
+        ) : (
+          <Typography variant="h4" fontWeight="bold" mb={3}>
+            {book.title}
+          </Typography>
         )}
 
-        {role === "seller" && (
-          <>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => router.push(`/updatebook/${id}`)}
-            >
-              Update
-            </Button>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => setOpenConfirm(true)}
-            >
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={4}
+          alignItems={{ xs: "flex-start", md: "center" }} // <-- vertical center for image
+        >
+          {/* Left: Image */}
+          <Box sx={{ flex: "0 0 420px", width: { xs: "100%", md: 420 } }}>
+            {loading ? (
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={380}
+                sx={{ borderRadius: 2 }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: 380,
+                  borderRadius: 2,
+                  bgcolor: "#fafafa",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  border: "1px solid #f1f5f9",
+                  position: "relative",
+                }}
+              >
+                {bookImage ? (
+                  <CardMedia
+                    component="img"
+                    image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${bookImage}`}
+                    alt={book.title}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      p: 2,
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(245,245,245,0.35))",
+                    }}
+                  />
+                ) : (
+                  <Box sx={{ textAlign: "center", color: "text.secondary", p: 2 }}>
+                    <Typography variant="body2">No image available</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
+
+          {/* Right: Details */}
+          <Box sx={{ flex: 1 }}>
+            {loading ? (
+              <>
+                <Skeleton variant="text" width="40%" height={30} />
+                <Skeleton variant="text" width="50%" height={28} />
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={110}
+                  sx={{ mt: 2, borderRadius: 1 }}
+                />
+              </>
+            ) : error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Author: {book.author}
+                </Typography>
+
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" mb={2}>
+                  {book.genre && Array.isArray(book.genre) && book.genre.length > 0 && (
+                    <Chip label={book.genre.join(", ")} size="small" sx={{ mr: 1 }} />
+                  )}
+
+                  {book.language && Array.isArray(book.language) && book.language.length > 0 && (
+                    <Chip label={book.language.join(", ")} size="small" sx={{ mr: 1 }} />
+                  )}
+
+                  {book.page_count && <Chip label={`${book.page_count} pages`} size="small" sx={{ mr: 1 }} />}
+
+                  {book.publish_date && <Chip label={new Date(book.publish_date).toLocaleDateString()} size="small" />}
+                </Stack>
+
+                <Divider sx={{ mb: 2 }} />
+
+                {book.excerpt && (
+                  <Box sx={{ mb: 2, p: 2, borderRadius: 1, bgcolor: "#fffaf3", border: "1px solid #fbedd8" }}>
+                    <Typography variant="subtitle2" sx={{ fontStyle: "italic", mb: 1 }}>
+                      Excerpt
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.primary", whiteSpace: "pre-line" }}>
+                      {book.excerpt}
+                    </Typography>
+                  </Box>
+                )}
+
+                <Typography variant="body1" sx={{ color: "text.secondary", mb: 2, whiteSpace: "pre-line" }}>
+                  {book.description}
+                </Typography>
+
+                <Typography mt={1} variant="h6" sx={{ mb: 2 }}>
+                  Price: <Box component="span" sx={{ fontWeight: 800 }}>₹{book.prize}</Box>
+                </Typography>
+
+                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+                  {role === "customer" && (
+                    <>
+                      <Button
+                        variant="contained"
+                        startIcon={<ShoppingCartIcon />}
+                        disabled={busyCart}
+                        onClick={handleAddToCart}
+                        sx={{ bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" }, textTransform: "none" }}
+                      >
+                        {busyCart ? "Adding..." : "Add to Cart"}
+                      </Button>
+
+                      <Button
+                        variant={isInWishlist ? "outlined" : "contained"}
+                        startIcon={isInWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                        onClick={handleWishlistToggle}
+                        disabled={busyWishlist}
+                        sx={{
+                          textTransform: "none",
+                          borderColor: isInWishlist ? "#c57a45" : undefined,
+                          color: isInWishlist ? "#c57a45" : undefined,
+                          bgcolor: isInWishlist ? "#fff" : undefined,
+                          "&:hover": { borderColor: "#c57a45" },
+                        }}
+                      >
+                        {isInWishlist ? "Remove Wishlist" : "Add to Wishlist"}
+                      </Button>
+                    </>
+                  )}
+
+                  {role === "seller" && (
+                    <>
+                      <Button
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => router.push(`/updatebook/${id}`)}
+                        sx={{ textTransform: "none" }}
+                      >
+                        Update
+                      </Button>
+
+                      <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<DeleteOutlineIcon />}
+                        onClick={() => setOpenConfirm(true)}
+                        sx={{ textTransform: "none" }}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  )}
+
+                  {role === "admin" && (
+                    <Button
+                      variant="contained"
+                      color="error"
+                      startIcon={<DeleteOutlineIcon />}
+                      onClick={() => setOpenConfirm(true)}
+                      sx={{ textTransform: "none" }}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </Stack>
+              </>
+            )}
+          </Box>
+        </Stack>
+
+        {/* Delete confirmation */}
+        <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
+          <DialogTitle>Are you sure you want to delete this book?</DialogTitle>
+          <DialogActions>
+            <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error">
               Delete
             </Button>
-          </>
-        )}
-
-        {role === "admin" && (
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => setOpenConfirm(true)}
-          >
-            Delete
-          </Button>
-        )}
-      </Stack>
-
-      <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
-        <DialogTitle>Are you sure you want to delete this book?</DialogTitle>
-        <DialogActions>
-          <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+          </DialogActions>
+        </Dialog>
+      </Container>
+    </Box>
   );
 }

@@ -50,8 +50,10 @@ return (
 
 const sellerName = user ? `${user.firstName} ${user.lastName}` : "Seller";
 const sellerEmail = user?.email || "";
-const sellerPhone = user?.phone || "";
-const imageUrl = user?.image || undefined;
+const sellerPhone = user?.fullPhone || "";
+ const imageUrl = user?.image
+  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${user.image}`
+  : undefined;
 
 const productCount = sellerStats?.totalBooks ?? 0;
 const ordersCount = sellerStats?.totalOrders ?? 0;
@@ -86,6 +88,19 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
             <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
               {sellerPhone}
             </Typography>
+
+              {user?.bio && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#4b5563",
+                      textAlign: "center",
+                      mt: 1,
+                    }}
+                  >
+                    {user.bio}
+                  </Typography>
+                )}
 
             <Divider sx={{ width: "100%", my: 2 }} />
 

@@ -110,7 +110,6 @@ export default function LoginPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
         p: 2,
       }}
     >
@@ -122,10 +121,11 @@ export default function LoginPage() {
           boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.1)",
         }}
       >
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: 4,boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
           <Typography
             variant="h5"
-            sx={{ fontWeight: 700, textAlign: "center", mb: 2 }}
+            
+            sx={{ fontWeight: 700, textAlign: "center", mb: 2, }}
           >
             Welcome Back
           </Typography>
@@ -183,7 +183,7 @@ export default function LoginPage() {
                   borderRadius: "10px",
                   textTransform: "none",
                   fontSize: "16px",
-                  bgcolor: "#111827",
+                  bgcolor: "#c57a45",
                   "&:hover": {
                     bgcolor: "#1f2937",
                   },

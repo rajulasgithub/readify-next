@@ -38,7 +38,7 @@ export default function SellerOrdersPage() {
   };
 
   const handleBack = () => {
-    router.push("/seller/dashboard");
+    router.push("/sellerdashboard");
   };
 
   return (

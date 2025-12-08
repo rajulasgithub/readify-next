@@ -24,7 +24,7 @@ type StatCard = {
   id: number;
   label: string;
   value: string;
-  helper: string;
+
   icon: React.ReactNode;
 };
 
@@ -43,11 +43,7 @@ const SellerDashboard: React.FC = () => {
   );
 
   // Demo fallback numbers used only if sellerStats is null
-  const demo = {
-    totalBooks: 18,
-    totalOrders: 52,
-    totalRevenue: 38450,
-  };
+ 
 
   const stats: StatCard[] = [
     {
@@ -55,8 +51,8 @@ const SellerDashboard: React.FC = () => {
       label: "My Books",
       value: sellerStatsLoading
         ? "Loading..."
-        : `${sellerStats?.totalBooks ?? demo.totalBooks}`,
-      helper: "2 drafts | 3 out of stock",
+        : `${sellerStats?.totalBooks ?? 0}`,
+  
       icon: <LibraryBooksIcon />,
     },
     {
@@ -64,8 +60,8 @@ const SellerDashboard: React.FC = () => {
       label: "Total Orders",
       value: sellerStatsLoading
         ? "Loading..."
-        : `${sellerStats?.totalOrders ?? demo.totalOrders}`,
-      helper: "8 new this week",
+        : `${sellerStats?.totalOrders ?? 0}`,
+    
       icon: <ShoppingBagOutlinedIcon />,
     },
     {
@@ -73,8 +69,8 @@ const SellerDashboard: React.FC = () => {
       label: "Revenue",
       value: sellerStatsLoading
         ? "Loading..."
-        : `₹${(sellerStats?.totalRevenue ?? demo.totalRevenue).toLocaleString()}`,
-      helper: "Last 30 days",
+        : `₹${(sellerStats?.totalRevenue ?? 0).toLocaleString()}`,
+   
       icon: <CurrencyRupeeOutlinedIcon />,
     },
   ];
@@ -101,12 +97,7 @@ const SellerDashboard: React.FC = () => {
           }}
         >
           <Box>
-            <Typography
-              variant="overline"
-              sx={{ letterSpacing: 3, color: "text.secondary" }}
-            >
-              SELLER DASHBOARD
-            </Typography>
+           
             <Typography
               variant="h4"
               sx={{ fontWeight: 700, lineHeight: 1.1, mt: 0.5 }}
@@ -210,9 +201,6 @@ const SellerDashboard: React.FC = () => {
                   {stat.value}
                 </Typography>
 
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  {stat.helper}
-                </Typography>
               </Card>
             </Box>
           ))}

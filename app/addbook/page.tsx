@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Box,
   TextField,
@@ -12,19 +12,19 @@ import {
   CardMedia,
   IconButton,
   CircularProgress,
+  Autocomplete,
 } from "@mui/material";
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
-
-
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/src/redux/store"; 
-import { addBook } from "@/src/redux/slices/bookSlice"; 
+import type { RootState, AppDispatch } from "@/src/redux/store";
+import { addBook } from "@/src/redux/slices/bookSlice";
 
 import { useRouter } from "next/navigation";
 
@@ -58,25 +58,40 @@ const languages = [
   "Telugu",
 ];
 
-
 type BookFormInputs = {
   title: string;
   description: string;
-  excerpt?: yup.Maybe<string>; 
+  excerpt?: string;
   page_count: number | string;
   publish_date: string;
   author: string;
-  genre: string;
-  language: string;
+  genre: string[]; // now array
+  language: string[]; // now array
   prize: number | string;
   category: string;
 };
 
-
-const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
+const bookSchema: yup.ObjectSchema<any> = yup.object({
   title: yup.string().required("Title is required"),
-  description: yup.string().required("Description is required"),
-  excerpt: yup.string().optional(),
+  description: yup
+    .string()
+    .required("Description is required")
+    .test(
+      "len",
+      "Description must be at least 20 characters and at most 1000 characters",
+      (val) => !!val && val.length >= 20 && val.length <= 1000
+    ),
+  excerpt: yup
+    .string()
+    .nullable()
+    .test(
+      "excerpt-len",
+      "Excerpt must be at least 20 characters and at most 1000 characters",
+      (val) => {
+        if (!val) return true; // allow empty
+        return val.length >= 20 && val.length <= 1000;
+      }
+    ),
   page_count: yup
     .number()
     .typeError("Page count must be a number")
@@ -84,8 +99,16 @@ const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
     .required("Page count is required"),
   publish_date: yup.string().required("Publish date is required"),
   author: yup.string().required("Author is required"),
-  genre: yup.string().required("Genre is required"),
-  language: yup.string().required("Language is required"),
+  genre: yup
+    .array()
+    .of(yup.string())
+    .min(1, "Select at least one genre")
+    .required("Genre is required"),
+  language: yup
+    .array()
+    .of(yup.string())
+    .min(1, "Select at least one language")
+    .required("Language is required"),
   prize: yup
     .number()
     .typeError("Price must be a number")
@@ -94,59 +117,66 @@ const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
   category: yup.string().required("Category is required"),
 });
 
-
-
-
 const AddBook: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const route = useRouter();
 
- 
   const { loading, error } = useSelector((state: RootState) => state.books);
 
   const {
-  register,
-  handleSubmit,
-  formState: { errors },
-} = useForm<BookFormInputs>({
-  resolver: yupResolver(bookSchema),
-});
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<BookFormInputs>({
+    resolver: yupResolver(bookSchema),
+    defaultValues: { genre: [], language: [] },
+  });
 
- 
-  const [images, setImages] = useState<File[]>([]);
-  const [preview, setPreview] = useState<string[]>([]);
+  const descriptionValue = watch("description") || "";
+  const excerptValue = watch("excerpt") || "";
+
+  // Only a single image now
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const fileArray = Array.from(files);
+    const file = files[0];
 
-    setImages((prev) => [...prev, ...fileArray]);
-
-    const urls = fileArray.map((f) => URL.createObjectURL(f));
-    setPreview((prev) => [...prev, ...urls]);
-
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
     setImageError(null);
+
+    // reset input value so same file can be selected again if needed
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setPreview((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setImage(null);
+    setPreview(null);
   };
 
-  
+  const openFilePicker = () => {
+    fileRef.current?.click();
+  };
+
   const onSubmit = async (data: BookFormInputs) => {
-    if (images.length === 0) {
-      setImageError("At least one image is required");
+    if (!image) {
+      setImageError("An image is required");
       return;
     }
 
     const formData = new FormData();
 
-    images.forEach((img) => formData.append("image", img)); 
+    formData.append("image", image);
 
     formData.append("title", data.title);
     formData.append("description", data.description);
@@ -154,20 +184,19 @@ const AddBook: React.FC = () => {
     formData.append("page_count", String(data.page_count));
     formData.append("publish_date", data.publish_date);
     formData.append("author", data.author);
-    formData.append("genre", data.genre);
-    formData.append("language", data.language);
+
+    formData.append("genre", JSON.stringify(data.genre));
+    formData.append("language", JSON.stringify(data.language));
+
     formData.append("prize", String(data.prize));
     formData.append("category", data.category);
 
     try {
-    
-      const resultAction = await dispatch(addBook(formData)).unwrap();;
+      const resultAction = await dispatch(addBook(formData) as any);
 
-    
       if (addBook.fulfilled.match(resultAction)) {
         route.push("/sellerbooks");
       }
-     
     } catch (err) {
       console.error("Error adding book:", err);
     }
@@ -191,194 +220,186 @@ const AddBook: React.FC = () => {
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
           Add New Book
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: "text.secondary", mb: 3, maxWidth: 400 }}
-        >
-          Fill in the book details and upload cover images to list your book in
-          the store.
+        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: 400 }}>
+          Fill in the book details and upload cover images to list your book in the store.
         </Typography>
 
-       
-        <Stack spacing={1.5} sx={{ mb: 3 }}>
-          <Typography variant="subtitle2">Book Images *</Typography>
+        <Stack spacing={1.5} sx={{ mb: 3, alignItems: "center" }}>
+          <Typography variant="subtitle2">Book Image *</Typography>
 
-          <Button
-            variant="contained"
-            component="label"
+          {/* Hidden input (single file) */}
+          <input
+            ref={fileRef}
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+
+          {/* Centered preview area (click to open) */}
+          <Box
+            onClick={openFilePicker}
             sx={{
-              bgcolor: "#c57a45",
-              "&:hover": { bgcolor: "#b36a36" },
-              textTransform: "none",
-              borderRadius: "999px",
-              px: 3,
-              width: "fit-content",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+              position: 'relative'
             }}
+            aria-hidden
           >
-            Upload Images
-            <input type="file" multiple hidden onChange={handleImageUpload} />
-          </Button>
-
-          <Stack direction="row" spacing={2} flexWrap="wrap">
-            {preview.map((src, index) => (
-              <Card
-                key={index}
-                sx={{
-                  width: 100,
-                  height: 130,
-                  position: "relative",
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  image={src}
-                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
+            {preview ? (
+              <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: 'relative' }}>
+                <CardMedia component="img" image={preview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                {/* delete button on top-right of preview */}
                 <IconButton
-                  onClick={() => removeImage(index)}
-                  sx={{
-                    position: "absolute",
-                    top: 4,
-                    right: 4,
-                    bgcolor: "#ffffff",
-                    "&:hover": { bgcolor: "#f1f5f9" },
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeImage();
                   }}
+                  sx={{ position: 'absolute', top: 8, right: 8, bgcolor: '#fff', '&:hover': { bgcolor: '#f3f4f6' } }}
                 >
-                  <DeleteOutlineIcon fontSize="small" />
+                  <DeleteOutlineIcon />
                 </IconButton>
               </Card>
-            ))}
-          </Stack>
+            ) : (
+              <Box
+                sx={{
+                  width: 160,
+                  height: 200,
+                  borderRadius: 2,
+                  border: "1px dashed #e5e7eb",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AddPhotoAlternateIcon />
+              </Box>
+            )}
 
-          {imageError && (
-            <Typography variant="caption" sx={{ color: "red" }}>
-              {imageError}
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Click to choose image
             </Typography>
-          )}
+
+            {imageError && (
+              <Typography variant="caption" sx={{ color: "red" }}>
+                {imageError}
+              </Typography>
+            )}
+          </Box>
         </Stack>
 
-        
         {error && (
-          <Typography
-            variant="body2"
-            sx={{ color: "#b91c1c", mb: 2, fontWeight: 500 }}
-          >
+          <Typography variant="body2" sx={{ color: "#b91c1c", mb: 2, fontWeight: 500 }}>
             {typeof error === "string" ? error : "Failed to add book"}
           </Typography>
         )}
 
-       
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Stack spacing={2.3}>
-            <TextField
-              label="Title"
-              fullWidth
-              {...register("title")}
-              error={!!errors.title}
-              helperText={errors.title?.message}
-            />
+            <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />
 
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              {...register("description")}
-              error={!!errors.description}
-              helperText={errors.description?.message}
-            />
-
-            <TextField
-              label="Excerpt"
-              fullWidth
-              multiline
-              rows={2}
-              {...register("excerpt")}
-              error={!!errors.excerpt}
-              helperText={errors.excerpt?.message}
-            />
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Box>
               <TextField
-                label="Page Count"
-                type="number"
+                label="Description"
                 fullWidth
-                {...register("page_count")}
-                error={!!errors.page_count}
-                helperText={errors.page_count?.message}
+                multiline
+                rows={4}
+                {...register("description")}
+                error={!!errors.description}
+                helperText={errors.description?.message}
+                inputProps={{ maxLength: 1000 }}
               />
 
+              {/* character counter aligned right */}
+              <Typography variant="caption" sx={{ display: "block", textAlign: "right", color: "text.secondary", mt: 0.5 }}>
+                {`${descriptionValue.length}/1000`}
+              </Typography>
+            </Box>
+
+            <Box>
               <TextField
-                label="Publish Date"
-                type="date"
+                label="Excerpt"
                 fullWidth
-                InputLabelProps={{ shrink: true }}
-                {...register("publish_date")}
-                error={!!errors.publish_date}
-                helperText={errors.publish_date?.message}
+                multiline
+                rows={3}
+                {...register("excerpt")}
+                error={!!errors.excerpt}
+                helperText={errors.excerpt?.message}
+                inputProps={{ maxLength: 1000 }}
+              />
+
+              <Typography variant="caption" sx={{ display: "block", textAlign: "right", color: "text.secondary", mt: 0.5 }}>
+                {`${excerptValue.length}/1000`}
+              </Typography>
+            </Box>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField label="Page Count" type="number" fullWidth {...register("page_count")} error={!!errors.page_count} helperText={errors.page_count?.message} />
+
+              <TextField label="Publish Date" type="date" fullWidth InputLabelProps={{ shrink: true }} {...register("publish_date")} error={!!errors.publish_date} helperText={errors.publish_date?.message} />
+            </Stack>
+
+            <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Controller
+                name="genre"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    multiple
+                    options={genres}
+                    onChange={(_, value) => field.onChange(value)}
+                    value={field.value || []}
+                    sx={{ width: '100%' }}
+                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Genre"
+                        error={!!errors.genre}
+                        helperText={(errors.genre as any)?.message}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
+              />
+
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    multiple
+                    options={languages}
+                    onChange={(_, value) => field.onChange(value)}
+                    value={field.value || []}
+                    sx={{ width: '100%' }}
+                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Language"
+                        error={!!errors.language}
+                        helperText={(errors.language as any)?.message}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
               />
             </Stack>
 
-            <TextField
-              label="Author"
-              fullWidth
-              {...register("author")}
-              error={!!errors.author}
-              helperText={errors.author?.message}
-            />
-
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                select
-                label="Genre"
-                fullWidth
-                {...register("genre")}
-                error={!!errors.genre}
-                helperText={errors.genre?.message}
-              >
-                {genres.map((g) => (
-                  <MenuItem key={g} value={g}>
-                    {g}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <TextField label="Price (₹)" type="number" fullWidth {...register("prize")} error={!!errors.prize} helperText={errors.prize?.message} />
 
-              <TextField
-                select
-                label="Language"
-                fullWidth
-                {...register("language")}
-                error={!!errors.language}
-                helperText={errors.language?.message}
-              >
-                {languages.map((l) => (
-                  <MenuItem key={l} value={l}>
-                    {l}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField
-                label="Price (₹)"
-                type="number"
-                fullWidth
-                {...register("prize")}
-                error={!!errors.prize}
-                helperText={errors.prize?.message}
-              />
-
-              <TextField
-                select
-                label="Category"
-                fullWidth
-                {...register("category")}
-                error={!!errors.category}
-                helperText={errors.category?.message}
-              >
+              <TextField select label="Category" fullWidth {...register("category")} error={!!errors.category} helperText={errors.category?.message}>
                 {categories.map((c) => (
                   <MenuItem key={c} value={c}>
                     {c}
