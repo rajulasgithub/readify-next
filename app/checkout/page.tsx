@@ -20,14 +20,11 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { placeOrderThunk ,fetchAddressThunk} from "@/src/redux/slices/orderSlice";
-import { useEffect,useState } from "react";
-
-import { saveAddressThunk } from "@/src/redux/slices/orderSlice";
+import { placeOrderThunk, fetchAddressThunk, saveAddressThunk } from "@/src/redux/slices/orderSlice";
+import { useEffect, useState } from "react";
 import { clearCart } from "@/src/redux/slices/cartSlice";
 
-
-// ✅ Address validation schema
+// ------------------ validation schema ------------------
 const addressSchema = yup.object({
   fullName: yup.string().required("Full name is required"),
   phone: yup
@@ -46,47 +43,34 @@ const addressSchema = yup.object({
 
 type AddressForm = yup.InferType<typeof addressSchema>;
 
+// ------------------ component ------------------
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  
+
   const cart = useSelector((state: RootState) => state.cart as any);
   const items: any[] = cart?.items || [];
   const totalPrice: number | undefined = cart?.totalPrice;
 
   const ordersState = useSelector((state: RootState) => state.orders as any);
   const placing: boolean = ordersState?.placing || false;
-  const savedAddress = useSelector(
-  (state: RootState) => state.orders?.savedAddresses?.[0] ?? null
-);
+  const savedAddress = useSelector((state: RootState) => state.orders?.savedAddresses?.[0] ?? null);
 
-  
-
-
-  // 🔍 Debug once to see real structure
-  console.log("Cart from Redux:", cart);
-  console.log("Cart items:", items);
-
-  // 🔹 Subtotal from items
+  // subtotal calculation (robust for different item shapes)
   const subtotal =
     typeof totalPrice === "number"
       ? totalPrice
       : items.reduce((sum, item) => {
-          // 🔧 TODO: adjust these 2 lines once you see your structure
           const price =
-            item.price ??                // flat
-            item.prize ??                // if you use "prize"
-            item.book?.price ??          // nested
-            item.book?.prize ??          // nested with "prize"
+            // check a few possible property names
+            item.price ??
+            item.prize ??
+            item.book?.price ??
+            item.book?.prize ??
             0;
-
-          const qty =
-            item.quantity ??             // flat
-            item.qty ??                  // some slices use "qty"
-            1;
-
+          const qty = item.quantity ?? item.qty ?? 1;
           return sum + price * qty;
         }, 0);
 
@@ -97,7 +81,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    setValue
+    reset,
   } = useForm<AddressForm>({
     resolver: yupResolver(addressSchema),
     defaultValues: {
@@ -111,40 +95,52 @@ export default function CheckoutPage() {
     },
   });
 
-  useEffect(()=>{
-       dispatch(fetchAddressThunk())
-  },[])
-
+  // fetch saved address on mount
   useEffect(() => {
-  if (savedAddress && editing) {
-    setValue("fullName", savedAddress.fullName);
-    setValue("phone", savedAddress.phone);
-    setValue("addressLine1", savedAddress.addressLine1);
-    setValue("addressLine2", savedAddress.addressLine2 ?? "");
-    setValue("city", savedAddress.city);
-    setValue("state", savedAddress.state);
-    setValue("pinCode", savedAddress.pinCode);
-    setEditingAddressId(savedAddress._id ?? ""); // store the id
-  }
-}, [savedAddress, editing, setValue]);
+    dispatch(fetchAddressThunk());
+  }, [dispatch]);
 
-const onSaveAddress = async (data: AddressForm) => {
-  if (!editingAddressId) {
-    toast.error("No address selected for editing");
-    return;
-  }
+  // when savedAddress is loaded, populate the form (but do not automatically switch to edit mode)
+  useEffect(() => {
+    if (savedAddress) {
+      reset({
+        fullName: savedAddress.fullName ?? "",
+        phone: savedAddress.phone ?? "",
+        addressLine1: savedAddress.addressLine1 ?? "",
+        addressLine2: savedAddress.addressLine2 ?? "",
+        city: savedAddress.city ?? "",
+        state: savedAddress.state ?? "",
+        pinCode: savedAddress.pinCode ?? "",
+      });
+      // store id if you want to edit it later
+      setEditingAddressId(savedAddress._id ?? null);
+    }
+  }, [savedAddress, reset]);
 
-  try {
-    await dispatch(saveAddressThunk({ addressId: editingAddressId, updatedAddress: data })).unwrap();
-    toast.success("Address updated successfully!");
-    setEditing(false);
-    setEditingAddressId(null); // clear after save
-  } catch (err: any) {
-    toast.error(err || "Failed to save address");
-  }
-};
-  
+  // Save edited address
+  const onSaveAddress = async (data: AddressForm) => {
+    if (!editingAddressId) {
+      toast.error("No address selected for editing");
+      return;
+    }
 
+    try {
+      await dispatch(saveAddressThunk({ addressId: editingAddressId, updatedAddress: data })).unwrap();
+      toast.success("Address updated successfully!");
+      setEditing(false);
+      // re-fetch addresses (optional, depending on your thunk behavior)
+      dispatch(fetchAddressThunk());
+    } catch (err: any) {
+      const msg =
+        typeof err === "string"
+          ? err
+          : err?.response?.data?.message || "Failed to save address";
+      toast.error(msg);
+      console.error("Save address error:", err);
+    }
+  };
+
+  // Place order handler (address is validated by react-hook-form)
   const onSubmit = async (data: AddressForm) => {
     if (!items.length) {
       toast.error("Your cart is empty");
@@ -152,26 +148,15 @@ const onSaveAddress = async (data: AddressForm) => {
     }
 
     try {
-      // 🔹 Map cart items → backend expected shape
+      // map items to backend shape (adapt to your API)
       const mappedItems = items.map((item) => {
-        // ⬇️ VERY IMPORTANT: adjust these lines according to your console.log
         const bookId =
-          item.bookId ??           // e.g. if you store bookId
-          item.book?._id ??        // if nested book
-          item._id ??              // if _id is the book id
-          undefined;
+          item.bookId ?? item.book?._id ?? item._id ?? undefined;
 
         const price =
-          item.price ??            // flat
-          item.prize ??            // if you called it "prize"
-          item.book?.price ??      // nested
-          item.book?.prize ??      // nested + "prize"
-          0;
+          item.price ?? item.prize ?? item.book?.price ?? item.book?.prize ?? 0;
 
-        const quantity =
-          item.quantity ??         // flat
-          item.qty ??              // alt key
-          1;
+        const quantity = item.quantity ?? item.qty ?? 1;
 
         return {
           book: bookId,
@@ -185,19 +170,15 @@ const onSaveAddress = async (data: AddressForm) => {
         items: mappedItems,
       };
 
-      console.log("Order payload sent to backend:", payload);
-
       await dispatch(placeOrderThunk(payload)).unwrap();
-
       toast.success("Order placed successfully!");
-      dispatch(clearCart())
+      dispatch(clearCart());
       router.push("/vieworders");
     } catch (err: any) {
       const msg =
         typeof err === "string"
           ? err
-          : err?.response?.data?.message ||
-            "Failed to place order. Please try again.";
+          : err?.response?.data?.message || "Failed to place order. Please try again.";
       toast.error(msg);
       console.error("Place order error:", err);
     }
@@ -247,147 +228,185 @@ const onSaveAddress = async (data: AddressForm) => {
           }}
         >
           {/* LEFT: Delivery Address */}
-         {/* LEFT: Delivery Address */}
-<Card
-  sx={{
-    flex: 1,
-    borderRadius: 3,
-    boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
-    bgcolor: "#ffffff",
-  }}
->
-  <CardContent sx={{ p: 3 }}>
-    <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-      Delivery Address
-    </Typography>
+          <Card
+            sx={{
+              flex: 1,
+              borderRadius: 3,
+              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+              bgcolor: "#ffffff",
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                Delivery Address
+              </Typography>
 
-   {savedAddress && !editing ? (
-  // Show saved address view
-  <Box sx={{ p: 2, borderRadius: 2, bgcolor: "#f9fafb" }}>
-    <Typography variant="body1" fontWeight={600}>
-      {savedAddress.fullName}
-    </Typography>
-    <Typography variant="body2" sx={{ color: "#6b7280" }}>
-      {savedAddress.phone}
-    </Typography>
-    <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
-      {savedAddress.addressLine1}, {savedAddress.addressLine2}
-    </Typography>
-    <Typography variant="body2" sx={{ color: "#6b7280" }}>
-      {savedAddress.city}, {savedAddress.state} - {savedAddress.pinCode}
-    </Typography>
+              {savedAddress && !editing ? (
+                // Show saved address view
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: "#f9fafb" }}>
+                  <Typography variant="body1" fontWeight={600}>
+                    {savedAddress.fullName}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                    {savedAddress.phone}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
+                    {savedAddress.addressLine1}, {savedAddress.addressLine2}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                    {savedAddress.city}, {savedAddress.state} - {savedAddress.pinCode}
+                  </Typography>
 
-    <Button
-      variant="outlined"
-      sx={{ mt: 2, textTransform: "none", borderRadius: "999px" }}
-      onClick={() =>{ setEditing(true)
-         setEditingAddressId(savedAddress._id ?? ""); 
-      }}
-    >
-      Edit
-    </Button>
-  </Box>
-) : (
-  // Show form for new or editing address
-  <form onSubmit={handleSubmit(editing ? onSaveAddress : onSubmit)} noValidate>
-  <Stack spacing={2.5}>
-    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-      <TextField
-        label="Full Name"
-        fullWidth
-        {...register("fullName")}
-        error={!!errors.fullName}
-        helperText={errors.fullName?.message}
-      />
-      <TextField
-        label="Phone Number"
-        fullWidth
-        {...register("phone")}
-        error={!!errors.phone}
-        helperText={errors.phone?.message}
-      />
-    </Stack>
+                  <Button
+                    variant="outlined"
+                    sx={{ mt: 2, textTransform: "none", borderRadius: "999px" }}
+                    onClick={() => {
+                      setEditing(true);
+                      setEditingAddressId(savedAddress._id ?? null);
+                      // reset form with savedAddress (already handled by effect, but safe)
+                      reset({
+                        fullName: savedAddress.fullName ?? "",
+                        phone: savedAddress.phone ?? "",
+                        addressLine1: savedAddress.addressLine1 ?? "",
+                        addressLine2: savedAddress.addressLine2 ?? "",
+                        city: savedAddress.city ?? "",
+                        state: savedAddress.state ?? "",
+                        pinCode: savedAddress.pinCode ?? "",
+                      });
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </Box>
+              ) : (
+                // Show form for new address or editing
+                <form onSubmit={handleSubmit(editing ? onSaveAddress : onSubmit)} noValidate>
+                  <Stack spacing={2.5}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        label="Full Name"
+                        fullWidth
+                        {...register("fullName")}
+                        error={!!errors.fullName}
+                        helperText={errors.fullName?.message as string | undefined}
+                        inputProps={{ "aria-invalid": !!errors.fullName }}
+                      />
+                      <TextField
+                        label="Phone Number"
+                        fullWidth
+                        {...register("phone")}
+                        error={!!errors.phone}
+                        helperText={errors.phone?.message as string | undefined}
+                        inputProps={{ "aria-invalid": !!errors.phone }}
+                      />
+                    </Stack>
 
-    <TextField
-      label="Address Line 1"
-      fullWidth
-      {...register("addressLine1")}
-      error={!!errors.addressLine1}
-      helperText={errors.addressLine1?.message}
-    />
+                    <TextField
+                      label="Address Line 1"
+                      fullWidth
+                      {...register("addressLine1")}
+                      error={!!errors.addressLine1}
+                      helperText={errors.addressLine1?.message as string | undefined}
+                      inputProps={{ "aria-invalid": !!errors.addressLine1 }}
+                    />
 
-    <TextField
-      label="Address Line 2"
-      fullWidth
-      {...register("addressLine2")}
-      error={!!errors.addressLine2}
-      helperText={errors.addressLine2?.message}
-    />
+                    <TextField
+                      label="Address Line 2"
+                      fullWidth
+                      {...register("addressLine2")}
+                      error={!!errors.addressLine2}
+                      helperText={errors.addressLine2?.message as string | undefined}
+                      inputProps={{ "aria-invalid": !!errors.addressLine2 }}
+                    />
 
-    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-      <TextField
-        label="City"
-        fullWidth
-        {...register("city")}
-        error={!!errors.city}
-        helperText={errors.city?.message}
-      />
-      <TextField
-        label="State"
-        fullWidth
-        {...register("state")}
-        error={!!errors.state}
-        helperText={errors.state?.message}
-      />
-    </Stack>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        label="City"
+                        fullWidth
+                        {...register("city")}
+                        error={!!errors.city}
+                        helperText={errors.city?.message as string | undefined}
+                        inputProps={{ "aria-invalid": !!errors.city }}
+                      />
+                      <TextField
+                        label="State"
+                        fullWidth
+                        {...register("state")}
+                        error={!!errors.state}
+                        helperText={errors.state?.message as string | undefined}
+                        inputProps={{ "aria-invalid": !!errors.state }}
+                      />
+                    </Stack>
 
-    <TextField
-      label="Pincode"
-      fullWidth
-      {...register("pinCode")}
-      error={!!errors.pinCode}
-      helperText={errors.pinCode?.message}
-    />
+                    <TextField
+                      label="Pincode"
+                      fullWidth
+                      {...register("pinCode")}
+                      error={!!errors.pinCode}
+                      helperText={errors.pinCode?.message as string | undefined}
+                      inputProps={{ "aria-invalid": !!errors.pinCode }}
+                    />
 
-    <Stack
-      direction={{ xs: "column", sm: "row" }}
-      spacing={2}
-      justifyContent="flex-end"
-      sx={{ mt: 1 }}
-    >
-      <Button
-        type="button"
-        variant="outlined"
-        sx={{
-          textTransform: "none",
-          borderRadius: "999px",
-          px: 3,
-        }}
-        onClick={() => setEditing(false)}
-      >
-        Cancel
-      </Button>
-      <Button
-        type="submit"
-        variant="contained"
-        sx={{
-          textTransform: "none",
-          borderRadius: "999px",
-          px: 4,
-          bgcolor: "#c57a45",
-          "&:hover": { bgcolor: "#b36a36" },
-        }}
-      >
-        Save
-      </Button>
-    </Stack>
-  </Stack>
-</form>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={2}
+                      justifyContent="flex-end"
+                      sx={{ mt: 1 }}
+                    >
+                      <Button
+                        type="button"
+                        variant="outlined"
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: "999px",
+                          px: 3,
+                        }}
+                        onClick={() => {
+                          // if editing -> cancel edit; if not editing -> reset form
+                          if (editing) {
+                            setEditing(false);
+                            // reset to savedAddress if present
+                            if (savedAddress) {
+                              reset({
+                                fullName: savedAddress.fullName ?? "",
+                                phone: savedAddress.phone ?? "",
+                                addressLine1: savedAddress.addressLine1 ?? "",
+                                addressLine2: savedAddress.addressLine2 ?? "",
+                                city: savedAddress.city ?? "",
+                                state: savedAddress.state ?? "",
+                                pinCode: savedAddress.pinCode ?? "",
+                              });
+                            } else {
+                              reset(); // clear
+                            }
+                          } else {
+                            reset();
+                          }
+                        }}
+                      >
+                        Cancel
+                      </Button>
 
-)}
-  </CardContent>
-</Card>
-
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        sx={{
+                          textTransform: "none",
+                          borderRadius: "999px",
+                          px: 4,
+                          bgcolor: "#c57a45",
+                          "&:hover": { bgcolor: "#b36a36" },
+                        }}
+                        disabled={isSubmitting || placing} // disable while submitting
+                      >
+                        {editing ? (isSubmitting ? "Saving..." : "Save") : (isSubmitting ? "Submitting..." : "Save & Place Order")}
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </form>
+              )}
+            </CardContent>
+          </Card>
 
           {/* RIGHT: Order Summary */}
           <Card
@@ -405,11 +424,7 @@ const onSaveAddress = async (data: AddressForm) => {
                   Order Summary
                 </Typography>
                 {items.length > 0 && (
-                  <Chip
-                    label={`${items.length} item${items.length > 1 ? "s" : ""}`}
-                    size="small"
-                    sx={{ bgcolor: "#f3f4ff" }}
-                  />
+                  <Chip label={`${items.length} item${items.length > 1 ? "s" : ""}`} size="small" sx={{ bgcolor: "#f3f4ff" }} />
                 )}
               </Stack>
 
@@ -419,28 +434,13 @@ const onSaveAddress = async (data: AddressForm) => {
                 </Typography>
               ) : (
                 <>
-                  <Box
-                    sx={{
-                      maxHeight: 260,
-                      overflowY: "auto",
-                      pr: 1,
-                      mb: 2,
-                    }}
-                  >
+                  <Box sx={{ maxHeight: 260, overflowY: "auto", pr: 1, mb: 2 }}>
                     <Stack spacing={1.5}>
                       {items.map((item) => {
-                        const title =
-                          item.title ?? item.book?.title ?? "Book";
-                        const author =
-                          item.author ?? item.book?.author;
-                        const qty =
-                          item.quantity ?? item.qty ?? 1;
-                        const price =
-                          item.price ??
-                          item.prize ??
-                          item.book?.price ??
-                          item.book?.prize ??
-                          0;
+                        const title = item.title ?? item.book?.title ?? "Book";
+                        const author = item.author ?? item.book?.author;
+                        const qty = item.quantity ?? item.qty ?? 1;
+                        const price = item.price ?? item.prize ?? item.book?.price ?? item.book?.prize ?? 0;
 
                         return (
                           <Box
@@ -455,34 +455,14 @@ const onSaveAddress = async (data: AddressForm) => {
                             }}
                           >
                             <Box sx={{ maxWidth: "70%" }}>
-                              <Typography
-                                variant="body1"
-                                fontWeight={600}
-                                sx={{ mb: 0.3 }}
-                              >
+                              <Typography variant="body1" fontWeight={600} sx={{ mb: 0.3 }}>
                                 {title}
                               </Typography>
-                              {author && (
-                                <Typography
-                                  variant="body2"
-                                  sx={{ color: "#6b7280" }}
-                                >
-                                  {author}
-                                </Typography>
-                              )}
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "#6b7280", mt: 0.4 }}
-                              >
-                                Qty: {qty}
-                              </Typography>
+                              {author && <Typography variant="body2" sx={{ color: "#6b7280" }}>{author}</Typography>}
+                              <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.4 }}>Qty: {qty}</Typography>
                             </Box>
 
-                            <Typography
-                              variant="body1"
-                              fontWeight={700}
-                              sx={{ whiteSpace: "nowrap" }}
-                            >
+                            <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
                               ₹{price * qty}
                             </Typography>
                           </Box>
@@ -494,13 +474,7 @@ const onSaveAddress = async (data: AddressForm) => {
                   <Divider sx={{ my: 2 }} />
 
                   <Stack spacing={1.1}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 14,
-                      }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                       <Typography variant="body2" sx={{ color: "#6b7280" }}>
                         Subtotal
                       </Typography>
@@ -509,13 +483,7 @@ const onSaveAddress = async (data: AddressForm) => {
                       </Typography>
                     </Box>
 
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 14,
-                      }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
                       <Typography variant="body2" sx={{ color: "#6b7280" }}>
                         Shipping
                       </Typography>
@@ -526,13 +494,7 @@ const onSaveAddress = async (data: AddressForm) => {
 
                     <Divider sx={{ my: 1 }} />
 
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Typography variant="subtitle1" fontWeight={700}>
                         Total
                       </Typography>

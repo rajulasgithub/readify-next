@@ -43,30 +43,37 @@ const ViewStore: React.FC = () => {
   const formatCurrency = (value: number | undefined) =>
     `₹${(value || 0).toLocaleString("en-IN")}`;
 
-
-  if (loading)
-    return (
-      <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
-        <CircularProgress />
-      </Box>
-    );
-
-  if (error)
-    return (
-      <Box sx={{ py: 2 }}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-
   return (
-    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
-      <Container maxWidth="lg">
+    <Box
+      sx={{
+        bgcolor: "#f5f5f5",
+        minHeight: "100vh", // ensures footer stays at bottom
+        py: 4,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Container maxWidth="lg" sx={{ flex: 1 }}>
         <Typography variant="h4" gutterBottom>
           Seller&apos;s Books
         </Typography>
 
-        
-        {(!sellerBooks || sellerBooks.length === 0) && (
+        {/* Loading State */}
+        {loading && (
+          <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {/* Error State */}
+        {!loading && error && (
+          <Box sx={{ py: 6 }}>
+            <Alert severity="error">{error}</Alert>
+          </Box>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && (!sellerBooks || sellerBooks.length === 0) && (
           <Box
             sx={{
               py: 6,
@@ -80,8 +87,8 @@ const ViewStore: React.FC = () => {
           </Box>
         )}
 
-      
-        {sellerBooks && sellerBooks.length > 0 && (
+        {/* Table of Seller Books */}
+        {!loading && !error && sellerBooks && sellerBooks.length > 0 && (
           <Box sx={{ overflowX: "auto" }}>
             <Table size="small">
               <TableHead>
@@ -99,22 +106,15 @@ const ViewStore: React.FC = () => {
               <TableBody>
                 {sellerBooks.map((book) => (
                   <TableRow key={book._id} hover>
-                    
-
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {book.title}
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>{book.title}</TableCell>
                     <TableCell>{book.author}</TableCell>
                     <TableCell>{formatCurrency(book.prize)}</TableCell>
                     <TableCell>{book.category}</TableCell>
-
                     <TableCell align="right">
                       <Button
                         variant="outlined"
                         size="small"
-                        onClick={() =>
-                          router.push(`/viewonebook/${book._id}`)
-                        }
+                        onClick={() => router.push(`/viewonebook/${book._id}`)}
                         sx={{ textTransform: "none", borderRadius: "999px" }}
                       >
                         View

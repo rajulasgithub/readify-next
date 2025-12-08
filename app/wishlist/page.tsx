@@ -12,23 +12,27 @@ import {
   Stack,
   Pagination,
   Chip,
+  Fab,
+  Tooltip,
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import AddIcon from "@mui/icons-material/Add";
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   fetchWishlist,
   removeFromWishlist,
   clearWishlist,
 } from "@/src/redux/slices/wishlistSlice";
 import { AppDispatch, RootState } from "@/src/redux/store";
-import { addToCart } from "@/src/redux/slices/cartSlice"; 
+import { addToCart } from "@/src/redux/slices/cartSlice";
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -55,20 +59,19 @@ export default function WishlistPage() {
   };
 
   const addToCartHandler = (id: string) => {
-    
     dispatch(addToCart(id));
-     toast(
-  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-    <span>Added to cart!</span>
-    <ShoppingCartIcon
-      onClick={() => router.push("/cart")}
-      style={{ cursor: "pointer", color: "#1976d2" }} // color & pointer
-    />
-  </div>,
-  {
-    autoClose: 5000,
-  }
-);
+    toast(
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span>Added to cart!</span>
+        <ShoppingCartIcon
+          onClick={() => router.push("/cart")}
+          style={{ cursor: "pointer", color: "#1976d2" }}
+        />
+      </div>,
+      {
+        autoClose: 5000,
+      }
+    );
   };
 
   if (loading) {
@@ -89,21 +92,20 @@ export default function WishlistPage() {
   const hasItems = items && items.length > 0;
 
   return (
-    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", position: "relative" }}>
       <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  hideProgressBar={false}
-  newestOnTop={false}
-  closeOnClick
-  rtl={false}
-  pauseOnFocusLoss
-  draggable
-  pauseOnHover
-  theme="light"
-/>
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Container maxWidth="lg" sx={{ py: 4 }}>
- 
         <Box
           sx={{
             maxWidth: "900px",
@@ -122,12 +124,7 @@ export default function WishlistPage() {
             }}
           >
             <Box>
-              <Typography
-                variant="overline"
-                sx={{ letterSpacing: 3, color: "text.secondary" }}
-              >
-                WISHLIST
-              </Typography>
+            
 
               <Typography
                 variant="h4"
@@ -197,7 +194,6 @@ export default function WishlistPage() {
           </Box>
         )}
 
-
         {!hasItems && !error && (
           <Box
             sx={{
@@ -229,10 +225,7 @@ export default function WishlistPage() {
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               Your wishlist is empty
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ color: "text.secondary", mb: 3 }}
-            >
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
               Start exploring books and tap the wishlist icon to save your
               favourites here.
             </Typography>
@@ -246,13 +239,12 @@ export default function WishlistPage() {
                 bgcolor: "#c57a45",
                 "&:hover": { bgcolor: "#b36a36" },
               }}
-              href="/"
+              href="/viewbooks"
             >
               Browse Books
             </Button>
           </Box>
         )}
-
 
         {hasItems && (
           <>
@@ -293,7 +285,6 @@ export default function WishlistPage() {
                         transition: "all 0.25s ease",
                       }}
                     >
-              
                       <Box sx={{ position: "relative", p: 2, pb: 0 }}>
                         {item.genre && (
                           <Chip
@@ -328,17 +319,15 @@ export default function WishlistPage() {
                         <CardMedia
                           component="img"
                           image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.image}`}
-                        
                           sx={{
                             borderRadius: 3,
-                            height: 220,         
+                            height: 220,
                             objectFit: "contain",
-                            bgcolor: "#f9fafb",   
+                            bgcolor: "#f9fafb",
                           }}
                         />
                       </Box>
 
-                     
                       <CardContent sx={{ pt: 1.5, pb: 1 }}>
                         <Typography
                           variant="subtitle1"
@@ -364,7 +353,6 @@ export default function WishlistPage() {
                         </Typography>
                       </CardContent>
 
-               
                       <Box
                         sx={{
                           display: "flex",
@@ -394,26 +382,26 @@ export default function WishlistPage() {
                           Add to Cart
                         </Button>
 
-                      <Button
-  variant="outlined"
-  size="small"
-  sx={{
-    borderRadius: "999px",
-    textTransform: "none",
-    borderColor: "#e5e7eb",
-    color: "text.primary",
-    fontSize: 13,
-    px: 2.5,
-    "&:hover": {
-      borderColor: "#c57a45",
-      bgcolor: "rgba(197,122,69,0.04)",
-    },
-    flexGrow: 1,
-  }}
-  onClick={() => router.push(`/viewonebook/${item.bookId}`)}
->
-  View Details
-</Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            borderRadius: "999px",
+                            textTransform: "none",
+                            borderColor: "#e5e7eb",
+                            color: "text.primary",
+                            fontSize: 13,
+                            px: 2.5,
+                            "&:hover": {
+                              borderColor: "#c57a45",
+                              bgcolor: "rgba(197,122,69,0.04)",
+                            },
+                            flexGrow: 1,
+                          }}
+                          onClick={() => router.push(`/viewonebook/${item.bookId}`)}
+                        >
+                          View Details
+                        </Button>
                       </Box>
                     </Card>
                   </Box>
@@ -421,7 +409,6 @@ export default function WishlistPage() {
               </Box>
             </Box>
 
-       
             <Box mt={2} mb={4} display="flex" justifyContent="center">
               <Pagination
                 count={totalPageCount}
@@ -435,6 +422,28 @@ export default function WishlistPage() {
           </>
         )}
       </Container>
+
+      {/* Floating + button to quickly navigate to viewbooks */}
+      <Link href="/viewbooks" passHref>
+        <Tooltip title="Browse books" arrow>
+          <Fab
+            aria-label="browse-books"
+            sx={{
+              position: "fixed",
+              right: 20,
+              bottom: 28,
+              bgcolor: "#c57a45",
+              color: "#fff",
+              "&:hover": {
+                bgcolor: "#b36a36",
+              },
+              zIndex: (theme) => theme.zIndex.tooltip + 1,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        </Tooltip>
+      </Link>
     </Box>
   );
 }

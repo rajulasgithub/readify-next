@@ -83,9 +83,21 @@ export default function ViewOneBook() {
     setBusyCart(true);
     const result = await dispatch(addToCart(id));
     setBusyCart(false);
+   
 
     if (addToCart.fulfilled.match(result)) {
-      toast.success("Book added to cart!");
+       toast(
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>Added to cart!</span>
+            <ShoppingCartIcon
+              onClick={() => router.push("/cart")}
+              style={{ cursor: "pointer", color: "#1976d2" }}
+            />
+          </div>,
+          {
+            autoClose: 5000,
+          }
+        );
     } else {
       toast.error(result.payload || "Failed to add book to cart.");
     }
@@ -129,7 +141,18 @@ export default function ViewOneBook() {
       }}
     >
       <Container maxWidth="md" sx={{ py: 4, minHeight: "70vh" }}>
-        <ToastContainer />
+          <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
         {loading ? (
           <Skeleton variant="text" width="60%" height={40} sx={{ mb: 2 }} />

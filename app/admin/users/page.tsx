@@ -75,7 +75,7 @@ const fetchUsersWithSearch = useCallback(
       fetchUsers({
         type: role as "seller" | "customer",
         page: pageNum,
-        limit: 2,
+        limit: 10,
         search: searchVal,
       })
     );
@@ -188,7 +188,7 @@ Total {role ?? "user"}s:{" "}
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Total Orders</TableCell>
+                    {/* <TableCell sx={{ fontWeight: 600 }}>Total Orders</TableCell> */}
                     <TableCell sx={{ fontWeight: 600 }}>Joined On</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
                   </TableRow>
@@ -208,7 +208,7 @@ Total {role ?? "user"}s:{" "}
                           </Stack>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
-                        <TableCell><Chip label={`${user.totalOrders || 0} orders`} size="small" /></TableCell>
+                        {/* <TableCell><Chip label={`${user.sellerOrderCount || 0} orders`} size="small" /></TableCell> */}
                         <TableCell>{formatDate(user.createdAt)}</TableCell>
                         <TableCell align="right">
                           <Stack direction="row" spacing={1}>
