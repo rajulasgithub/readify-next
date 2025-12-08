@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback  } from "react";
 import {
 Box,
 Container,
@@ -67,34 +67,38 @@ const users = role === "seller" ? sellers : customers;
 const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
 // Fetch users with optional search and page
-const fetchUsersWithSearch = (searchVal: string, pageNum: number) => {
-if (!role) return;
-dispatch(
-fetchUsers({
-type: role as "seller" | "customer",
-page: pageNum,
-limit: 2,
-search: searchVal,
-})
+const fetchUsersWithSearch = useCallback(
+  (searchVal: string, pageNum: number) => {
+    if (!role) return;
+
+    dispatch(
+      fetchUsers({
+        type: role as "seller" | "customer",
+        page: pageNum,
+        limit: 2,
+        search: searchVal,
+      })
+    );
+
+    router.replace(
+      `?type=${role}&page=${pageNum}&search=${encodeURIComponent(searchVal)}`
+    );
+  },
+  [dispatch, role, router] // dependencies that actually matter
 );
-router.replace(
-`?type=${role}&page=${pageNum}&search=${encodeURIComponent(searchVal)}`
-);
-};
 
 // Trigger search with debounce (500ms)
 useEffect(() => {
-if (searchTimeout.current) clearTimeout(searchTimeout.current);
-searchTimeout.current = setTimeout(() => {
-fetchUsersWithSearch(search, page);
-}, 500);
-
-return () => {
   if (searchTimeout.current) clearTimeout(searchTimeout.current);
-};
 
+  searchTimeout.current = setTimeout(() => {
+    fetchUsersWithSearch(search, page);
+  }, 500);
 
-}, [search, page, role]);
+  return () => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+  };
+}, [search, page, role, fetchUsersWithSearch]);
 
 const formatDate = (iso?: string) => {
 if (!iso) return "-";

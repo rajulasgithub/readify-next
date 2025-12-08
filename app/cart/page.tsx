@@ -84,13 +84,7 @@ export default function CartPage() {
     );
   }
 
- const handleNextPage = () => {
-    if (page < (pagination?.totalPages || 1)) setPage(page + 1);
-  };
-
-  const handlePrevPage = () => {
-    if (page > 1) setPage(page - 1);
-  };
+ 
 
   return (
     <Box

@@ -161,7 +161,7 @@ const AddBook: React.FC = () => {
 
     try {
     
-      const resultAction = await dispatch(addBook(formData) as any);
+      const resultAction = await dispatch(addBook(formData)).unwrap();;
 
     
       if (addBook.fulfilled.match(resultAction)) {

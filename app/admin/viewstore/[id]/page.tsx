@@ -12,8 +12,6 @@ import {
   TableBody,
   CircularProgress,
   Alert,
-  Card,
-  CardMedia,
   Button,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
