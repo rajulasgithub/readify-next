@@ -4,13 +4,47 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
 
+/* ------------------ localStorage helpers (client-only) ------------------ */
+const CART_STORAGE_KEY = "book_app_cart_v1";
+
+function loadCartFromStorage(): { items: CartItem[]; totalQuantity: number; totalPrice: number } | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error("loadCartFromStorage error:", e);
+    return null;
+  }
+}
+
+function saveCartToStorage(cartState: { items: CartItem[]; totalQuantity: number; totalPrice: number }) {
+  try {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartState));
+  } catch (e) {
+    console.error("saveCartToStorage error:", e);
+  }
+}
+
+function clearCartFromStorage() {
+  try {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(CART_STORAGE_KEY);
+  } catch (e) {
+    console.error("clearCartFromStorage error:", e);
+  }
+}
+
+/* ------------------------- TYPES ------------------------- */
 
 export interface CartItem {
   bookId: string;
   title: string;
   prize: number;
   genre: string;
-  image: string; 
+  image: string;
   quantity: number;
 }
 
@@ -20,7 +54,6 @@ interface CartState {
   error: string | null;
   success: boolean;
 
-  
   totalQuantity: number;
   totalPrice: number;
   pagination?: {
@@ -30,22 +63,35 @@ interface CartState {
   };
 }
 
-const initialState: CartState = {
-  items: [],
-  loading: false,
-  error: null,
-  success: false,
-  totalQuantity: 0,
-  totalPrice: 0,
-  
-};
+/* ------------------------- persisted initial state ------------------------- */
 
+const persistedCart = loadCartFromStorage();
+
+const initialState: CartState = persistedCart
+  ? {
+      items: persistedCart.items,
+      loading: false,
+      error: null,
+      success: false,
+      totalQuantity: persistedCart.totalQuantity,
+      totalPrice: persistedCart.totalPrice,
+      pagination: undefined,
+    }
+  : {
+      items: [],
+      loading: false,
+      error: null,
+      success: false,
+      totalQuantity: 0,
+      totalPrice: 0,
+    };
+
+/* ------------------------- helpers ------------------------- */
 
 const getToken = () => {
   if (typeof window === "undefined") return null;
   return Cookies.get("accessToken") || null;
 };
-
 
 const recalcTotals = (state: CartState) => {
   let qty = 0;
@@ -60,7 +106,7 @@ const recalcTotals = (state: CartState) => {
   state.totalPrice = total;
 };
 
-
+/* ------------------------- THUNKS ------------------------- */
 
 export const fetchCartItems = createAsyncThunk<
   { items: CartItem[]; totalItems: number; totalPages: number; currentPage: number },
@@ -73,7 +119,7 @@ export const fetchCartItems = createAsyncThunk<
 
     const res = await api.get("/api/cart/getallcartitems", {
       headers: { Authorization: `Bearer ${token}` },
-      params: { page, limit }, 
+      params: { page, limit },
     });
 
     return {
@@ -87,72 +133,59 @@ export const fetchCartItems = createAsyncThunk<
   }
 });
 
+export const addToCart = createAsyncThunk<void, string, { rejectValue: string }>(
+  "cart/addToCart",
+  async (bookId, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      if (!token) return rejectWithValue("No token found");
 
-export const addToCart = createAsyncThunk<
-  void,
-  string,
-  { rejectValue: string }
->("cart/addToCart", async (bookId, { rejectWithValue }) => {
-  try {
-    const token = getToken();
-    if (!token) return rejectWithValue("No token found");
+      await api.post(
+        `/api/cart/addtocart/${bookId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to add item to cart");
+    }
+  }
+);
 
-    await api.post(
-      `/api/cart/addtocart/${bookId}`,
-      {},
-      {
+export const removeCartItem = createAsyncThunk<string, string, { rejectValue: string }>(
+  "cart/removeCartItem",
+  async (bookId, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      if (!token) return rejectWithValue("No token found");
+
+      await api.delete(`/api/cart/deletecartitem/${bookId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+      });
 
-  } catch (err: any) {
-    return rejectWithValue(
-      err.response?.data?.message || "Failed to add item to cart"
-    );
+      return bookId;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to remove item from cart");
+    }
   }
-});
+);
 
-export const removeCartItem = createAsyncThunk<
-  string,
-  string,
-  { rejectValue: string }
->("cart/removeCartItem", async (bookId, { rejectWithValue }) => {
-  try {
-    const token = getToken();
-    if (!token) return rejectWithValue("No token found");
+export const clearCart = createAsyncThunk<void, void, { rejectValue: string }>(
+  "cart/clearCart",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      if (!token) return rejectWithValue("No token found");
 
-    await api.delete(`/api/cart/deletecartitem/${bookId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    return bookId;
-  } catch (err: any) {
-    return rejectWithValue(
-      err.response?.data?.message || "Failed to remove item from cart"
-    );
+      await api.delete("/api/cart/clearcartitem", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || "Failed to clear cart");
+    }
   }
-});
-
-
-export const clearCart = createAsyncThunk<
-  void,
-  void,
-  { rejectValue: string }
->("cart/clearCart", async (_, { rejectWithValue }) => {
-  try {
-    const token = getToken();
-    if (!token) return rejectWithValue("No token found");
-
-    await api.delete("/api/cart/clearcartitem", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  } catch (err: any) {
-    return rejectWithValue(
-      err.response?.data?.message || "Failed to clear cart"
-    );
-  }
-});
-
+);
 
 export const updateCartQuantity = createAsyncThunk<
   { bookId: string; quantity: number },
@@ -173,13 +206,11 @@ export const updateCartQuantity = createAsyncThunk<
 
     return { bookId, quantity };
   } catch (err: any) {
-    return rejectWithValue(
-      err.response?.data?.message || "Failed to update quantity"
-    );
+    return rejectWithValue(err.response?.data?.message || "Failed to update quantity");
   }
 });
 
-
+/* ------------------------- SLICE ------------------------- */
 
 export const cartSlice = createSlice({
   name: "cart",
@@ -190,6 +221,8 @@ export const cartSlice = createSlice({
       state.error = null;
       state.success = false;
     },
+    // optional: client-only add/remove which persist locally (not used if server is source-of-truth)
+    // addLocalItem: (state, action: PayloadAction<CartItem>) => { ... }
   },
   extraReducers: (builder) => {
     // FETCH CART ITEMS
@@ -199,42 +232,37 @@ export const cartSlice = createSlice({
         state.error = null;
         state.success = false;
       })
-     .addCase(
-  fetchCartItems.fulfilled,
-  (state, action: PayloadAction<{
-    items: CartItem[];
-    totalItems: number;
-    totalPages: number;
-    currentPage: number;
-  }>) => {
-    state.loading = false;
-    state.items = action.payload.items;
-    state.totalQuantity = action.payload.items.length; // or sum of quantities if needed
-    state.totalPrice = action.payload.items.reduce(
-      (acc, item) => acc + item.prize * item.quantity,
-      0
-    );
-    state.pagination = {
-      totalItems: action.payload.totalItems,
-      totalPages: action.payload.totalPages,
-      currentPage: action.payload.currentPage,
-    };
-    state.success = true;
-  }
-)
-
+      .addCase(
+        fetchCartItems.fulfilled,
+        (state, action: PayloadAction<{
+          items: CartItem[];
+          totalItems: number;
+          totalPages: number;
+          currentPage: number;
+        }>) => {
+          state.loading = false;
+          state.items = action.payload.items;
+          // compute totals robustly
+          recalcTotals(state);
+          state.pagination = {
+            totalItems: action.payload.totalItems,
+            totalPages: action.payload.totalPages,
+            currentPage: action.payload.currentPage,
+          };
+          state.success = true;
+          // persist updated cart
+          saveCartToStorage({ items: state.items, totalQuantity: state.totalQuantity, totalPrice: state.totalPrice });
+        }
+      )
       .addCase(fetchCartItems.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
-        state.error =
-          (action.payload as string) || "Failed to fetch cart items";
-       
-        if (
-          typeof action.payload === "string" &&
-          action.payload.toLowerCase().includes("cart is empty")
-        ) {
+        state.error = (action.payload as string) || "Failed to fetch cart items";
+
+        if (typeof action.payload === "string" && action.payload.toLowerCase().includes("cart is empty")) {
           state.items = [];
           recalcTotals(state);
+          saveCartToStorage({ items: state.items, totalQuantity: state.totalQuantity, totalPrice: state.totalPrice });
         }
       });
 
@@ -248,13 +276,12 @@ export const cartSlice = createSlice({
       .addCase(addToCart.fulfilled, (state) => {
         state.loading = false;
         state.success = true;
-       
+        // Note: server endpoint is authoritative; call fetchCartItems from UI after addToCart if you want immediate local update
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
-        state.error =
-          (action.payload as string) || "Failed to add item to cart";
+        state.error = (action.payload as string) || "Failed to add item to cart";
       });
 
     // REMOVE ITEM
@@ -264,22 +291,17 @@ export const cartSlice = createSlice({
         state.error = null;
         state.success = false;
       })
-      .addCase(
-        removeCartItem.fulfilled,
-        (state, action: PayloadAction<string>) => {
-          state.loading = false;
-          state.success = true;
-          state.items = state.items.filter(
-            (item) => item.bookId !== action.payload
-          );
-          recalcTotals(state);
-        }
-      )
+      .addCase(removeCartItem.fulfilled, (state, action: PayloadAction<string>) => {
+        state.loading = false;
+        state.success = true;
+        state.items = state.items.filter((item) => item.bookId !== action.payload);
+        recalcTotals(state);
+        saveCartToStorage({ items: state.items, totalQuantity: state.totalQuantity, totalPrice: state.totalPrice });
+      })
       .addCase(removeCartItem.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
-        state.error =
-          (action.payload as string) || "Failed to remove item from cart";
+        state.error = (action.payload as string) || "Failed to remove item from cart";
       });
 
     // CLEAR CART
@@ -294,39 +316,35 @@ export const cartSlice = createSlice({
         state.success = true;
         state.items = [];
         recalcTotals(state);
+        clearCartFromStorage();
       })
       .addCase(clearCart.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
-        state.error =
-          (action.payload as string) || "Failed to clear cart";
+        state.error = (action.payload as string) || "Failed to clear cart";
       });
 
     // UPDATE QUANTITY
     builder
       .addCase(updateCartQuantity.pending, (state) => {
-        // state.loading = true;
         state.error = null;
         state.success = false;
       })
-      .addCase(
-        updateCartQuantity.fulfilled,
-        (state, action: PayloadAction<{ bookId: string; quantity: number }>) => {
-          state.loading = false;
-          state.success = true;
-          const { bookId, quantity } = action.payload;
-          const item = state.items.find((i) => i.bookId === bookId);
-          if (item) {
-            item.quantity = quantity;
-          }
-          recalcTotals(state);
+      .addCase(updateCartQuantity.fulfilled, (state, action: PayloadAction<{ bookId: string; quantity: number }>) => {
+        state.loading = false;
+        state.success = true;
+        const { bookId, quantity } = action.payload;
+        const item = state.items.find((i) => i.bookId === bookId);
+        if (item) {
+          item.quantity = quantity;
         }
-      )
+        recalcTotals(state);
+        saveCartToStorage({ items: state.items, totalQuantity: state.totalQuantity, totalPrice: state.totalPrice });
+      })
       .addCase(updateCartQuantity.rejected, (state, action) => {
         state.loading = false;
         state.success = false;
-        state.error =
-          (action.payload as string) || "Failed to update quantity";
+        state.error = (action.payload as string) || "Failed to update quantity";
       });
   },
 });
