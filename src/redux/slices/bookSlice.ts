@@ -207,7 +207,7 @@ interface AddReviewParams {
 }
 
 export const addReview = createAsyncThunk<
-  Book,
+  { bookId: string },      // return only bookId
   AddReviewParams,
   { rejectValue: string }
 >(
@@ -224,8 +224,8 @@ export const addReview = createAsyncThunk<
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log(res)
-      return res.data.data; 
+
+      return { bookId }; // controller returns only message
     } catch (err: any) {
       return rejectWithValue(
         err.response?.data?.message || "Failed to add review"
@@ -244,7 +244,7 @@ export const fetchReviews = createAsyncThunk<
 >("books/fetchReviews", async (bookId, { rejectWithValue }) => {
   try {
     const res = await api.get(`/api/books/${bookId}/reviews`);
-    return res.data.reviews;
+    return res.data.reviews; 
   } catch (err: any) {
     return rejectWithValue(
       err.response?.data?.message || "Failed to fetch reviews"
@@ -355,21 +355,16 @@ builder
     state.loading = true;
     state.error = null;
   })
-  .addCase(addReview.fulfilled, (state, action: PayloadAction<Book>) => {
+  .addCase(addReview.fulfilled, (state) => {
     state.loading = false;
-    state.singleBook = action.payload;
-
-    // Update in book list too
-    const index = state.books.findIndex(b => b._id === action.payload._id);
-    if (index !== -1) state.books[index] = action.payload;
+    // we do nothing here because backend does not return updated book
   })
   .addCase(addReview.rejected, (state, action) => {
     state.loading = false;
     state.error = action.payload || "Failed to add review";
   });
 
-
-//  FETCH REVIEWS
+// FETCH REVIEWS
 builder
   .addCase(fetchReviews.pending, (state) => {
     state.loading = true;
@@ -386,7 +381,6 @@ builder
     state.error = action.payload || "Failed to fetch reviews";
   });
 
-   
    
   },
 });
