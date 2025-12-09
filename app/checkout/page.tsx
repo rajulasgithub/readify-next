@@ -120,6 +120,9 @@ export default function CheckoutPage() {
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false); // for add/edit dialog
 
+  // Compute whether user can add another address (max 3)
+  const canAddAddress = !(savedAddresses && savedAddresses.length >= 3);
+
   // subtotal calculation
   const subtotal =
     typeof totalPrice === "number"
@@ -264,7 +267,7 @@ export default function CheckoutPage() {
 
     try {
       const mappedItems = items.map((item) => {
-        const bookId = item.bookId ?? item.book?._id ?? item._id ?? undefined;
+        const bookId = item.bookId ?? item.book?._1d ?? item._id ?? undefined;
         const price = item.price ?? item.prize ?? item.book?.price ?? item.book?.prize ?? 0;
         const quantity = item.quantity ?? item.qty ?? 1;
         return { book: bookId, quantity, price };
@@ -304,9 +307,22 @@ export default function CheckoutPage() {
                 <Typography variant="h6" fontWeight={700}>
                   Delivery Address
                 </Typography>
-                <Button startIcon={<AddIcon />} variant="outlined" onClick={openAdd} sx={{ textTransform: "none", borderRadius: "999px" }}>
-                  Add New
-                </Button>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <Button
+                    startIcon={<AddIcon />}
+                    variant="outlined"
+                    onClick={openAdd}
+                    sx={{ textTransform: "none", borderRadius: "999px" }}
+                    disabled={!canAddAddress}
+                  >
+                    Add New
+                  </Button>
+                  {!canAddAddress && (
+                    <Typography variant="caption" sx={{ color: "#ef4444", mt: 0.5 }}>
+                      Maximum of 3 addresses allowed
+                    </Typography>
+                  )}
+                </Box>
               </Stack>
 
               {/* Addresses list */}

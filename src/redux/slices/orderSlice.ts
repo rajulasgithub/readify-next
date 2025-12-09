@@ -349,6 +349,7 @@ const ordersSlice = createSlice({
     state.lastPlacedMessage = action.payload.message;
     // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
   })
+  
   .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
     // ---------- User orders ----------
     builder
