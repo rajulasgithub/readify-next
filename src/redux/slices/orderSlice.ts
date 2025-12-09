@@ -120,9 +120,7 @@ const initialState: OrdersState = {
   error: null,
 };
 
-/* ------------------------- THUNKS ------------------------- */
 
-// ---------- Address Thunks ----------
 
 export const fetchAddressThunk = createAsyncThunk<
   { addresses: OrderAddress[] },
@@ -199,6 +197,8 @@ export const deleteAddressThunk = createAsyncThunk<
     return rejectWithValue(err?.response?.data?.message || "Failed to delete address");
   }
 });
+
+
 
 // ---------- Place Order ----------
 export const placeOrderThunk = createAsyncThunk<PlaceOrderResponse, PlaceOrderPayload, { rejectValue: string }>(
@@ -342,18 +342,14 @@ const ordersSlice = createSlice({
       .addCase(deleteAddressThunk.rejected, (state, action) => { state.addressLoading = false; state.addressError = action.payload || "Failed to delete address"; });
 
     // ---------- Place order ----------
-    builder
-      .addCase(placeOrderThunk.pending, (state) => { state.placing = true; state.placeError = null; state.lastPlacedMessage = null; })
-      .addCase(placeOrderThunk.fulfilled, (state, action) => {
-        state.placing = false;
-        state.lastPlacedMessage = action.payload.message;
-        if (action.payload.order && state.savedAddresses) {
-          const exists = state.savedAddresses.find(a => a._id === action.payload.order?.address._id);
-          if (!exists) state.savedAddresses.unshift(action.payload.order.address);
-        }
-      })
-      .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
-
+  builder
+  .addCase(placeOrderThunk.pending, (state) => { state.placing = true; state.placeError = null; state.lastPlacedMessage = null; })
+  .addCase(placeOrderThunk.fulfilled, (state, action) => {
+    state.placing = false;
+    state.lastPlacedMessage = action.payload.message;
+    // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
+  })
+  .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
     // ---------- User orders ----------
     builder
       .addCase(fetchUserOrdersThunk.pending, (state) => { state.userOrdersLoading = true; state.userOrdersError = null; })
