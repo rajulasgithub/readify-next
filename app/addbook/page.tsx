@@ -62,13 +62,13 @@ const languages = [
 type BookFormInputs = {
   title: string;
   description: string;
-  excerpt?: string;
-  page_count: number;   // ✅ FIXED
+  excerpt?: string | null;   // ✅ FIXED HERE
+  page_count: number;
   publish_date: string;
   author: string;
   genre: string[];
   language: string[];
-  prize: number;        // ✅ FIXED
+  prize: number;
   category: string;
 };
 
@@ -87,48 +87,33 @@ const bookSchema = yup.object({
   excerpt: yup
     .string()
     .nullable()
-    .test(
-      "excerpt-len",
-      "Excerpt must be at least 20 characters and at most 1000 characters",
-      (val) => {
-        if (!val) return true;
-        return val.length >= 20 && val.length <= 1000;
-      }
-    ),
+    .test("excerpt-len", "Excerpt must be at least 20 characters and at most 1000 characters", (val) => {
+      if (!val) return true;
+      return val.length >= 20 && val.length <= 1000;
+    }),
 
- page_count: yup
-  .number()
-  .transform((value, originalValue) =>
-    originalValue === "" ? undefined : Number(originalValue)
-  )
-  .typeError("Page count must be a number")
-  .positive("Page count must be positive")
-  .required("Page count is required"),
+  page_count: yup
+    .number()
+    .transform((value, originalValue) => (originalValue === "" ? undefined : Number(originalValue)))
+    .typeError("Page count must be a number")
+    .positive("Page count must be positive")
+    .required("Page count is required"),
 
   publish_date: yup.string().required("Publish date is required"),
 
   author: yup.string().required("Author is required"),
 
- genre: yup
-  .array()
-  .ensure() // ✅ converts undefined → []
-  .of(yup.string().required())
-  .min(1, "Select at least one genre"),
+  genre: yup.array().ensure().of(yup.string().required()).min(1, "Select at least one genre"),
 
+  language: yup.array().ensure().of(yup.string().required()).min(1, "Select at least one language"),
 
-language: yup
-  .array()
-  .ensure() // ✅ converts undefined → []
-  .of(yup.string().required())
-  .min(1, "Select at least one language"),
- prize: yup
-  .number()
-  .transform((value, originalValue) =>
-    originalValue === "" ? undefined : Number(originalValue)
-  )
-  .typeError("Price must be a number")
-  .positive("Price must be positive")
-  .required("Price is required"),
+  prize: yup
+    .number()
+    .transform((value, originalValue) => (originalValue === "" ? undefined : Number(originalValue)))
+    .typeError("Price must be a number")
+    .positive("Price must be positive")
+    .required("Price is required"),
+
   category: yup.string().required("Category is required"),
 });
 
@@ -138,19 +123,13 @@ const AddBook: React.FC = () => {
 
   const { loading, error } = useSelector((state: RootState) => state.books);
 
- const {
-  register,
-  handleSubmit,
-  control,
-  watch,
-  formState: { errors },
-} = useForm<BookFormInputs>({
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<BookFormInputs>({
   resolver: yupResolver(bookSchema),
-  defaultValues: { genre: [], language: [] },
+  defaultValues: { genre: [], language: [], excerpt: null },
 });
 
   const descriptionValue = watch("description") || "";
-  const excerptValue = watch("excerpt") || "";
+  const excerptValue = (watch("excerpt") as string) || "";
 
   // Only a single image now
   const [image, setImage] = useState<File | null>(null);
@@ -200,16 +179,15 @@ const AddBook: React.FC = () => {
     formData.append("publish_date", data.publish_date);
     formData.append("author", data.author);
 
-    formData.append("genre", JSON.stringify(data.genre));
-    formData.append("language", JSON.stringify(data.language));
+    formData.append("genre", JSON.stringify(data.genre ?? []));
+    formData.append("language", JSON.stringify(data.language ?? []));
 
     formData.append("prize", String(data.prize));
     formData.append("category", data.category);
 
     try {
-
-    const dispatchTyped = dispatch as AppDispatch;
-   const resultAction = await dispatchTyped(addBook(formData));
+      const dispatchTyped = dispatch as AppDispatch;
+      const resultAction = await dispatchTyped(addBook(formData));
 
       if (addBook.fulfilled.match(resultAction)) {
         route.push("/sellerbooks");
@@ -245,13 +223,7 @@ const AddBook: React.FC = () => {
           <Typography variant="subtitle2">Book Image *</Typography>
 
           {/* Hidden input (single file) */}
-          <input
-            ref={fileRef}
-            type="file"
-            hidden
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
+          <input ref={fileRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
 
           {/* Centered preview area (click to open) */}
           <Box
@@ -262,12 +234,12 @@ const AddBook: React.FC = () => {
               flexDirection: "column",
               alignItems: "center",
               gap: 1,
-              position: 'relative'
+              position: "relative",
             }}
             aria-hidden
           >
             {preview ? (
-              <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: 'relative' }}>
+              <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <CardMedia component="img" image={preview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 {/* delete button on top-right of preview */}
                 <IconButton
@@ -275,7 +247,7 @@ const AddBook: React.FC = () => {
                     e.stopPropagation();
                     removeImage();
                   }}
-                  sx={{ position: 'absolute', top: 8, right: 8, bgcolor: '#fff', '&:hover': { bgcolor: '#f3f4f6' } }}
+                  sx={{ position: "absolute", top: 8, right: 8, bgcolor: "#fff", "&:hover": { bgcolor: "#f3f4f6" } }}
                 >
                   <DeleteOutlineIcon />
                 </IconButton>
@@ -362,64 +334,52 @@ const AddBook: React.FC = () => {
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Controller
-  name="genre"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={genres}
-      value={field.value || []}
-      onChange={(_, value) => field.onChange(value)}
-      isOptionEqualToValue={(opt, val) => opt === val}  // ✅ REQUIRED
-      getOptionLabel={(opt) => opt}                     // ✅ REQUIRED
-      sx={{ width: "100%" }}
-      slotProps={{
-        popper: {
-          style: { minWidth: 240, maxWidth: 480 },
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Genre"
-          error={!!errors.genre}
-          helperText={(errors.genre as FieldError)?.message}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
-<Controller
-  name="language"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={languages}
-      value={field.value || []}
-      onChange={(_, value) => field.onChange(value)}
-      isOptionEqualToValue={(opt, val) => opt === val}   // ✅ REQUIRED
-      getOptionLabel={(opt) => opt}                     // ✅ REQUIRED
-      sx={{ width: "100%" }}
-      slotProps={{
-        popper: {
-          style: { minWidth: 240, maxWidth: 480 },
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Language"
-          error={!!errors.language}
-          helperText={(errors.language as FieldError)?.message}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
+              <Controller
+                name="genre"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={genres}
+                    value={field.value || []}
+                    onChange={(_, value) => field.onChange(value)}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    getOptionLabel={(opt) => opt}
+                    sx={{ width: "100%" }}
+                    slotProps={{
+                      popper: {
+                        style: { minWidth: 240, maxWidth: 480 },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Genre" error={!!errors.genre} helperText={(errors.genre as FieldError)?.message} fullWidth />
+                    )}
+                  />
+                )}
+              />
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={languages}
+                    value={field.value || []}
+                    onChange={(_, value) => field.onChange(value)}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    getOptionLabel={(opt) => opt}
+                    sx={{ width: "100%" }}
+                    slotProps={{
+                      popper: {
+                        style: { minWidth: 240, maxWidth: 480 },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Language" error={!!errors.language} helperText={(errors.language as FieldError)?.message} fullWidth />
+                    )}
+                  />
+                )}
+              />
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>

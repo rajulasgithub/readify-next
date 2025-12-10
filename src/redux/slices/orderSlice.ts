@@ -3,7 +3,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
-import type { AxiosResponse } from "axios";
 
 /* ------------------------- TYPES ------------------------- */
 
@@ -20,7 +19,7 @@ export interface OrderAddress {
 
 export interface OrderItem {
   _id?: string;
-  book: any;
+  book: unknown; // can be populated object or id string depending on backend
   quantity: number;
   orderedAt?: string;
   price: number;
@@ -30,7 +29,7 @@ export interface OrderItem {
 
 export interface Order {
   _id: string;
-  user: any;
+  user: unknown; // can be populated user object or user id
   items: OrderItem[];
   totalQty: number;
   totalAmount: number;
@@ -120,7 +119,27 @@ const initialState: OrdersState = {
   error: null,
 };
 
+/* ------------------------- Helpers ------------------------- */
 
+/** Safely extract an error message from unknown shapes */
+const extractErrorMessage = (err: unknown): string => {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+
+  try {
+    const possible = err as { response?: { data?: { message?: unknown } }; message?: unknown };
+    const maybe = possible.response?.data?.message ?? possible.message;
+    if (typeof maybe === "string" && maybe.length > 0) return maybe;
+    const str = JSON.stringify(err);
+    if (str && str !== "{}") return str;
+  } catch {
+    // ignore
+  }
+  return "Unknown error";
+};
+
+/* ------------------------- THUNKS ------------------------- */
 
 export const fetchAddressThunk = createAsyncThunk<
   { addresses: OrderAddress[] },
@@ -131,13 +150,13 @@ export const fetchAddressThunk = createAsyncThunk<
     const token = Cookies.get("accessToken");
     if (!token) return rejectWithValue("No token found");
 
-    const { data } = await api.get("/api/orders/address", {
+    const res = await api.get("/api/orders/address", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return { addresses: data.addresses };
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to fetch addresses");
+    return { addresses: (res.data?.addresses as OrderAddress[]) ?? [] };
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to fetch addresses");
   }
 });
 
@@ -150,13 +169,13 @@ export const saveAddressThunk = createAsyncThunk<
     const token = Cookies.get("accessToken");
     if (!token) return rejectWithValue("No token found");
 
-    const { data } = await api.patch("/api/orders/updateaddress", { addressId, updatedAddress }, {
+    const res = await api.patch("/api/orders/updateaddress", { addressId, updatedAddress }, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return { addresses: data.addresses };
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to save address");
+    return { addresses: (res.data?.addresses as OrderAddress[]) ?? [] };
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to save address");
   }
 });
 
@@ -169,55 +188,53 @@ export const addAddressThunk = createAsyncThunk<
     const token = Cookies.get("accessToken");
     if (!token) return rejectWithValue("No token found");
 
-    const { data } = await api.post("/api/orders/addaddress", newAddress, {
+    const res = await api.post("/api/orders/addaddress", newAddress, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return { addresses: data.addresses };
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to add address");
+    return { addresses: (res.data?.addresses as OrderAddress[]) ?? [] };
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to add address");
   }
 });
 
-export const deleteAddressThunk = createAsyncThunk<
-  string,
-  string,
-  { rejectValue: string }
->("orders/deleteAddress", async (addressId, { rejectWithValue }) => {
-  try {
-    const token = Cookies.get("accessToken");
-    if (!token) return rejectWithValue("No token found");
-
-    await api.delete(`/api/orders/deleteaddress/${addressId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    return addressId;
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to delete address");
-  }
-});
-
-
-
-// ---------- Place Order ----------
-export const placeOrderThunk = createAsyncThunk<PlaceOrderResponse, PlaceOrderPayload, { rejectValue: string }>(
-  "orders/placeOrder",
-  async (payload, { rejectWithValue }) => {
+export const deleteAddressThunk = createAsyncThunk<string, string, { rejectValue: string }>(
+  "orders/deleteAddress",
+  async (addressId, { rejectWithValue }) => {
     try {
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.post("/api/orders/orderitems", payload, {
+      await api.delete(`/api/orders/deleteaddress/${addressId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || "Failed to place order");
+      return addressId;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to delete address");
     }
   }
 );
+
+// ---------- Place Order ----------
+export const placeOrderThunk = createAsyncThunk<
+  PlaceOrderResponse,
+  PlaceOrderPayload,
+  { rejectValue: string }
+>("orders/placeOrder", async (payload, { rejectWithValue }) => {
+  try {
+    const token = Cookies.get("accessToken");
+    if (!token) return rejectWithValue("No token found");
+
+    const res = await api.post("/api/orders/orderitems", payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return res.data as PlaceOrderResponse;
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to place order");
+  }
+});
 
 // ---------- Fetch User Orders ----------
 export const fetchUserOrdersThunk = createAsyncThunk<OrdersListResponse, void, { rejectValue: string }>(
@@ -227,13 +244,13 @@ export const fetchUserOrdersThunk = createAsyncThunk<OrdersListResponse, void, {
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.get("/api/orders/getallorder", {
+      const res = await api.get("/api/orders/getallorder", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || "Failed to fetch user orders");
+      return res.data as OrdersListResponse;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to fetch user orders");
     }
   }
 );
@@ -246,13 +263,13 @@ export const fetchSellerOrdersThunk = createAsyncThunk<OrdersListResponse, void,
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.get("/api/orders/sellerorder", {
+      const res = await api.get("/api/orders/sellerorder", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || "Failed to fetch seller orders");
+      return res.data as OrdersListResponse;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to fetch seller orders");
     }
   }
 );
@@ -269,15 +286,15 @@ export const updateOrderItemStatusThunk = createAsyncThunk<
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.patch(
+      const res = await api.patch(
         `/api/orders/updatestatus/${orderId}/${itemId}`,
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      return data;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || "Failed to update item status");
+      return res.data as OrderDetailResponse;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to update item status");
     }
   }
 );
@@ -290,13 +307,13 @@ export const fetchSellerOrderDetailsThunk = createAsyncThunk<OrderDetailResponse
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
-      const { data } = await api.get(`/api/orders/sellerorderdetail/${orderId}`, {
+      const res = await api.get(`/api/orders/sellerorderdetail/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data;
-    } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || "Failed to fetch order details");
+      return res.data as OrderDetailResponse;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to fetch order details");
     }
   }
 );
@@ -342,15 +359,15 @@ const ordersSlice = createSlice({
       .addCase(deleteAddressThunk.rejected, (state, action) => { state.addressLoading = false; state.addressError = action.payload || "Failed to delete address"; });
 
     // ---------- Place order ----------
-  builder
-  .addCase(placeOrderThunk.pending, (state) => { state.placing = true; state.placeError = null; state.lastPlacedMessage = null; })
-  .addCase(placeOrderThunk.fulfilled, (state, action) => {
-    state.placing = false;
-    state.lastPlacedMessage = action.payload.message;
-    // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
-  })
-  
-  .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
+    builder
+      .addCase(placeOrderThunk.pending, (state) => { state.placing = true; state.placeError = null; state.lastPlacedMessage = null; })
+      .addCase(placeOrderThunk.fulfilled, (state, action) => {
+        state.placing = false;
+        state.lastPlacedMessage = action.payload.message;
+        // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
+      })
+      .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
+
     // ---------- User orders ----------
     builder
       .addCase(fetchUserOrdersThunk.pending, (state) => { state.userOrdersLoading = true; state.userOrdersError = null; })

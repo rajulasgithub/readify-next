@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import FavoriteIcon from "@mui/icons-material/Favorite"; 
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useEffect, useState, MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -30,7 +30,6 @@ import {
 import Searchfield from "@/src/components/Searchfield";
 import { toast } from "react-toastify";
 
-
 export default function ViewBooks() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -43,77 +42,74 @@ export default function ViewBooks() {
     (state: RootState) => state.wishlist
   );
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const limit = 8;
 
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
-  const [searchInput, setSearchInput] = useState("");
- 
-  const [search, setSearch] = useState("");
-
+  // Fetch wishlist once
   useEffect(() => {
-  dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
-}, [dispatch]);
- 
+    dispatch(fetchWishlist({ page: 1, limit: 9999 }));
+  }, [dispatch]);
+
+  // Debounced search
   useEffect(() => {
     const timeout = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1); 
+      setPage(1);
     }, 500);
 
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-
+  // Fetch books
   useEffect(() => {
     dispatch(
       fetchBooks({
         page,
         limit,
         search: search || undefined,
-      }) as any
+      })
     );
   }, [page, search, dispatch]);
 
-  const handlePageChange = (_: any, value: number) => setPage(value);
+  const handlePageChange = (_: unknown, value: number) => setPage(value);
 
   const viewDetails = (id: string) => {
     router.push(`/viewonebook/${id}`);
   };
 
- 
   const isInWishlist = (bookId: string) =>
     wishlistItems?.some((item) => item.bookId === bookId);
-
 
   const handleWishlistClick = async (
     e: MouseEvent<HTMLButtonElement>,
     bookId: string
   ) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
 
     const inWishlist = isInWishlist(bookId);
 
     try {
       if (inWishlist) {
-        await dispatch(removeFromWishlist(bookId) as any).unwrap();
+        await dispatch(removeFromWishlist(bookId)).unwrap();
         toast.info("Removed from wishlist");
       } else {
-        await dispatch(addToWishlist(bookId) as any).unwrap();
+        await dispatch(addToWishlist(bookId)).unwrap();
         toast.success("Added to wishlist");
-       dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
+        dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       }
-    } catch (err: any) {
-      toast.error(
-        typeof err === "string" ? err : "Wishlist action failed"
-      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Wishlist action failed";
+      toast.error(message);
     }
   };
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-      
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             Browse Books
@@ -123,18 +119,14 @@ export default function ViewBooks() {
           </Typography>
         </Box>
 
-   
         <Box sx={{ mb: 4 }}>
           <Searchfield
             value={searchInput}
-            onChange={(val) => {
-              setSearchInput(val);
-            }}
+            onChange={(val: string) => setSearchInput(val)}
             placeholder="Search books..."
           />
         </Box>
 
-      
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress />
@@ -206,7 +198,6 @@ export default function ViewBooks() {
                         height: 170,
                         width: "100%",
                         objectFit: "contain",
-                       
                       }}
                     />
                   </Box>
@@ -237,31 +228,29 @@ export default function ViewBooks() {
                   </CardContent>
 
                   <CardActions sx={{ px: 2, pb: 2, pt: 1 }}>
-                 <Button
-  fullWidth
-  variant="outlined"
-  size="small"
-  onClick={(e) => {
-    e.stopPropagation();
-    viewDetails(book._id);
-  }}
-  sx={{
-    borderRadius: "999px",
-    textTransform: "none",
-    fontSize: 13,
-    fontWeight: 600,
-    border: "1.8px solid #c57a45",
-    color: "#c57a45",
-    "&:hover": {
-      borderColor: "#a65a28",
-      backgroundColor: "rgba(197,122,69,0.08)",
-    },
-  }}
->
-  View Details
-</Button>
-
-
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        viewDetails(book._id);
+                      }}
+                      sx={{
+                        borderRadius: "999px",
+                        textTransform: "none",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        border: "1.8px solid #c57a45",
+                        color: "#c57a45",
+                        "&:hover": {
+                          borderColor: "#a65a28",
+                          backgroundColor: "rgba(197,122,69,0.08)",
+                        },
+                      }}
+                    >
+                      View Details
+                    </Button>
                   </CardActions>
                 </Card>
               );
@@ -269,7 +258,6 @@ export default function ViewBooks() {
           </Box>
         )}
 
- 
         {totalPages > 1 && (
           <Stack alignItems="center" sx={{ pb: 4 }}>
             <Pagination

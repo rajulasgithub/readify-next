@@ -1,8 +1,7 @@
 "use client";
 
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/utils/api";
-
 
 export interface Book {
   _id: string;
@@ -23,7 +22,6 @@ interface HomeState {
   errorBest: string | null;
 }
 
-
 const initialState: HomeState = {
   newBooks: [],
   bestSellerBooks: [],
@@ -33,7 +31,23 @@ const initialState: HomeState = {
   errorBest: null,
 };
 
+/** Safely extract an error message from unknown shapes */
+const extractErrorMessage = (err: unknown): string => {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
 
+  try {
+    const possible = err as { response?: { data?: { message?: unknown } }; message?: unknown };
+    const maybe = possible.response?.data?.message ?? possible.message;
+    if (typeof maybe === "string" && maybe.length > 0) return maybe;
+    const str = JSON.stringify(err);
+    if (str && str !== "{}") return str;
+  } catch {
+    // fallback
+  }
+  return "Unknown error";
+};
 
 export const getHomeBooksThunk = createAsyncThunk<
   { newBooks: Book[]; bestSellerBooks: Book[] },
@@ -41,19 +55,19 @@ export const getHomeBooksThunk = createAsyncThunk<
   { rejectValue: string }
 >("home/getHomeBooks", async (_, { rejectWithValue }) => {
   try {
-    const { data } = await api.get("/api/user/gethomebooks");
+    const response = await api.get("/api/user/gethomebooks");
+    const data = response.data as unknown;
+
+    const payload = (data as { newBooks?: Book[]; bestSellers?: Book[] | undefined }) ?? {};
+
     return {
-      newBooks: data.newBooks || [],
-      bestSellerBooks: data.bestSellers || [],
+      newBooks: Array.isArray(payload.newBooks) ? payload.newBooks : [],
+      bestSellerBooks: Array.isArray(payload.bestSellers) ? payload.bestSellers : [],
     };
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Failed to fetch home books");
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to fetch home books");
   }
 });
-
-
-
-
 
 const homeSlice = createSlice({
   name: "home",
@@ -88,7 +102,6 @@ const homeSlice = createSlice({
       });
   },
 });
-
 
 export const { clearHomeState } = homeSlice.actions;
 export default homeSlice.reducer;

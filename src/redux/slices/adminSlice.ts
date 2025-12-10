@@ -1,8 +1,6 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
-
 
 export interface DashboardStats {
   customersCount: number;
@@ -19,7 +17,7 @@ export interface User {
   createdAt?: string;
   orders?: { totalAmount: number }[];
   totalOrders: number;
-  totalSpent: number; 
+  totalSpent: number;
   role?: string;
   blocked?: boolean;
 }
@@ -28,7 +26,7 @@ export interface Book {
   _id: string;
   title: string;
   author: string;
-  prize: number; 
+  prize: number;
   category: string;
   coverImage?: string;
   createdAt: string;
@@ -46,7 +44,7 @@ interface FetchUsersResponse {
 }
 
 interface AdminState {
-  loading: boolean; 
+  loading: boolean;
   error: string | null;
   stats: DashboardStats;
   sellers: User[];
@@ -58,17 +56,47 @@ interface AdminState {
     limit: number;
     totalPages: number;
   };
-  actionLoading: boolean; 
+  actionLoading: boolean;
   actionError: string | null;
 }
-
 
 const getToken = () => {
   if (typeof window === "undefined") return null;
   return Cookies.get("accessToken") || null;
 };
 
+/**
+ * Safely extract a user-friendly message from different error shapes
+ * (axios-like response, Error instance, string, or other).
+ * Avoids using `any`.
+ */
+const extractErrorMessage = (err: unknown): string => {
+  if (!err) return "Unknown error";
 
+  if (typeof err === "string") return err;
+
+  if (err instanceof Error) return err.message;
+
+  // Try to access axios-style response -> data -> message safely
+  try {
+    const possible = err as {
+      response?: { data?: { message?: unknown } };
+      message?: unknown;
+    };
+
+    const maybeMessage = possible.response?.data?.message ?? possible.message;
+
+    if (typeof maybeMessage === "string" && maybeMessage.length > 0) return maybeMessage;
+
+    // Fallback to JSON stringification when reasonable
+    const str = JSON.stringify(err);
+    if (str && str !== "{}") return str;
+  } catch {
+    // ignore
+  }
+
+  return "Unknown error";
+};
 
 export const fetchDashboardStats = createAsyncThunk<
   DashboardStats,
@@ -81,11 +109,10 @@ export const fetchDashboardStats = createAsyncThunk<
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data.data as DashboardStats;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || err.message);
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err));
   }
 });
-
 
 export const fetchUsers = createAsyncThunk<
   FetchUsersResponse,
@@ -107,11 +134,10 @@ export const fetchUsers = createAsyncThunk<
     });
 
     return res.data as FetchUsersResponse;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || err.message);
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err));
   }
 });
-
 
 export const fetchSellerBooks = createAsyncThunk<
   Book[],
@@ -124,11 +150,10 @@ export const fetchSellerBooks = createAsyncThunk<
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data.data as Book[];
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || err.message);
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err));
   }
 });
-
 
 export const toggleBlockUser = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
@@ -145,11 +170,10 @@ export const toggleBlockUser = createAsyncThunk<
       }
     );
     return { userId, role };
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || err.message);
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err));
   }
 });
-
 
 export const deleteUserThunk = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
@@ -162,11 +186,10 @@ export const deleteUserThunk = createAsyncThunk<
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return { userId, role };
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || err.message);
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err));
   }
 });
-
 
 const initialState: AdminState = {
   loading: false,
@@ -303,8 +326,6 @@ const adminSlice = createSlice({
         } else {
           state.customers = state.customers.filter((u) => u._id !== userId);
         }
-
-       
       })
       .addCase(deleteUserThunk.rejected, (state, action) => {
         state.actionLoading = false;

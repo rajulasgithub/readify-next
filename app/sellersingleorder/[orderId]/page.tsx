@@ -24,7 +24,11 @@ import {
   updateOrderItemStatusThunk,
 } from "@/src/redux/slices/orderSlice";
 
-export default function SellerOrderDetailsPage({ params }: any) {
+interface SellerOrderParams {
+  orderId: string;
+}
+
+export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
   const { orderId } = params;
   const dispatch = useDispatch<AppDispatch>();
 
@@ -224,7 +228,7 @@ export default function SellerOrderDetailsPage({ params }: any) {
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack spacing={2}>
-                  {selectedSellerOrder.items.map((item: any, idx: number) => (
+                  {selectedSellerOrder.items.map((item: SellerOrderItem, idx: number) => (
                     <Box
                       key={item._id ?? idx}
                       sx={{

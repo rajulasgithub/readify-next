@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Container,
@@ -82,10 +82,10 @@ export default function SellerOrdersPage() {
 
         {!sellerOrdersLoading && !sellerOrdersError && Array.isArray(sellerOrders) && sellerOrders.length > 0 && (
           <Stack spacing={2}>
-            {sellerOrders.map((order: any) => {
+            {sellerOrders.map((order: Order) => {
               // Display a single card per order
               const orderItemCount = Array.isArray(order.items) ? order.items.length : 0;
-              const subtotal = order.totalAmount ?? (order.items || []).reduce((s: number, it: any) => s + ((it.price ?? 0) * (it.quantity ?? 1)), 0);
+              const subtotal = order.totalAmount ?? (order.items || []).reduce((s: number, it: Order) => s + ((it.price ?? 0) * (it.quantity ?? 1)), 0);
 
               return (
                 <Card key={order._id}>
@@ -134,7 +134,7 @@ export default function SellerOrdersPage() {
 
                     {/* brief preview of first item title(s) */}
                     <Stack spacing={0.5}>
-                      {(order.items || []).slice(0, 3).map((it: any, idx: number) => (
+                      {(order.items || []).slice(0, 3).map((it: Order, idx: number) => (
                         <Typography key={idx} variant="body2" sx={{ color: "#374151" }}>
                           • {it.book?.title ?? `Book id: ${typeof it.book === "string" ? it.book : it.book?._id ?? "?"}`} — Qty: {it.quantity ?? 1}
                         </Typography>

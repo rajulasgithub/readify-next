@@ -36,12 +36,29 @@ import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
+/**
+ * Minimal typed shape for book data used in this component.
+ * Keeps typing strict while matching fields you access in the UI.
+ */
+type BookType = {
+  title?: string;
+  image?: string | string[];
+  author?: string;
+  genre?: string[];
+  language?: string[];
+  page_count?: number;
+  publish_date?: string | number;
+  excerpt?: string;
+  description?: string;
+  prize?: number;
+};
+
 export default function ViewOneBook() {
   const { role } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const id = params.id;
+  const params = useParams();
+  const id = (params as { id?: string } | undefined)?.id;
 
   const { singleBook, loading, error } = useSelector(
     (state: RootState) => state.books
@@ -58,14 +75,18 @@ export default function ViewOneBook() {
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleBook(id));
-      dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any); // fetch wishlist to check status
+      // fetch wishlist to check status (no explicit any cast)
+      dispatch(fetchWishlist({ page: 1, limit: 9999 }));
     }
   }, [id, dispatch]);
 
-  const book = singleBook || ({} as any);
+  // typed book object used in UI
+  const book = (singleBook as BookType) || ({} as BookType);
   const bookImage = Array.isArray(book.image) ? book.image?.[0] : book.image;
 
   const confirmDelete = async () => {
+    if (!id) return;
+    // deleteBook thunk dispatch
     await dispatch(deleteBook(id));
     setOpenConfirm(false);
 
@@ -83,23 +104,25 @@ export default function ViewOneBook() {
     setBusyCart(true);
     const result = await dispatch(addToCart(id));
     setBusyCart(false);
-   
 
     if (addToCart.fulfilled.match(result)) {
-       toast(
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span>Added to cart!</span>
-            <ShoppingCartIcon
-              onClick={() => router.push("/cart")}
-              style={{ cursor: "pointer", color: "#1976d2" }}
-            />
-          </div>,
-          {
-            autoClose: 5000,
-          }
-        );
+      toast(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Added to cart!</span>
+          <ShoppingCartIcon
+            onClick={() => router.push("/cart")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
+          />
+        </div>,
+        {
+          autoClose: 5000,
+        }
+      );
     } else {
-      toast.error(result.payload || "Failed to add book to cart.");
+      // result.payload might be undefined or a string; keep behavior same
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payloadMsg = (result as any)?.payload;
+      toast.error(payloadMsg || "Failed to add book to cart.");
     }
   };
 
@@ -110,22 +133,26 @@ export default function ViewOneBook() {
     setBusyWishlist(true);
 
     if (isInWishlist) {
-      const result = await dispatch(removeFromWishlist(id) as any);
+      const result = await dispatch(removeFromWishlist(id));
       setBusyWishlist(false);
       if (removeFromWishlist.fulfilled.match(result)) {
         toast.info("Removed from wishlist");
-        dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
+        dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        toast.error(result.payload || "Failed to remove from wishlist.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payloadMsg = (result as any)?.payload;
+        toast.error(payloadMsg || "Failed to remove from wishlist.");
       }
     } else {
-      const result = await dispatch(addToWishlist(id) as any);
+      const result = await dispatch(addToWishlist(id));
       setBusyWishlist(false);
       if (addToWishlist.fulfilled.match(result)) {
         toast.success("Added to wishlist");
-        dispatch(fetchWishlist({ page: 1, limit: 9999 }) as any);
+        dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        toast.error(result.payload || "Failed to add to wishlist.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payloadMsg = (result as any)?.payload;
+        toast.error(payloadMsg || "Failed to add to wishlist.");
       }
     }
   };
@@ -141,18 +168,18 @@ export default function ViewOneBook() {
       }}
     >
       <Container maxWidth="md" sx={{ py: 4, minHeight: "70vh" }}>
-          <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
 
         {loading ? (
           <Skeleton variant="text" width="60%" height={40} sx={{ mb: 2 }} />
@@ -165,7 +192,7 @@ export default function ViewOneBook() {
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={4}
-          alignItems={{ xs: "flex-start", md: "center" }} // <-- vertical center for image
+          alignItems={{ xs: "flex-start", md: "center" }}
         >
           {/* Left: Image */}
           <Box sx={{ flex: "0 0 420px", width: { xs: "100%", md: 420 } }}>
@@ -246,7 +273,7 @@ export default function ViewOneBook() {
 
                   {book.page_count && <Chip label={`${book.page_count} pages`} size="small" sx={{ mr: 1 }} />}
 
-                  {book.publish_date && <Chip label={new Date(book.publish_date).toLocaleDateString()} size="small" />}
+                  {book.publish_date && <Chip label={new Date(String(book.publish_date)).toLocaleDateString()} size="small" />}
                 </Stack>
 
                 <Divider sx={{ mb: 2 }} />

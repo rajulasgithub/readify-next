@@ -9,11 +9,10 @@ interface User {
   firstName: string;
   lastName: string;
   phone: number;
-  createdAt?: boolean;
+  createdAt?: string;
   image?: string;
   bio?: string;
-  fullPhone: Number;
-  
+  fullPhone?: number | string;
 }
 
 interface SellerStats {
@@ -56,6 +55,31 @@ export interface ApiResponse {
 
 export type UpdateProfilePayload = FormData;
 
+/** Safely extract an error message from different error shapes */
+const extractErrorMessage = (err: unknown): string => {
+  if (!err) return "Unknown error";
+
+  if (typeof err === "string") return err;
+
+  if (err instanceof Error) return err.message;
+
+  try {
+    const possible = err as {
+      response?: { data?: { message?: unknown } };
+      message?: unknown;
+    };
+    const maybeMessage = possible.response?.data?.message ?? possible.message;
+    if (typeof maybeMessage === "string" && maybeMessage.length > 0) return maybeMessage;
+
+    const str = JSON.stringify(err);
+    if (str && str !== "{}") return str;
+  } catch {
+    // ignore and fallback
+  }
+
+  return "Unknown error";
+};
+
 // REGISTER USER
 export const registerUser = createAsyncThunk<
   ApiResponse,
@@ -65,9 +89,9 @@ export const registerUser = createAsyncThunk<
   try {
     const { data } = await api.post<ApiResponse>("/api/user/register", formData);
     return data;
-  } catch (err: any) {
-    console.log(" FULL ERROR:", err.response);
-    return rejectWithValue(err.response?.data?.message || "Something went wrong");
+  } catch (err: unknown) {
+    console.log(" FULL ERROR:", err);
+    return rejectWithValue(extractErrorMessage(err) || "Something went wrong");
   }
 });
 
@@ -80,8 +104,8 @@ export const loginUserThunk = createAsyncThunk<
   try {
     const { data } = await api.post<ApiResponse>("/api/user/login", formData);
     return data;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Invalid credentials");
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Invalid credentials");
   }
 });
 
@@ -105,8 +129,8 @@ export const updateProfileThunk = createAsyncThunk<
     });
 
     return data;
-  } catch (err: any) {
-    return rejectWithValue(err.response?.data?.message || "Failed to update profile");
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to update profile");
   }
 });
 
@@ -129,15 +153,19 @@ export const fetchProfileThunk = createAsyncThunk<
     });
     console.log(data);
     return data;
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to fetch profile");
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to fetch profile");
   }
 });
 
 /**
  * NEW: fetchSellerStats thunk
  * Expects backend endpoint: GET /api/seller/stats
- * Response shape: { success: true, data: { totalBooks, totalOrders, totalRevenue } }
+ * Response shape can be either:
+ *  - { success: true, data: { totalBooks, totalOrders, totalRevenue } }
+ *  - or directly { totalBooks, totalOrders, totalRevenue }
+ *
+ * We robustly handle both shapes without using `any`.
  */
 export const fetchSellerStats = createAsyncThunk<
   { totalBooks: number; totalOrders: number; totalRevenue: number },
@@ -152,17 +180,44 @@ export const fetchSellerStats = createAsyncThunk<
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    // Accept either { success, data } or direct object
-    const payload =
-      data && data.data ? data.data : data;
+    // raw holds the unknown response body
+    const raw: unknown = data;
+
+    // Helper to safely coerce a value to number (handles number or numeric string)
+    const toNumber = (v: unknown): number => {
+      if (typeof v === "number") return v;
+      if (typeof v === "string") {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      }
+      return 0;
+    };
+
+    // Determine payload object either from data.data or data directly
+    let payloadObj: Record<string, unknown> = {};
+
+    if (raw && typeof raw === "object") {
+      const rawObj = raw as Record<string, unknown>;
+      // prefer raw.data if present
+      const possibleInner = rawObj["data"];
+      if (possibleInner && typeof possibleInner === "object") {
+        payloadObj = possibleInner as Record<string, unknown>;
+      } else {
+        payloadObj = rawObj;
+      }
+    }
+
+    const totalBooks = toNumber(payloadObj["totalBooks"]);
+    const totalOrders = toNumber(payloadObj["totalOrders"]);
+    const totalRevenue = toNumber(payloadObj["totalRevenue"]);
 
     return {
-      totalBooks: payload.totalBooks ?? 0,
-      totalOrders: payload.totalOrders ?? 0,
-      totalRevenue: payload.totalRevenue ?? 0,
+      totalBooks,
+      totalOrders,
+      totalRevenue,
     };
-  } catch (err: any) {
-    return rejectWithValue(err?.response?.data?.message || "Failed to fetch seller stats");
+  } catch (err: unknown) {
+    return rejectWithValue(extractErrorMessage(err) || "Failed to fetch seller stats");
   }
 });
 
@@ -253,14 +308,17 @@ const authSlice = createSlice({
         state.sellerStatsLoading = true;
         state.sellerStatsError = null;
       })
-      .addCase(fetchSellerStats.fulfilled, (state, action: PayloadAction<{ totalBooks: number; totalOrders: number; totalRevenue: number }>) => {
-        state.sellerStatsLoading = false;
-        state.sellerStats = {
-          totalBooks: action.payload.totalBooks,
-          totalOrders: action.payload.totalOrders,
-          totalRevenue: action.payload.totalRevenue,
-        };
-      })
+      .addCase(
+        fetchSellerStats.fulfilled,
+        (state, action: PayloadAction<{ totalBooks: number; totalOrders: number; totalRevenue: number }>) => {
+          state.sellerStatsLoading = false;
+          state.sellerStats = {
+            totalBooks: action.payload.totalBooks,
+            totalOrders: action.payload.totalOrders,
+            totalRevenue: action.payload.totalRevenue,
+          };
+        }
+      )
       .addCase(fetchSellerStats.rejected, (state, action) => {
         state.sellerStatsLoading = false;
         state.sellerStatsError = action.payload ?? "Failed to fetch seller stats";

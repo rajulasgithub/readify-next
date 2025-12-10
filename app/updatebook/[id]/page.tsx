@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, {  useRef, useState } from "react";
 import {
   Box,
   TextField,
@@ -24,7 +24,6 @@ import * as yup from "yup";
 // Redux
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
-import { fetchSingleBook, updateBook } from "@/src/redux/slices/bookSlice";
 
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -51,7 +50,7 @@ const DESCRIPTION_MAX = 1000;
 const EXCERPT_MIN = 20;
 const EXCERPT_MAX = 1000;
 
-const bookSchema: yup.ObjectSchema<any> = yup.object({
+const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
   title: yup.string().required("Title is required"),
   description: yup.string().required("Description is required")
     .min(DESCRIPTION_MIN, `Description must be at least ${DESCRIPTION_MIN} characters`)
@@ -74,7 +73,7 @@ const UpdateBook: React.FC = () => {
   const params = useParams();
   const bookId = params?.id as string;
 
-  const { singleBook, singleBookLoading, singleBookError, loading, error } = useSelector((state: RootState) => state.books);
+  const {  singleBookLoading, singleBookError, loading, error } = useSelector((state: RootState) => state.books);
 
   // image handling
   const [existingImage, setExistingImage] = useState<string>("");
@@ -84,7 +83,7 @@ const UpdateBook: React.FC = () => {
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<BookFormInputs>({
+  const { register, handleSubmit,  control, watch, formState: { errors } } = useForm<BookFormInputs>({
     resolver: yupResolver(bookSchema),
     defaultValues: {
       title: "",
@@ -103,53 +102,34 @@ const UpdateBook: React.FC = () => {
   const watchDescription = watch("description", "");
   const watchExcerpt = watch("excerpt", "");
 
-  useEffect(() => {
-    if (!singleBook) return;
+//   type MaybeArrayInput = string | string[] | null | undefined | object;
 
-    const parseMaybeArray = (val: any): string[] => {
-      if (val === null || val === undefined || val === "") return [];
+//   const parseMaybeArray = (val: MaybeArrayInput): string[] => {
+//   if (val === null || val === undefined || val === "") return [];
 
-      let v = val;
-      let attempts = 0;
+//   let v: unknown = val;
+//   let attempts = 0;
 
-      while (typeof v === "string" && attempts < 3) {
-        const trimmed = v.trim();
-        if (trimmed.startsWith("[") || trimmed.startsWith("{") || trimmed.startsWith('"')) {
-          try {
-            v = JSON.parse(trimmed);
-            attempts++;
-            continue;
-          } catch (e) {
-            break;
-          }
-        }
-        break;
-      }
+//   while (typeof v === "string" && attempts < 3) {
+//     const trimmed = v.trim();
+//     if (trimmed.startsWith("[") || trimmed.startsWith("{") || trimmed.startsWith('"')) {
+//       try {
+//         v = JSON.parse(trimmed);
+//         attempts++;
+//         continue;
+//       } catch {
+//         break;
+//       }
+//     }
+//     break;
+//   }
 
-      if (Array.isArray(v)) return v.map((x) => (x == null ? "" : String(x)));
-      if (typeof v === "string") return v.trim() ? [v.trim()] : [];
-      return [String(v)];
-    };
+//   if (Array.isArray(v)) return v.map((x) => (x == null ? "" : String(x)));
+//   if (typeof v === "string") return v.trim() ? [v.trim()] : [];
 
-    const g = parseMaybeArray(singleBook.genre);
-    const l = parseMaybeArray(singleBook.language);
+//   return [String(v)];
+// };
 
-    reset({
-      title: singleBook.title || "",
-      description: singleBook.description || "",
-      excerpt: singleBook.excerpt || "",
-      page_count: singleBook.page_count ?? 0,
-      publish_date: singleBook.publish_date ? singleBook.publish_date.split("T")[0] : "",
-      author: singleBook.author || "",
-      genre: g,
-      language: l,
-      prize: singleBook.prize ?? 0,
-      category: singleBook.category || "",
-    });
-
-    const img = Array.isArray(singleBook.image) ? singleBook.image[0] : singleBook.image;
-    setExistingImage(img || "");
-  }, [singleBook, reset]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -217,16 +197,21 @@ const UpdateBook: React.FC = () => {
           <Box
             onClick={openFilePicker}
             sx={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}
-            aria-hidden
+              aria-hidden="true"
           >
             {previewSrc ? (
               <Card sx={{ width: 140, height: 190, borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <CardMedia component="img" image={previewSrc} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    newPreview ? removeNewImage() : removeExistingImage();
-                  }}
+                 onClick={(e) => {
+  e.stopPropagation();
+
+  if (newPreview) {
+    removeNewImage();
+  } else {
+    removeExistingImage();
+  }
+}}
                   sx={{ position: 'absolute', top: 8, right: 8, bgcolor: '#fff', '&:hover': { bgcolor: '#f3f4f6' } }}
                 >
                   <DeleteOutlineIcon />
@@ -273,10 +258,10 @@ const UpdateBook: React.FC = () => {
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField label="Page Count" type="number" fullWidth {...register("page_count")} error={!!errors.page_count} helperText={errors.page_count?.message} />
-              <TextField label="Publish Date" type="date" fullWidth InputLabelProps={{ shrink: true }} {...register("publish_date")} error={!!errors.publish_date} helperText={errors.publish_date?.message} />
+              <TextField label="Publish Date" type="date" fullWidth InputLabelProps={{ shrink: true }} {...register("publish_date")} error={!!errors.publish_date} helperText={errors.language?.message as string} />
             </Stack>
 
-            <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
+            <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.language?.message as string} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Controller
@@ -292,7 +277,7 @@ const UpdateBook: React.FC = () => {
                     sx={{ width: '100%' }}
                     PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
                     renderInput={(params) => (
-                      <TextField {...params} label="Genre" error={!!errors.genre} helperText={(errors.genre as any)?.message} fullWidth />
+                      <TextField {...params} label="Genre" error={!!errors.genre} helperText={errors.language?.message as string}fullWidth />
                     )}
                   />
                 )}
@@ -311,7 +296,7 @@ const UpdateBook: React.FC = () => {
                     sx={{ width: '100%' }}
                     PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
                     renderInput={(params) => (
-                      <TextField {...params} label="Language" error={!!errors.language} helperText={(errors.language as any)?.message} fullWidth />
+                      <TextField {...params} label="Language" error={!!errors.language} helperText={errors.language?.message as string} fullWidth />
                     )}
                   />
                 )}
@@ -319,12 +304,12 @@ const UpdateBook: React.FC = () => {
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField label="Price (₹)" type="number" fullWidth {...register("prize")} error={!!errors.prize} helperText={errors.prize?.message} />
+              <TextField label="Price (₹)" type="number" fullWidth {...register("prize")} error={!!errors.prize} helperText={errors.language?.message as string} />
               <Controller
                 name="category"
                 control={control}
                 render={({ field }) => (
-                  <TextField select label="Category" fullWidth {...field} error={!!errors.category} helperText={errors.category?.message}>
+                  <TextField select label="Category" fullWidth {...field} error={!!errors.category} helperText={errors.language?.message as string}>
                     {categories.map((c) => (
                       <MenuItem key={c} value={c}>{c}</MenuItem>
                     ))}
