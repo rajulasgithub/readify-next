@@ -17,6 +17,7 @@ import {
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import { FieldError } from "react-hook-form";
 
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -62,17 +63,18 @@ type BookFormInputs = {
   title: string;
   description: string;
   excerpt?: string;
-  page_count: number | string;
+  page_count: number;   // ✅ FIXED
   publish_date: string;
   author: string;
-  genre: string[]; // now array
-  language: string[]; // now array
-  prize: number | string;
+  genre: string[];
+  language: string[];
+  prize: number;        // ✅ FIXED
   category: string;
 };
 
-const bookSchema: yup.ObjectSchema<any> = yup.object({
+const bookSchema = yup.object({
   title: yup.string().required("Title is required"),
+
   description: yup
     .string()
     .required("Description is required")
@@ -81,6 +83,7 @@ const bookSchema: yup.ObjectSchema<any> = yup.object({
       "Description must be at least 20 characters and at most 1000 characters",
       (val) => !!val && val.length >= 20 && val.length <= 1000
     ),
+
   excerpt: yup
     .string()
     .nullable()
@@ -88,32 +91,44 @@ const bookSchema: yup.ObjectSchema<any> = yup.object({
       "excerpt-len",
       "Excerpt must be at least 20 characters and at most 1000 characters",
       (val) => {
-        if (!val) return true; // allow empty
+        if (!val) return true;
         return val.length >= 20 && val.length <= 1000;
       }
     ),
-  page_count: yup
-    .number()
-    .typeError("Page count must be a number")
-    .positive("Page count must be positive")
-    .required("Page count is required"),
+
+ page_count: yup
+  .number()
+  .transform((value, originalValue) =>
+    originalValue === "" ? undefined : Number(originalValue)
+  )
+  .typeError("Page count must be a number")
+  .positive("Page count must be positive")
+  .required("Page count is required"),
+
   publish_date: yup.string().required("Publish date is required"),
+
   author: yup.string().required("Author is required"),
-  genre: yup
-    .array()
-    .of(yup.string())
-    .min(1, "Select at least one genre")
-    .required("Genre is required"),
-  language: yup
-    .array()
-    .of(yup.string())
-    .min(1, "Select at least one language")
-    .required("Language is required"),
-  prize: yup
-    .number()
-    .typeError("Price must be a number")
-    .positive("Price must be positive")
-    .required("Price is required"),
+
+ genre: yup
+  .array()
+  .ensure() // ✅ converts undefined → []
+  .of(yup.string().required())
+  .min(1, "Select at least one genre"),
+
+
+language: yup
+  .array()
+  .ensure() // ✅ converts undefined → []
+  .of(yup.string().required())
+  .min(1, "Select at least one language"),
+ prize: yup
+  .number()
+  .transform((value, originalValue) =>
+    originalValue === "" ? undefined : Number(originalValue)
+  )
+  .typeError("Price must be a number")
+  .positive("Price must be positive")
+  .required("Price is required"),
   category: yup.string().required("Category is required"),
 });
 
@@ -123,16 +138,16 @@ const AddBook: React.FC = () => {
 
   const { loading, error } = useSelector((state: RootState) => state.books);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    formState: { errors },
-  } = useForm<BookFormInputs>({
-    resolver: yupResolver(bookSchema),
-    defaultValues: { genre: [], language: [] },
-  });
+ const {
+  register,
+  handleSubmit,
+  control,
+  watch,
+  formState: { errors },
+} = useForm<BookFormInputs>({
+  resolver: yupResolver(bookSchema),
+  defaultValues: { genre: [], language: [] },
+});
 
   const descriptionValue = watch("description") || "";
   const excerptValue = watch("excerpt") || "";
@@ -192,7 +207,9 @@ const AddBook: React.FC = () => {
     formData.append("category", data.category);
 
     try {
-      const resultAction = await dispatch(addBook(formData) as any);
+
+    const dispatchTyped = dispatch as AppDispatch;
+   const resultAction = await dispatchTyped(addBook(formData));
 
       if (addBook.fulfilled.match(resultAction)) {
         route.push("/sellerbooks");
@@ -345,55 +362,64 @@ const AddBook: React.FC = () => {
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Controller
-                name="genre"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    multiple
-                    options={genres}
-                    onChange={(_, value) => field.onChange(value)}
-                    value={field.value || []}
-                    sx={{ width: '100%' }}
-                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Genre"
-                        error={!!errors.genre}
-                        helperText={(errors.genre as any)?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                )}
-              />
-
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    multiple
-                    options={languages}
-                    onChange={(_, value) => field.onChange(value)}
-                    value={field.value || []}
-                    sx={{ width: '100%' }}
-                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Language"
-                        error={!!errors.language}
-                        helperText={(errors.language as any)?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                )}
-              />
+            <Controller
+  name="genre"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={genres}
+      value={field.value || []}
+      onChange={(_, value) => field.onChange(value)}
+      isOptionEqualToValue={(opt, val) => opt === val}  // ✅ REQUIRED
+      getOptionLabel={(opt) => opt}                     // ✅ REQUIRED
+      sx={{ width: "100%" }}
+      slotProps={{
+        popper: {
+          style: { minWidth: 240, maxWidth: 480 },
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Genre"
+          error={!!errors.genre}
+          helperText={(errors.genre as FieldError)?.message}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
+<Controller
+  name="language"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={languages}
+      value={field.value || []}
+      onChange={(_, value) => field.onChange(value)}
+      isOptionEqualToValue={(opt, val) => opt === val}   // ✅ REQUIRED
+      getOptionLabel={(opt) => opt}                     // ✅ REQUIRED
+      sx={{ width: "100%" }}
+      slotProps={{
+        popper: {
+          style: { minWidth: 240, maxWidth: 480 },
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Language"
+          error={!!errors.language}
+          helperText={(errors.language as FieldError)?.message}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>

@@ -21,7 +21,6 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 import { fetchProfileThunk } from "@/src/redux/slices/authSlice";
-import { fetchCartItems } from "@/src/redux/slices/cartSlice";
 import { fetchWishlist } from "@/src/redux/slices/wishlistSlice";
 
 export default function UserProfilePage() {

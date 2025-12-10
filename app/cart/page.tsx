@@ -53,7 +53,6 @@ export default function CartPage() {
 
   useEffect(() => {
     dispatch(fetchCartItems({ page, limit }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, page]);
 
   const increaseQty = (id: string, quantity: number) => {

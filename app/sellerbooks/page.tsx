@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,ChangeEvent} from "react";
 import {
   Box,
   Container,
@@ -48,17 +48,19 @@ export default function ViewSellerBooks() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  useEffect(() => {
-    dispatch(
-      fetchBooks({
-        page,
-        limit,
-        search: search || undefined,
-      }) as any
-    );
-  }, [page, search, dispatch]);
+ useEffect(() => {
+  dispatch(
+    fetchBooks({
+      page,
+      limit,
+      search: search || undefined,
+    })
+  );
+}, [page, search, dispatch]);
 
-  const handlePageChange = (_: any, value: number) => setPage(value);
+ const handlePageChange = (_: ChangeEvent<unknown>, value: number) => {
+  setPage(value);
+};
 
   const viewDetails = (id: string) => {
     router.push(`/viewonebook/${id}`);

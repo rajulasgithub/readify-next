@@ -20,7 +20,6 @@ import { registerUser } from "@/src/redux/slices/authSlice";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/context/AuthContext";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 
 type SignupFormData = {
   firstName: string;

@@ -62,53 +62,90 @@ const addressSchema = yup.object({
 type AddressForm = yup.InferType<typeof addressSchema> & { _id?: string };
 
 // ------------------ helper: normalize API payload ------------------
-function normalizeSavedAddresses(raw: any): AddressForm[] | null {
+export interface OrderAddress {
+  _id: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pinCode: string;
+}
+
+interface AddressWrapper {
+  addresses: unknown[];
+}
+
+// Type guard for OrderAddress
+function isOrderAddress(obj: unknown): obj is OrderAddress {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "_id" in obj &&
+    "fullName" in obj &&
+    "phone" in obj &&
+    "addressLine1" in obj &&
+    "city" in obj &&
+    "state" in obj &&
+    "pinCode" in obj
+  );
+}
+
+// Type-safe normalize function
+function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
   if (!raw) return null;
 
-  // If it's already a flat array of address objects
-  if (Array.isArray(raw) && raw.length && raw[0]._id && raw[0].fullName) {
-    return raw as AddressForm[];
+  // Case 1: raw is an array of OrderAddress
+  if (Array.isArray(raw) && raw.length && isOrderAddress(raw[0])) {
+    return raw as OrderAddress[];
   }
 
-  // If API returned the wrapper array like:
-  // [ { _id: wrapperId, user, addresses: [ {..}, {...} ] }, ... ]
-  if (Array.isArray(raw) && raw.length && raw[0].addresses && Array.isArray(raw[0].addresses)) {
-    // flatten all inner addresses from all wrapper entries
-    const flattened: AddressForm[] = raw.flatMap((entry: any) =>
-      Array.isArray(entry.addresses) ? entry.addresses : []
-    );
+  // Case 2: raw is an array of wrapper objects containing addresses
+  if (Array.isArray(raw) && raw.length && typeof raw[0] === "object" && raw[0] !== null && "addresses" in raw[0]) {
+    const flattened: OrderAddress[] = raw.flatMap((entry) => {
+      const wrapper = entry as AddressWrapper;
+      if (Array.isArray(wrapper.addresses)) {
+        return wrapper.addresses.filter(isOrderAddress);
+      }
+      return [];
+    });
     return flattened.length ? flattened : null;
   }
 
-  // If API returned object with addresses property
-  if (typeof raw === "object" && raw.addresses && Array.isArray(raw.addresses)) {
-    return raw.addresses;
+  // Case 3: raw is a single object with addresses property
+  if (typeof raw === "object" && raw !== null && "addresses" in raw) {
+    const wrapper = raw as AddressWrapper;
+    if (Array.isArray(wrapper.addresses)) {
+      return wrapper.addresses.filter(isOrderAddress);
+    }
   }
 
-  // If single address object
-  if (typeof raw === "object" && raw._id && raw.fullName) {
-    return [raw as AddressForm];
+  // Case 4: raw is a single OrderAddress object
+  if (isOrderAddress(raw)) {
+    return [raw];
   }
 
   return null;
 }
 
+export { normalizeSavedAddresses, isOrderAddress };
 // ------------------ component ------------------
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
-  const cart = useSelector((state: RootState) => state.cart as any);
-  const items: any[] = cart?.items || [];
-  const totalPrice: number | undefined = cart?.totalPrice;
+ const cart = useSelector((state: RootState) => state.cart);
+const items: CartItem[] = cart?.items || [];
+const totalPrice: number = cart?.totalPrice ?? 0;
 
-  const ordersState = useSelector((state: RootState) => state.orders as any);
-  const placing: boolean = ordersState?.placing || false;
-  const rawSaved = ordersState?.savedAddresses ?? null; // whatever is stored in slice
-  const addressLoading: boolean = ordersState?.addressLoading || false;
 
+ const ordersState = useSelector((state: RootState) => state.orders);
+const placing: boolean = ordersState.placing;
+const rawSaved: unknown = ordersState.savedAddresses ?? null;
+const addressLoading: boolean = ordersState.addressLoading;
   // Normalize the addresses so UI always sees flat AddressForm[] or null
-  const savedAddresses = useMemo(() => normalizeSavedAddresses(rawSaved), [rawSaved]);
+ const savedAddresses = useMemo<OrderAddress[] | null>(() => normalizeSavedAddresses(rawSaved), [rawSaved]);
 
   // debug log to confirm shape — remove in production
   useEffect(() => {
@@ -214,39 +251,51 @@ export default function CheckoutPage() {
   };
 
   // handle add or save
-  const onSaveAddress = async (data: AddressForm) => {
-    try {
-      if (editingAddressId) {
-        await dispatch(saveAddressThunk({ addressId: editingAddressId, updatedAddress: data as any })).unwrap();
-        toast.success("Address updated successfully");
-        setSelectedAddressId(editingAddressId);
-      } else {
-        const newAddrPayload = { ...data };
-        await dispatch(addAddressThunk({ newAddress: newAddrPayload as any })).unwrap();
-        toast.success("Address added successfully");
-        // The fetch/fulfilled should refresh the list; effect will auto-select the first
-      }
-      // refresh to ensure slice shape is consistent
-      dispatch(fetchAddressThunk());
-      closeDialog();
-    } catch (err: any) {
-      const msg = typeof err === "string" ? err : err?.message || "Failed to save address";
-      toast.error(msg);
-      console.error(err);
+ const onSaveAddress = async (data: AddressForm) => {
+  try {
+    if (editingAddressId) {
+      // Pass AddressForm as OrderAddress if compatible
+      await dispatch(
+        saveAddressThunk({
+          addressId: editingAddressId,
+          updatedAddress: data as OrderAddress,
+        })
+      ).unwrap();
+      toast.success("Address updated successfully");
+      setSelectedAddressId(editingAddressId);
+    } else {
+      await dispatch(
+        addAddressThunk({
+          newAddress: data as OrderAddress,
+        })
+      ).unwrap();
+      toast.success("Address added successfully");
+      // Effect will auto-select the first address
     }
-  };
 
-  const onDeleteAddress = async (id: string) => {
-    if (!confirm("Delete this address?")) return;
-    try {
-      await dispatch(deleteAddressThunk(id)).unwrap();
-      toast.success("Address deleted");
-      if (selectedAddressId === id) setSelectedAddressId(null);
-      dispatch(fetchAddressThunk());
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to delete address");
-    }
-  };
+    dispatch(fetchAddressThunk());
+    closeDialog();
+  } catch (err: unknown) {
+    // Properly handle unknown error
+    const msg = err instanceof Error ? err.message : "Failed to save address";
+    toast.error(msg);
+  }
+};
+
+const onDeleteAddress = async (id: string) => {
+  if (!confirm("Delete this address?")) return;
+
+  try {
+    await dispatch(deleteAddressThunk(id)).unwrap();
+    toast.success("Address deleted");
+
+    if (selectedAddressId === id) setSelectedAddressId(null);
+    dispatch(fetchAddressThunk());
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete address";
+    toast.error(msg);
+  }
+};
 
   // Place order using selected address id
   const placeOrderWithSelected = async () => {
@@ -277,9 +326,10 @@ export default function CheckoutPage() {
       toast.success("Order placed successfully!");
       dispatch(clearCart());
       router.push("/vieworders");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to place order");
-    }
+    }catch (err: unknown) {
+  const msg = err instanceof Error ? err.message : "Failed to place order";
+  toast.error(msg);
+}
   };
 
   return (
@@ -518,7 +568,7 @@ export default function CheckoutPage() {
             <Button onClick={closeDialog} variant="outlined" sx={{ textTransform: "none" }}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit(onSaveAddress) as any} variant="contained" sx={{ textTransform: "none", bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }} disabled={isSubmitting || placing}>
+            <Button onClick={() => handleSubmit(onSaveAddress)()} variant="contained" sx={{ textTransform: "none", bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }} disabled={isSubmitting || placing}>
               {isSubmitting ? (editingAddressId ? "Saving..." : "Adding...") : editingAddressId ? "Save" : "Add & Save"}
             </Button>
           </DialogActions>

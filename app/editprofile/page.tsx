@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import { updateProfileThunk } from "@/src/redux/slices/authSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
+// yup schema
 const schema = yup
   .object({
     firstName: yup.string().required("First name is required"),
@@ -43,63 +44,48 @@ export default function EditProfilePage() {
   const { role } = useAuth();
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-
   const { user, loading } = useSelector((state: RootState) => state.auth);
 
-  const [bioLength, setBioLength] = useState(user?.bio?.length || 0);
-
-  // Build full URL for previously saved image
+  const [bioLength, setBioLength] = useState(user?.bio?.length ?? 0);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const initialImageUrl =
-    user?.image && backendUrl
+  const initialImageUrl = user?.image
+    ? backendUrl
       ? `${backendUrl}/${user.image}`
-      : user?.image
-      ? user.image
-      : null;
+      : user.image
+    : null;
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(
-    initialImageUrl
-  );
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialImageUrl);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setValue,
-  } = useForm<EditProfileForm>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm<EditProfileForm>({
     resolver: yupResolver(schema),
     defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      email: user?.email ?? "",
       phone: user?.phone ? String(user.phone) : "",
-      bio: (user as any)?.bio || "",
+      bio: user?.bio ?? "",
     },
   });
 
-  // Sync with Redux user whenever it changes
   useEffect(() => {
     if (user) {
       reset({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        email: user.email ?? "",
         phone: user.fullPhone ? String(user.fullPhone) : "",
-        bio: (user as any)?.bio || "",
+        bio: user.bio ?? "",
       });
 
-      setBioLength((user as any)?.bio?.length || 0);
+      setBioLength(user.bio?.length ?? 0);
 
-      const imgUrl =
-        user.image && backendUrl
+      const imgUrl = user.image
+        ? backendUrl
           ? `${backendUrl}/${user.image}`
           : user.image
-          ? user.image
-          : null;
-
+        : null;
       setPhotoPreview(imgUrl);
     }
   }, [user, reset, backendUrl]);
@@ -108,9 +94,7 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoFile(file);
-
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const onSubmit = async (data: EditProfileForm) => {
@@ -121,13 +105,9 @@ export default function EditProfilePage() {
       formData.append("email", data.email);
       formData.append("phone", data.phone);
       formData.append("bio", data.bio ?? "");
-
-      if (photoFile) {
-        formData.append("image", photoFile);
-      }
+      if (photoFile) formData.append("image", photoFile);
 
       await dispatch(updateProfileThunk(formData)).unwrap();
-
       toast.success("Profile updated successfully");
 
       switch (role) {
@@ -143,37 +123,23 @@ export default function EditProfilePage() {
         default:
           router.push("/");
       }
-    } catch (err: any) {
-      const msg =
-        typeof err === "string"
-          ? err
-          : err?.response?.data?.message || "Failed to update profile. Try again.";
+    } catch (err: unknown) {
+      let msg = "Failed to update profile. Try again.";
+
+      if (err instanceof Error) msg = err.message;
+      else if (typeof err === "object" && err !== null && "response" in err) {
+        const e = err as { response?: { data?: { message?: string } } };
+        msg = e.response?.data?.message ?? msg;
+      }
+
       toast.error(msg);
     }
   };
 
   if (!user) {
     return (
-      <Box
-        sx={{
-          bgcolor: "#f5f7fb",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          px: 2,
-        }}
-      >
-        <Card
-          sx={{
-            maxWidth: 400,
-            width: "100%",
-            borderRadius: 4,
-            boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-            bgcolor: "#ffffff",
-            p: 3,
-          }}
-        >
+      <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 2 }}>
+        <Card sx={{ maxWidth: 400, width: "100%", borderRadius: 4, boxShadow: "0 10px 30px rgba(15,23,42,0.08)", bgcolor: "#ffffff", p: 3 }}>
           <Typography variant="h6" fontWeight={700} mb={1}>
             You are not logged in
           </Typography>
@@ -183,12 +149,7 @@ export default function EditProfilePage() {
           <Button
             fullWidth
             variant="contained"
-            sx={{
-              textTransform: "none",
-              borderRadius: "999px",
-              bgcolor: "#c57a45",
-              "&:hover": { bgcolor: "#b36a36" },
-            }}
+            sx={{ textTransform: "none", borderRadius: "999px", bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }}
             onClick={() => router.push("/login")}
           >
             Go to Login
@@ -205,37 +166,14 @@ export default function EditProfilePage() {
           Edit Profile
         </Typography>
 
-        <Card
-          sx={{
-            borderRadius: 4,
-            boxShadow: "0 10px 30px rgba(15,23,42,0.08)",
-            bgcolor: "#ffffff",
-          }}
-        >
+        <Card sx={{ borderRadius: 4, boxShadow: "0 10px 30px rgba(15,23,42,0.08)", bgcolor: "#ffffff" }}>
           <CardContent sx={{ p: 4 }}>
-            {/* Avatar + Upload */}
             <Stack spacing={2} alignItems="center" mb={3}>
-              <Avatar
-                src={photoPreview || undefined}
-                sx={{
-                  width: 96,
-                  height: 96,
-                  fontSize: 32,
-                  bgcolor: "#c57a45",
-                }}
-              >
-                {user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
+              <Avatar src={photoPreview ?? undefined} sx={{ width: 96, height: 96, fontSize: 32, bgcolor: "#c57a45" }}>
+                {user.firstName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
               </Avatar>
 
-              <Button
-                variant="outlined"
-                component="label"
-                sx={{
-                  borderRadius: "999px",
-                  textTransform: "none",
-                  px: 3,
-                }}
-              >
+              <Button variant="outlined" component="label" sx={{ borderRadius: "999px", textTransform: "none", px: 3 }}>
                 Change Photo
                 <input hidden accept="image/*" type="file" onChange={handlePhotoChange} />
               </Button>
@@ -244,78 +182,34 @@ export default function EditProfilePage() {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <Stack spacing={3}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                  <TextField
-                    label="First Name"
-                    fullWidth
-                    {...register("firstName")}
-                    error={!!errors.firstName}
-                    helperText={errors.firstName?.message}
-                  />
-                  <TextField
-                    label="Last Name"
-                    fullWidth
-                    {...register("lastName")}
-                    error={!!errors.lastName}
-                    helperText={errors.lastName?.message}
-                  />
+                  <TextField label="First Name" fullWidth {...register("firstName")} error={!!errors.firstName} helperText={errors.firstName?.message} />
+                  <TextField label="Last Name" fullWidth {...register("lastName")} error={!!errors.lastName} helperText={errors.lastName?.message} />
                 </Stack>
 
-                <TextField
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  {...register("email")}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                />
+                <TextField label="Email" type="email" fullWidth {...register("email")} error={!!errors.email} helperText={errors.email?.message} />
+                <TextField label="Phone" fullWidth {...register("phone")} error={!!errors.phone} helperText={errors.phone?.message} />
 
                 <TextField
-                  label="Phone"
+                  label="Bio / About"
+                  multiline
+                  rows={4}
                   fullWidth
-                  {...register("phone")}
-                  error={!!errors.phone}
-                  helperText={errors.phone?.message}
+                  {...register("bio")}
+                  error={!!errors.bio}
+                  helperText={errors.bio?.message || `${bioLength}/100`}
+                  onChange={(e) => {
+                    const val = e.target.value.slice(0, 100);
+                    setBioLength(val.length);
+                    setValue("bio", val);
+                  }}
                 />
-
-                {/* Bio with live character counter */}
-               <TextField
-  label="Bio / About"
-  multiline
-  rows={4}
-  fullWidth
-  {...register("bio")}
-  error={!!errors.bio}
-  helperText={errors.bio?.message || `${bioLength}/100`}
-  onChange={(e) => {
-    let val = e.target.value;
-    if (val.length > 100) val = val.slice(0, 100); // truncate at 100 chars
-    setBioLength(val.length);
-    setValue("bio", val); // update react-hook-form
-  }}
-/>
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    sx={{ textTransform: "none", borderRadius: "999px", px: 3 }}
-                    onClick={() => router.push("/customerprofile")}
-                  >
+                  <Button type="button" variant="outlined" sx={{ textTransform: "none", borderRadius: "999px", px: 3 }} onClick={() => router.push("/customerprofile")}>
                     Cancel
                   </Button>
 
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting || loading}
-                    sx={{
-                      textTransform: "none",
-                      borderRadius: "999px",
-                      px: 4,
-                      bgcolor: "#c57a45",
-                      "&:hover": { bgcolor: "#b36a36" },
-                    }}
-                  >
+                  <Button type="submit" variant="contained" disabled={isSubmitting || loading} sx={{ textTransform: "none", borderRadius: "999px", px: 4, bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }}>
                     {isSubmitting || loading ? "Saving..." : "Save Changes"}
                   </Button>
                 </Stack>

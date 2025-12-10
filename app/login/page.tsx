@@ -19,7 +19,6 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { loginUserThunk } from "@/src/redux/slices/authSlice";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext"; 
-import Cookies from "js-cookie";
 
 
 type LoginFormInputs = {
