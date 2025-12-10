@@ -84,13 +84,18 @@ const bookSchema = yup.object({
       (val) => !!val && val.length >= 20 && val.length <= 1000
     ),
 
-  excerpt: yup
-    .string()
-    .nullable()
-    .test("excerpt-len", "Excerpt must be at least 20 characters and at most 1000 characters", (val) => {
+ excerpt: yup
+  .string()
+  .nullable()
+  .optional()
+  .test(
+    "excerpt-len",
+    "Excerpt must be at least 20 characters and at most 1000 characters",
+    (val) => {
       if (!val) return true;
       return val.length >= 20 && val.length <= 1000;
-    }),
+    }
+  ),
 
   page_count: yup
     .number()
