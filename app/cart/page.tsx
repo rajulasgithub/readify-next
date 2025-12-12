@@ -149,11 +149,7 @@ export default function CartPage() {
           )}
         </Box>
 
-        {error && (
-          <Typography color="error" mb={2}>
-            {error}
-          </Typography>
-        )}
+    
 
         {items.length === 0 ? (
           <Box

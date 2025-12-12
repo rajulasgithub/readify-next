@@ -140,20 +140,27 @@ export const fetchUsers = createAsyncThunk<
 });
 
 export const fetchSellerBooks = createAsyncThunk<
-  Book[],
-  string,
+  { books: Book[]; pagination: { total: number; page: number; limit: number; totalPages: number } },
+  { id: string; page?: number; limit?: number },
   { rejectValue: string }
->("admin/fetchSellerBooks", async (id, { rejectWithValue }) => {
-  try {
-    const token = getToken();
-    const res = await api.get(`/api/admin/sellerbooks/${id}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    return res.data.data as Book[];
-  } catch (err: unknown) {
-    return rejectWithValue(extractErrorMessage(err));
+>(
+  "admin/fetchSellerBooks",
+  async ({ id, page = 1, limit = 10 }, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+      const res = await api.get(`/api/admin/sellerbooks/${id}?page=${page}&limit=${limit}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      return {
+        books: res.data.data,
+        pagination: res.data.pagination,
+      };
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err));
+    }
   }
-});
+);
 
 export const toggleBlockUser = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
@@ -275,21 +282,19 @@ const adminSlice = createSlice({
 
     // Fetch seller books
     builder
-      .addCase(fetchSellerBooks.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(
-        fetchSellerBooks.fulfilled,
-        (state, action: PayloadAction<Book[]>) => {
-          state.loading = false;
-          state.sellerBooks = action.payload;
-        }
-      )
-      .addCase(fetchSellerBooks.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
+  .addCase(fetchSellerBooks.pending, (state) => {
+    state.loading = true;
+    state.error = null;
+  })
+  .addCase(fetchSellerBooks.fulfilled, (state, action: PayloadAction<{ books: Book[]; pagination: any }>) => {
+    state.loading = false;
+    state.sellerBooks = action.payload.books;
+    state.pagination = action.payload.pagination;
+  })
+  .addCase(fetchSellerBooks.rejected, (state, action) => {
+    state.loading = false;
+    state.error = action.payload as string;
+  });
 
     //  Toggle Block / Unblock
     builder

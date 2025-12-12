@@ -57,9 +57,16 @@ interface PlaceOrderResponse {
   order?: Order;
 }
 
-interface OrdersListResponse {
+export interface OrdersListResponse {
   message: string;
   orders: Order[];
+
+  
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  totalOrders?: number;
+   totalItems?: number;      // backend uses totalItems for item-level pagination
 }
 
 interface OrderDetailResponse {
@@ -69,6 +76,13 @@ interface OrderDetailResponse {
 
 /* ------------------------- INITIAL STATE ------------------------- */
 
+interface PaginationState {
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalOrders: number;
+}
+
 interface OrdersState {
   placing: boolean;
   placeError: string | null;
@@ -77,6 +91,7 @@ interface OrdersState {
   userOrders: Order[];
   userOrdersLoading: boolean;
   userOrdersError: string | null;
+  pagination: PaginationState | null;
 
   sellerOrders: Order[];
   sellerOrdersLoading: boolean;
@@ -102,6 +117,7 @@ const initialState: OrdersState = {
   userOrders: [],
   userOrdersLoading: false,
   userOrdersError: null,
+  pagination: null,
 
   sellerOrders: [],
   sellerOrdersLoading: false,
@@ -217,34 +233,38 @@ export const deleteAddressThunk = createAsyncThunk<string, string, { rejectValue
 );
 
 // ---------- Place Order ----------
-export const placeOrderThunk = createAsyncThunk<
-  PlaceOrderResponse,
-  PlaceOrderPayload,
-  { rejectValue: string }
->("orders/placeOrder", async (payload, { rejectWithValue }) => {
-  try {
-    const token = Cookies.get("accessToken");
-    if (!token) return rejectWithValue("No token found");
+export const placeOrderThunk = createAsyncThunk<PlaceOrderResponse, PlaceOrderPayload, { rejectValue: string }>(
+  "orders/placeOrder",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const token = Cookies.get("accessToken");
+      if (!token) return rejectWithValue("No token found");
 
-    const res = await api.post("/api/orders/orderitems", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await api.post("/api/orders/orderitems", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    return res.data as PlaceOrderResponse;
-  } catch (err: unknown) {
-    return rejectWithValue(extractErrorMessage(err) || "Failed to place order");
+      return res.data as PlaceOrderResponse;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err) || "Failed to place order");
+    }
   }
-});
+);
 
-// ---------- Fetch User Orders ----------
-export const fetchUserOrdersThunk = createAsyncThunk<OrdersListResponse, void, { rejectValue: string }>(
+// ---------- Fetch User Orders (server-side pagination) ----------
+export const fetchUserOrdersThunk = createAsyncThunk<
+  OrdersListResponse,
+  { page: number; limit: number },
+  { rejectValue: string }
+>(
   "orders/fetchUserOrders",
-  async (_, { rejectWithValue }) => {
+  async ({ page, limit }, { rejectWithValue }) => {
     try {
       const token = Cookies.get("accessToken");
       if (!token) return rejectWithValue("No token found");
 
       const res = await api.get("/api/orders/getallorder", {
+        params: { page, limit },
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -366,13 +386,46 @@ const ordersSlice = createSlice({
         state.lastPlacedMessage = action.payload.message;
         // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
       })
+
       .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
 
-    // ---------- User orders ----------
-    builder
-      .addCase(fetchUserOrdersThunk.pending, (state) => { state.userOrdersLoading = true; state.userOrdersError = null; })
-      .addCase(fetchUserOrdersThunk.fulfilled, (state, action) => { state.userOrdersLoading = false; state.userOrders = action.payload.orders; })
-      .addCase(fetchUserOrdersThunk.rejected, (state, action) => { state.userOrdersLoading = false; state.userOrdersError = action.payload || "Failed to fetch user orders"; });
+    // ---------- User orders (server-side pagination support) ----------
+    builder.addCase(fetchUserOrdersThunk.pending, (state) => {
+  state.userOrdersLoading = true;
+  state.userOrdersError = null;
+});
+
+builder.addCase(
+  fetchUserOrdersThunk.fulfilled,
+  (state, action: PayloadAction<OrdersListResponse>) => {
+    state.userOrdersLoading = false;
+
+    const p = action.payload ?? ({} as OrdersListResponse);
+
+    // accept either `orders` (order docs) or `orderItems` (flattened item docs)
+    const list = (p.orders ?? (p as any).orderItems ?? (p as any).items) as any[] ?? [];
+
+    state.userOrders = Array.isArray(list) ? (list as Order[]) : [];
+
+    // normalize pagination — prefer item-level totalItems, fallback to totalOrders
+    const page = p.page ?? state.pagination?.page ?? 1;
+    const limit = p.limit ?? state.pagination?.limit ?? 8;
+    const totalOrders = p.totalItems ?? p.totalOrders ?? (Array.isArray(list) ? list.length : 0);
+    const totalPages = p.totalPages ?? Math.max(1, Math.ceil(totalOrders / limit));
+
+    state.pagination = {
+      page,
+      limit,
+      totalPages,
+      totalOrders,
+    };
+  }
+);
+
+builder.addCase(fetchUserOrdersThunk.rejected, (state, action) => {
+  state.userOrdersLoading = false;
+  state.userOrdersError = action.payload || "Failed to fetch user orders";
+});
 
     // ---------- Seller orders ----------
     builder

@@ -89,24 +89,6 @@ const AdminDashboard: React.FC = () => {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1.5}>
-            <Button
-              variant="outlined"
-              startIcon={<SettingsOutlinedIcon />}
-              sx={{
-                textTransform: "none",
-                borderRadius: "999px",
-                borderColor: "#e5e7eb",
-                color: "text.primary",
-                "&:hover": {
-                  borderColor: "#c57a45",
-                  bgcolor: "rgba(197,122,69,0.04)",
-                },
-              }}
-            >
-              Settings
-            </Button>
-          </Stack>
         </Box>
 
         <Box

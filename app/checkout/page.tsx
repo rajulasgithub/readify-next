@@ -41,6 +41,7 @@ import {
 } from "@/src/redux/slices/orderSlice";
 import { useEffect, useState, useMemo } from "react";
 import { clearCart } from "@/src/redux/slices/cartSlice";
+import { useAuth } from "@/src/context/AuthContext";
 
 // ------------------ validation schema ------------------
 const addressSchema = yup.object({
@@ -134,7 +135,8 @@ export { normalizeSavedAddresses, isOrderAddress };
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-
+  const { blocked } = useAuth()
+ 
  const cart = useSelector((state: RootState) => state.cart);
 const items: CartItem[] = cart?.items || [];
 const totalPrice: number = cart?.totalPrice ?? 0;
@@ -360,10 +362,11 @@ const onDeleteAddress = async (id: string) => {
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
                   <Button
                     startIcon={<AddIcon />}
+                    
                     variant="outlined"
                     onClick={openAdd}
                     sx={{ textTransform: "none", borderRadius: "999px" }}
-                    disabled={!canAddAddress}
+                    disabled={!canAddAddress || blocked}
                   >
                     Add New
                   </Button>
@@ -415,10 +418,10 @@ const onDeleteAddress = async (id: string) => {
                           />
 
                           <Stack direction="row" spacing={0.5}>
-                            <IconButton size="small" onClick={() => openEdit(addr._id)} aria-label="edit address">
+                            <IconButton size="small" onClick={() => openEdit(addr._id)} disabled={blocked} aria-label="edit address">
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => onDeleteAddress(addr._id)} aria-label="delete address">
+                            <IconButton size="small"  disabled={blocked} onClick={() => onDeleteAddress(addr._id)} aria-label="delete address">
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Stack>
@@ -441,6 +444,7 @@ const onDeleteAddress = async (id: string) => {
                 <Button
                   variant="outlined"
                   sx={{ textTransform: "none", borderRadius: "999px" }}
+                  disabled={ blocked }
                   onClick={() => {
                     reset();
                     setDialogOpen(true);
@@ -449,7 +453,7 @@ const onDeleteAddress = async (id: string) => {
                 >
                   Cancel
                 </Button>
-                <Button variant="contained" sx={{ textTransform: "none", borderRadius: "999px", bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }} onClick={placeOrderWithSelected} disabled={placing}>
+                <Button variant="contained" sx={{ textTransform: "none", borderRadius: "999px", bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }} onClick={placeOrderWithSelected} disabled={placing || blocked}>
                   {placing ? "Placing..." : "Place Order"}
                 </Button>
               </Stack>

@@ -163,10 +163,6 @@ export default function EditProfilePage() {
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 6 }}>
       <Container maxWidth="sm">
-        <Typography variant="h4" fontWeight={700} sx={{ mb: 3, color: "#111827" }}>
-          Edit Profile
-        </Typography>
-
         <Card sx={{ borderRadius: 4, boxShadow: "0 10px 30px rgba(15,23,42,0.08)", bgcolor: "#ffffff" }}>
           <CardContent sx={{ p: 4 }}>
             <Stack spacing={2} alignItems="center" mb={3}>

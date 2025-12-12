@@ -24,8 +24,10 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
+import HeartBrokenIcon from "@mui/icons-material/HeartBroken";
 
 import { addToCart } from "@/src/redux/slices/cartSlice";
+
 import {
   addToWishlist,
   fetchWishlist,
@@ -134,23 +136,67 @@ export default function ViewOneBook() {
       const result = await dispatch(removeFromWishlist(id));
       setBusyWishlist(false);
       if (removeFromWishlist.fulfilled.match(result)) {
-        toast.info("Removed from wishlist");
+        toast(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>removed from Wishlist!</span>
+          <HeartBrokenIcon
+            onClick={() => router.push("/cart")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
+          />
+        </div>,
+        {
+          autoClose: 5000,
+        }
+      );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payloadMsg = (result as any)?.payload;
-        toast.error(payloadMsg || "Failed to remove from wishlist.");
+         toast(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Failed to remove from Wishlist!</span>
+          <ShoppingCartIcon
+            onClick={() => router.push("/cart")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
+          />
+        </div>,
+        {
+          autoClose: 5000,
+        }
+      );
       }
     } else {
       const result = await dispatch(addToWishlist(id));
       setBusyWishlist(false);
       if (addToWishlist.fulfilled.match(result)) {
-        toast.success("Added to wishlist");
+         toast(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>Added to Wishlist!</span>
+          <FavoriteIcon
+            onClick={() => router.push("/cart")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
+          />
+        </div>,
+        {
+          autoClose: 5000,
+        }
+      );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payloadMsg = (result as any)?.payload;
-        toast.error(payloadMsg || "Failed to add to wishlist.");
+         toast(
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>failed adding Wishlist!</span>
+          <ShoppingCartIcon
+            onClick={() => router.push("/cart")}
+            style={{ cursor: "pointer", color: "#1976d2" }}
+          />
+        </div>,
+        {
+          autoClose: 5000,
+        }
+      );
       }
     }
   };

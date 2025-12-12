@@ -125,29 +125,7 @@ export default function WishlistPage() {
               gap: 2,
             }}
           >
-            <Box>
-            
-
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  lineHeight: 1.1,
-                  mb: 1,
-                }}
-              >
-                Saved Books for Later
-              </Typography>
-
-              <Typography
-                variant="body2"
-                sx={{ color: "text.secondary", maxWidth: 420 }}
-              >
-                Keep track of the books you love. Move them to your cart whenever
-                you&apos;re ready to read.
-              </Typography>
-            </Box>
-
+         
             {hasItems && (
               <Stack direction="row" spacing={2} alignItems="center">
                 <Chip

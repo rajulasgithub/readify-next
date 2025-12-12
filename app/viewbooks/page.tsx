@@ -111,15 +111,6 @@ export default function ViewBooks() {
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Browse Books
-          </Typography>
-          <Typography sx={{ color: "text.secondary" }}>
-            Explore books from all categories
-          </Typography>
-        </Box>
-
-        <Box sx={{ mb: 4 }}>
           <Searchfield
             value={searchInput}
             onChange={(val: string) => setSearchInput(val)}
