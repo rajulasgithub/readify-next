@@ -34,17 +34,20 @@ toggleBlockUser,
 deleteUserThunk,
 } from "@/src/redux/slices/adminSlice";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext"; // adjust the path if ne
 
 interface ConfirmDialogState {
 open: boolean;
 action: "block" | "delete" | null;
 userId: string | null;
+ isBlocked?: boolean; 
 }
 
 const AdminUsersList: React.FC = () => {
 const router = useRouter();
 const searchParams = useSearchParams();
 const role = searchParams.get("type");
+const { setBlocked } = useAuth();
 
 const initialPage = Number(searchParams.get("page")) || 1;
 const [page, setPage] = useState(initialPage);
@@ -112,8 +115,8 @@ year: "numeric",
 
 const title = role === "seller" ? "All Sellers" : "All Customers";
 
-const openBlockDialog = (userId: string) => {
-setConfirmDialog({ open: true, action: "block", userId });
+const openBlockDialog = (userId: string,isBlocked: boolean) => {
+setConfirmDialog({ open: true, action: "block", userId , isBlocked,});
 };
 
 const openDeleteDialog = (userId: string) => {
@@ -133,6 +136,7 @@ return;
 try {
   if (confirmDialog.action === "block") {
     await dispatch(toggleBlockUser({ userId: confirmDialog.userId, role })).unwrap();
+      setBlocked(!confirmDialog.isBlocked);
   }
   if (confirmDialog.action === "delete") {
     await dispatch(deleteUserThunk({ userId: confirmDialog.userId, role })).unwrap();
@@ -154,7 +158,7 @@ return (
 title={<Typography variant="h6" sx={{ fontWeight: 600 }}>{title}</Typography>}
 subheader={
 <Typography variant="body2" sx={{ color: "text.secondary" }}>
-View all registered {role ?? ""}s, their order count and total spend. </Typography>
+View all registered {role ?? ""}s. </Typography>
 }
 />
 <CardContent sx={{ pt: 0 }}>
@@ -171,7 +175,6 @@ Total {role ?? "user"}s:{" "}
 <Typography component="span" sx={{ fontWeight: 600, color: "#0f172a" }}>
 {pagination?.total ?? users.length} </Typography> </Typography> </Stack>
 
-```
         {loading && (
           <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
             <CircularProgress size={28} />
@@ -188,9 +191,8 @@ Total {role ?? "user"}s:{" "}
                   <TableRow>
                     <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                    {/* <TableCell sx={{ fontWeight: 600 }}>Total Orders</TableCell> */}
                     <TableCell sx={{ fontWeight: 600 }}>Joined On</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -208,7 +210,6 @@ Total {role ?? "user"}s:{" "}
                           </Stack>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
-                        {/* <TableCell><Chip label={`${user.sellerOrderCount || 0} orders`} size="small" /></TableCell> */}
                         <TableCell>{formatDate(user.createdAt)}</TableCell>
                         <TableCell align="right">
                           <Stack direction="row" spacing={1}>
@@ -220,7 +221,7 @@ Total {role ?? "user"}s:{" "}
                                 onClick={() => router.push(`/admin/viewstore/${user._id}`)}
                               />
                             )}
-                            <Button variant="outlined" size="small" onClick={() => openBlockDialog(user._id)} disabled={actionLoading} sx={{ textTransform: "none" }}>
+                            <Button variant="outlined" size="small"  onClick={() => openBlockDialog(user._id, user.blocked)} disabled={actionLoading} sx={{ textTransform: "none" }}>
                               {user.blocked ? "Unblock" : "Block"}
                             </Button>
                             <Button variant="contained" size="small" color="error" sx={{ textTransform: "none" }} onClick={() => openDeleteDialog(user._id)} disabled={actionLoading}>
@@ -248,14 +249,22 @@ Total {role ?? "user"}s:{" "}
         )}
 
         <Dialog open={confirmDialog.open} onClose={handleCloseDialog}>
-          <DialogTitle>{confirmDialog.action === "delete" ? "Delete User" : "Block User"}</DialogTitle>
-          <DialogContent>
-            <Typography>
-              {confirmDialog.action === "delete"
-                ? "Are you sure you want to permanently delete this user?"
-                : "Are you sure you want to block this user?"}
-            </Typography>
-          </DialogContent>
+        <DialogTitle>
+  {confirmDialog.action === "delete"
+    ? "Delete User"
+    : confirmDialog.isBlocked
+    ? "Unblock User"
+    : "Block User"}
+</DialogTitle>
+         <DialogContent>
+  <Typography>
+    {confirmDialog.action === "delete"
+      ? "Are you sure you want to permanently delete this user?"
+      : confirmDialog.isBlocked
+      ? "Are you sure you want to unblock this user?"
+      : "Are you sure you want to block this user?"}
+  </Typography>
+</DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancel</Button>
             <Button onClick={handleConfirmAction} color="error" variant="contained" disabled={actionLoading}>

@@ -20,8 +20,10 @@ import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
 import { fetchSellerOrdersThunk } from "@/src/redux/slices/orderSlice";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext";
 
 export default function SellerOrdersPage() {
+  const {blocked } = useAuth()
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
@@ -119,6 +121,7 @@ export default function SellerOrdersPage() {
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Button
                           size="small"
+                          disabled={blocked}
                           variant="outlined"
                           startIcon={<VisibilityOutlinedIcon />}
                           onClick={() => handleView(order._id)}

@@ -54,6 +54,7 @@ export default function Navbar() {
   const isLoggedIn = !!role;
   const isCustomer = role === "customer";
   const isSeller = role === "seller";
+  const isAdmin = role === "admin"; // ✅ Added
 
   useEffect(() => {
     setMounted(true);
@@ -83,11 +84,13 @@ export default function Navbar() {
           letterSpacing: 1,
         }}
       >
-        Readify </Typography>
+        Readify
+      </Typography>
 
       <Divider sx={{ mb: 2 }} />
 
       <List>
+        {/* CUSTOMER MOBILE MENU */}
         {isCustomer && (
           <>
             <ListItem component={Link} href="/categories" sx={{ cursor: "pointer" }}>
@@ -105,7 +108,7 @@ export default function Navbar() {
             <ListItem component={Link} href="/vieworders" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Orders" />
             </ListItem>
-            <ListItem component={Link} href="/profile" sx={{ cursor: "pointer" }}>
+            <ListItem component={Link} href="/customerprofile" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Profile" />
             </ListItem>
             <Divider sx={{ my: 2 }} />
@@ -115,12 +118,16 @@ export default function Navbar() {
           </>
         )}
 
+        {/* SELLER MOBILE MENU */}
         {isSeller && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
               <ListItemText primary="About" />
             </ListItem>
-            <ListItem component={Link} href="/profile" sx={{ cursor: "pointer" }}>
+            <ListItem component={Link} href="/sellerbooks" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Books" />
+            </ListItem>
+            <ListItem component={Link} href="/sellerprofile" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Profile" />
             </ListItem>
             <Divider sx={{ my: 2 }} />
@@ -130,6 +137,25 @@ export default function Navbar() {
           </>
         )}
 
+        {/* ADMIN MOBILE MENU */}
+        {isAdmin && (
+          <>
+            <ListItem component={Link} href="/admin/dashboard" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+
+            <ListItem component={Link} href="/adminprofile" sx={{ cursor: "pointer" }}>
+              <ListItemText primary="Profile" />
+            </ListItem>
+
+            <Divider sx={{ my: 2 }} />
+            <ListItem onClick={handleLogout} sx={{ color: "#b91c1c", cursor: "pointer" }}>
+              <ListItemText primary="Logout" />
+            </ListItem>
+          </>
+        )}
+
+        {/* GUEST MOBILE MENU */}
         {!isLoggedIn && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
@@ -146,8 +172,6 @@ export default function Navbar() {
         )}
       </List>
     </Box>
-
-
   );
 
   if (!mounted) return null;
@@ -166,48 +190,39 @@ export default function Navbar() {
             px: { xs: 2, md: 5 },
           }}
         >
-         <Link href="/">
-  <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
- 
-    <Box
-      component="img"
-      src="/logo.jpg"
-      alt="Readify Logo"
-      sx={{ width: 32, height: 32 }}
-    />
+          {/* LOGO */}
+          <Link href="/">
+            <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
+              <Box
+                component="img"
+                src="/logo.jpg"
+                alt="Readify Logo"
+                sx={{ width: 32, height: 32 }}
+              />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 800,
+                  letterSpacing: 2,
+                  color: "#111827",
+                }}
+              >
+                Readify
+              </Typography>
+            </Box>
+          </Link>
 
-    {/* Site name */}
-    <Typography
-      variant="h6"
-      sx={{
-        fontWeight: 800,
-        letterSpacing: 2,
-        color: "#111827",
-      }}
-    >
-      Readify
-    </Typography>
-  </Box>
-</Link>
-
-          {/* Desktop menu */}
+          {/* DESKTOP MENU */}
           <Stack
             direction="row"
             spacing={3}
             sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}
           >
+            {/* CUSTOMER DESKTOP MENU */}
             {isCustomer && (
               <>
                 <Link href="/viewbooks" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     Books
                   </Typography>
                 </Link>
@@ -226,25 +241,13 @@ export default function Navbar() {
                 </Typography>
 
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     About
                   </Typography>
                 </Link>
 
                 <IconButton
-                  sx={{
-                    color: "#c57a45",
-                    transition: "0.3s",
-                    "&:hover": { color: "#b36a36" },
-                  }}
+                  sx={{ color: "#c57a45", "&:hover": { color: "#b36a36" } }}
                   onClick={() => router.push("/wishlist")}
                 >
                   <Badge badgeContent={0} color="error">
@@ -253,11 +256,7 @@ export default function Navbar() {
                 </IconButton>
 
                 <IconButton
-                  sx={{
-                    color: "#4b5563",
-                    transition: "0.3s",
-                    "&:hover": { color: "#111827" },
-                  }}
+                  sx={{ color: "#4b5563", "&:hover": { color: "#111827" } }}
                   onClick={() => router.push("/cart")}
                 >
                   <Badge badgeContent={0} color="primary">
@@ -266,11 +265,7 @@ export default function Navbar() {
                 </IconButton>
 
                 <IconButton
-                  sx={{
-                    color: "#4b5563",
-                    transition: "0.3s",
-                    "&:hover": { color: "#111827" },
-                  }}
+                  sx={{ color: "#4b5563", "&:hover": { color: "#111827" } }}
                   onClick={() => router.push("/customerprofile")}
                 >
                   <PersonOutlineIcon />
@@ -291,42 +286,23 @@ export default function Navbar() {
               </>
             )}
 
+            {/* SELLER DESKTOP MENU */}
             {isSeller && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     About
                   </Typography>
                 </Link>
 
                 <Link href="/sellerbooks" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     Books
                   </Typography>
                 </Link>
 
                 <IconButton
-                  sx={{
-                    color: "#4b5563",
-                    transition: "0.3s",
-                    "&:hover": { color: "#111827" },
-                  }}
+                  sx={{ color: "#4b5563", "&:hover": { color: "#111827" } }}
                   onClick={() => router.push("/sellerprofile")}
                 >
                   <PersonOutlineIcon />
@@ -347,32 +323,42 @@ export default function Navbar() {
               </>
             )}
 
+            {/* ADMIN DESKTOP MENU */}
+            {isAdmin && (
+              <>
+                <Link href="/admin" style={{ textDecoration: "none" }}>
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                    Dashboard
+                  </Typography>
+                </Link>
+
+             
+                <Button
+                  onClick={handleLogout}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: 14,
+                    ml: 1,
+                    color: "#b91c1c",
+                    "&:hover": { backgroundColor: "#fee2e2" },
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
+
+            {/* GUEST DESKTOP MENU */}
             {!isLoggedIn && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     About
                   </Typography>
                 </Link>
 
                 <Link href="/register" style={{ textDecoration: "none" }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 500,
-                      fontSize: 15,
-                      color: "#4b5563",
-                      cursor: "pointer",
-                      "&:hover": { color: "#111827" },
-                    }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
                     Register
                   </Typography>
                 </Link>
@@ -396,16 +382,14 @@ export default function Navbar() {
             )}
           </Stack>
 
-          {/* Mobile menu icon */}
-          <IconButton
-            sx={{ display: { xs: "flex", md: "none" } }}
-            onClick={handleDrawerToggle}
-          >
+          {/* MOBILE MENU BUTTON */}
+          <IconButton sx={{ display: { xs: "flex", md: "none" } }} onClick={handleDrawerToggle}>
             <MenuIcon sx={{ color: "#111827" }} />
           </IconButton>
         </Toolbar>
       </AppBar>
 
+      {/* CATEGORY MENU */}
       <Menu
         anchorEl={catAnchorEl}
         open={isCatMenuOpen}
@@ -436,7 +420,6 @@ export default function Navbar() {
               sx={{
                 borderRadius: 1,
                 fontSize: 14,
-                transition: "0.2s",
                 "&:hover": { backgroundColor: "#f3f4f6" },
               }}
             >
@@ -446,7 +429,7 @@ export default function Navbar() {
         </Box>
       </Menu>
 
-      {/* Mobile drawer */}
+      {/* MOBILE DRAWER */}
       <Drawer
         anchor="left"
         open={mobileOpen}
@@ -459,7 +442,5 @@ export default function Navbar() {
         {drawer}
       </Drawer>
     </>
-
-
   );
 }

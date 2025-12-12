@@ -31,15 +31,12 @@ import {
   fetchWishlist,
   removeFromWishlist,
 } from "@/src/redux/slices/wishlistSlice";
+import { useAuth } from "@/src/context/AuthContext"; 
 
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
-import { useAuth } from "@/src/context/AuthContext";
 
-/**
- * Minimal typed shape for book data used in this component.
- * Keeps typing strict while matching fields you access in the UI.
- */
+
 type BookType = {
   title?: string;
   image?: string | string[];
@@ -59,6 +56,7 @@ export default function ViewOneBook() {
   const router = useRouter();
   const params = useParams();
   const id = (params as { id?: string } | undefined)?.id;
+   const { blocked } = useAuth();
 
   const { singleBook, loading, error } = useSelector(
     (state: RootState) => state.books
@@ -302,8 +300,9 @@ export default function ViewOneBook() {
                     <>
                       <Button
                         variant="contained"
+                    
                         startIcon={<ShoppingCartIcon />}
-                        disabled={busyCart}
+                        disabled={busyCart || blocked}
                         onClick={handleAddToCart}
                         sx={{ bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" }, textTransform: "none" }}
                       >
@@ -314,7 +313,7 @@ export default function ViewOneBook() {
                         variant={isInWishlist ? "outlined" : "contained"}
                         startIcon={isInWishlist ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                         onClick={handleWishlistToggle}
-                        disabled={busyWishlist}
+                        disabled={busyWishlist || blocked}
                         sx={{
                           textTransform: "none",
                           borderColor: isInWishlist ? "#c57a45" : undefined,
@@ -332,6 +331,7 @@ export default function ViewOneBook() {
                     <>
                       <Button
                         variant="outlined"
+                        disabled={blocked}
                         startIcon={<EditIcon />}
                         onClick={() => router.push(`/updatebook/${id}`)}
                         sx={{ textTransform: "none" }}
@@ -341,6 +341,7 @@ export default function ViewOneBook() {
 
                       <Button
                         variant="contained"
+                         disabled={blocked}
                         color="error"
                         startIcon={<DeleteOutlineIcon />}
                         onClick={() => setOpenConfirm(true)}

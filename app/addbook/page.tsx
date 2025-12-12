@@ -28,6 +28,7 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { addBook } from "@/src/redux/slices/bookSlice";
 
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext"; 
 
 const categories = [
   "Academic",
@@ -62,14 +63,15 @@ const languages = [
 type BookFormInputs = {
   title: string;
   description: string;
-  excerpt?: string | null;   // ✅ FIXED HERE
-  page_count: number;
+  excerpt?: string;
+  page_count?: number | string;
   publish_date: string;
   author: string;
   genre: string[];
   language: string[];
-  prize: number;
+  prize?: number | string;
   category: string;
+  image?: File | null;
 };
 
 const bookSchema = yup.object({
@@ -84,22 +86,15 @@ const bookSchema = yup.object({
       (val) => !!val && val.length >= 20 && val.length <= 1000
     ),
 
- excerpt: yup
-  .string()
-  .nullable()
-  .optional()
-  .test(
-    "excerpt-len",
-    "Excerpt must be at least 20 characters and at most 1000 characters",
-    (val) => {
-      if (!val) return true;
-      return val.length >= 20 && val.length <= 1000;
-    }
-  ),
+  excerpt: yup
+    .string()
+    .required("Excerpt is required")
+    .min(20, "Excerpt must be at least 20 characters")
+    .max(1000, "Excerpt must be at most 1000 characters"),
 
   page_count: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" ? undefined : Number(originalValue)))
+    .transform((value, originalValue) => (originalValue === "" || originalValue == null ? undefined : Number(originalValue)))
     .typeError("Page count must be a number")
     .positive("Page count must be positive")
     .required("Page count is required"),
@@ -114,53 +109,90 @@ const bookSchema = yup.object({
 
   prize: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" ? undefined : Number(originalValue)))
+    .transform((value, originalValue) => (originalValue === "" || originalValue == null ? undefined : Number(originalValue)))
     .typeError("Price must be a number")
     .positive("Price must be positive")
     .required("Price is required"),
 
   category: yup.string().required("Category is required"),
+
+  // image validated here
+  image: yup
+    .mixed()
+    .required("An image is required")
+    .test("fileType", "Only image files are allowed", (value) => {
+      if (!value) return false;
+      return value instanceof File && value.type?.startsWith("image/");
+    }),
 });
 
 const AddBook: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const route = useRouter();
+  const { blocked } = useAuth();
+  console.log(blocked)
 
   const { loading, error } = useSelector((state: RootState) => state.books);
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<BookFormInputs>({
-  resolver: yupResolver(bookSchema),
-  defaultValues: { genre: [], language: [], excerpt: null },
-});
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<BookFormInputs>({
+    resolver: yupResolver(bookSchema),
+    defaultValues: {
+      genre: [],
+      language: [],
+      excerpt: "",
+      category: "",
+      image: null,
+    },
+  });
 
   const descriptionValue = watch("description") || "";
   const excerptValue = (watch("excerpt") as string) || "";
 
-  // Only a single image now
-  const [image, setImage] = useState<File | null>(null);
+  // local UI preview state (keeps preview URL safe)
   const [preview, setPreview] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      // clear
+      setValue("image", null, { shouldValidate: true });
+      if (preview) {
+        URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
+      return;
+    }
 
     const file = files[0];
 
-    setImage(file);
+    // update react-hook-form state and validate immediately
+    setValue("image", file, { shouldValidate: true });
+
+    // update preview UI
+    if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
-    setImageError(null);
 
     // reset input value so same file can be selected again if needed
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const removeImage = () => {
-    if (preview) URL.revokeObjectURL(preview);
-    setImage(null);
-    setPreview(null);
+    // remove file from form state
+    setValue("image", null, { shouldValidate: true, shouldDirty: true });
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const openFilePicker = () => {
@@ -168,14 +200,16 @@ const AddBook: React.FC = () => {
   };
 
   const onSubmit = async (data: BookFormInputs) => {
-    if (!image) {
-      setImageError("An image is required");
+    // at this point, yup has validated image as required.
+    const file = data.image;
+    if (!file) {
+      // defensive: show nothing further
       return;
     }
 
     const formData = new FormData();
 
-    formData.append("image", image);
+    formData.append("image", file);
 
     formData.append("title", data.title);
     formData.append("description", data.description);
@@ -199,6 +233,14 @@ const AddBook: React.FC = () => {
       }
     } catch (err) {
       console.error("Error adding book:", err);
+    }
+  };
+
+  // helper to scroll to image area when image error occurs
+  const onInvalid = (formErrors: any) => {
+    if (formErrors.image) {
+      // scroll to image (file input wrapper) to make error visible
+      fileRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
 
@@ -230,7 +272,7 @@ const AddBook: React.FC = () => {
           {/* Hidden input (single file) */}
           <input ref={fileRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
 
-          {/* Centered preview area (click to open) */}
+          {/* Centered preview area (click to open). We keep aria-hidden false so scrollIntoView works */}
           <Box
             onClick={openFilePicker}
             sx={{
@@ -241,7 +283,8 @@ const AddBook: React.FC = () => {
               gap: 1,
               position: "relative",
             }}
-            aria-hidden
+            role="button"
+            tabIndex={0}
           >
             {preview ? (
               <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: "relative" }}>
@@ -253,6 +296,7 @@ const AddBook: React.FC = () => {
                     removeImage();
                   }}
                   sx={{ position: "absolute", top: 8, right: 8, bgcolor: "#fff", "&:hover": { bgcolor: "#f3f4f6" } }}
+                  aria-label="Remove image"
                 >
                   <DeleteOutlineIcon />
                 </IconButton>
@@ -263,7 +307,7 @@ const AddBook: React.FC = () => {
                   width: 160,
                   height: 200,
                   borderRadius: 2,
-                  border: "1px dashed #e5e7eb",
+                  border: `1px dashed #e5e7eb`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -277,11 +321,10 @@ const AddBook: React.FC = () => {
               Click to choose image
             </Typography>
 
-            {imageError && (
-              <Typography variant="caption" sx={{ color: "red" }}>
-                {imageError}
-              </Typography>
-            )}
+            {/* show validation error from RHF/Yup */}
+            <Typography variant="caption" sx={{ color: "red" }}>
+              {(errors as any).image?.message ?? ""}
+            </Typography>
           </Box>
         </Stack>
 
@@ -290,8 +333,12 @@ const AddBook: React.FC = () => {
             {typeof error === "string" ? error : "Failed to add book"}
           </Typography>
         )}
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+           {blocked && (
+  <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+    Your account is blocked. You cannot add books.
+  </Typography>
+)}
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
           <Stack spacing={2.3}>
             <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />
 
@@ -307,7 +354,6 @@ const AddBook: React.FC = () => {
                 inputProps={{ maxLength: 1000 }}
               />
 
-              {/* character counter aligned right */}
               <Typography variant="caption" sx={{ display: "block", textAlign: "right", color: "text.secondary", mt: 0.5 }}>
                 {`${descriptionValue.length}/1000`}
               </Typography>
@@ -390,19 +436,33 @@ const AddBook: React.FC = () => {
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField label="Price (₹)" type="number" fullWidth {...register("prize")} error={!!errors.prize} helperText={errors.prize?.message} />
 
-              <TextField select label="Category" fullWidth {...register("category")} error={!!errors.category} helperText={errors.category?.message}>
-                {categories.map((c) => (
-                  <MenuItem key={c} value={c}>
-                    {c}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Controller
+                name="category"
+                control={control}
+                defaultValue=""
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Category"
+                    fullWidth
+                    {...field}
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
+                  >
+                    {categories.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
             </Stack>
 
             <Button
               variant="contained"
               type="submit"
-              disabled={loading}
+              disabled={loading || blocked} 
               sx={{
                 bgcolor: "#c57a45",
                 "&:hover": { bgcolor: "#b36a36" },
@@ -417,9 +477,10 @@ const AddBook: React.FC = () => {
               }}
             >
               {loading && <CircularProgress size={18} sx={{ color: "#fff" }} />}
-              {loading ? "Adding..." : "Add Book"}
+                {loading ? "Adding..." : blocked ? "Blocked" : "Add Book"}
             </Button>
           </Stack>
+
         </form>
       </Box>
     </Box>

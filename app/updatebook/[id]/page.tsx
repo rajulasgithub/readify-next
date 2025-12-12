@@ -27,6 +27,7 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext";
 
 const categories = ["Academic","Fiction","Non-Fiction","Comics","Children","Poetry"];
 const genres = ["Fiction","Thriller","Romance","Fantasy","Sci-Fi","Mystery","Biography","Adventure","Self-help"];
@@ -72,6 +73,7 @@ const UpdateBook: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const bookId = params?.id as string;
+  const { blocked } = useAuth();
 
   const {  singleBookLoading, singleBookError, loading, error } = useSelector((state: RootState) => state.books);
 
@@ -228,8 +230,14 @@ const UpdateBook: React.FC = () => {
           </Box>
         </Stack>
 
+       
         {error && <Typography variant="body2" sx={{ color: "#b91c1c", mb: 2, fontWeight: 500 }}>{typeof error === "string" ? error : "Failed to update book"}</Typography>}
 
+   {blocked && (
+  <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+    Your account is blocked. You cannot add books.
+  </Typography>
+)}
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Stack spacing={2.3}>
             <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />
@@ -321,7 +329,7 @@ const UpdateBook: React.FC = () => {
             <Button
               variant="contained"
               type="submit"
-              disabled={loading}
+              disabled={loading || blocked}
               sx={{
                 bgcolor: "#c57a45",
                 "&:hover": { bgcolor: "#b36a36" },

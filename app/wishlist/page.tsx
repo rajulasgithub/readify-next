@@ -33,8 +33,10 @@ import {
 } from "@/src/redux/slices/wishlistSlice";
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { addToCart } from "@/src/redux/slices/cartSlice";
+import { useAuth } from "@/src/context/AuthContext";
 
 export default function WishlistPage() {
+  const { blocked } = useAuth()
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -161,6 +163,7 @@ export default function WishlistPage() {
                 <Button
                   variant="outlined"
                   color="error"
+                  disabled={blocked}
                   sx={{
                     borderRadius: "999px",
                     textTransform: "none",
@@ -302,19 +305,27 @@ export default function WishlistPage() {
                           />
                         )}
 
-                        <IconButton
-                          size="small"
-                          onClick={() => removeHandler(item.bookId)}
-                          sx={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            bgcolor: "#ffffff",
-                            "&:hover": { bgcolor: "#f1f5f9" },
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" color="error" />
-                        </IconButton>
+                       <IconButton
+  size="small"
+  disabled={blocked}
+  onClick={() => removeHandler(item.bookId)}
+  sx={{
+    position: "absolute",
+    top: 8,
+    right: 8,
+    bgcolor: "#ffffff",
+    opacity: blocked ? 0.4 : 1,        // ← Dim when blocked
+    pointerEvents: blocked ? "none" : "auto", // ← Prevent clicking even if opacity allows
+    "&:hover": {
+      bgcolor: blocked ? "#ffffff" : "#f1f5f9", // No hover effect if blocked
+    },
+  }}
+>
+  <DeleteIcon
+    fontSize="small"
+    color={blocked ? "disabled" : "error"}   // ← Grey out icon
+  />
+</IconButton>
 
                         <CardMedia
                           component="img"
@@ -367,6 +378,7 @@ export default function WishlistPage() {
                         <Button
                           variant="contained"
                           size="small"
+                          disabled={blocked}
                           sx={{
                             borderRadius: "999px",
                             textTransform: "none",
@@ -385,6 +397,7 @@ export default function WishlistPage() {
                         <Button
                           variant="outlined"
                           size="small"
+                          
                           sx={{
                             borderRadius: "999px",
                             textTransform: "none",

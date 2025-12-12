@@ -23,6 +23,7 @@ import {
   fetchSellerOrderDetailsThunk,
   updateOrderItemStatusThunk,
 } from "@/src/redux/slices/orderSlice";
+import { useAuth } from "@/src/context/AuthContext";
 
 interface SellerOrderParams {
   orderId: string;
@@ -31,6 +32,7 @@ interface SellerOrderParams {
 export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
   const { orderId } = params;
   const dispatch = useDispatch<AppDispatch>();
+  const { blocked } = useAuth()
 
   const {
     selectedSellerOrder,
@@ -280,7 +282,7 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                           onChange={(e) =>
                             handleStatusChange(idx, e.target.value as string, item._id)
                           }
-                          disabled={updatingStatus}
+                          disabled={updatingStatus ||blocked}
                         >
                           <MenuItem value="dispatched">Mark as Dispatched</MenuItem>
                           <MenuItem value="delivered">Mark as Delivered</MenuItem>

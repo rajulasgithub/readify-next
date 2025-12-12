@@ -33,8 +33,10 @@ import {
 } from "@/src/redux/slices/cartSlice";
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext";
 
 export default function CartPage() {
+  const {blocked} = useAuth()
   const [page, setPage] = useState(1);
   const limit = 2;
   const dispatch = useDispatch<AppDispatch>();
@@ -133,6 +135,7 @@ export default function CartPage() {
           {items.length > 0 && (
             <Button
               variant="outlined"
+              disabled={blocked}
               color="error"
               onClick={clearAllHandler}
               sx={{
@@ -270,9 +273,10 @@ export default function CartPage() {
                       >
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <IconButton
+                        
                             size="small"
                             onClick={() => decreaseQty(item.bookId, item.quantity)}
-                            disabled={item.quantity === 1}
+                            disabled={item.quantity === 1 || blocked}
                             sx={{
                               borderRadius: "999px",
                               bgcolor: "#f3f4f6",
@@ -288,6 +292,7 @@ export default function CartPage() {
 
                           <IconButton
                             size="small"
+                            disabled={ blocked}
                             onClick={() => increaseQty(item.bookId, item.quantity)}
                             sx={{
                               borderRadius: "999px",
@@ -301,6 +306,7 @@ export default function CartPage() {
 
                         <Button
                           size="small"
+                          disabled={blocked}
                           startIcon={<DeleteIcon />}
                           onClick={() => removeItemHandler(item.bookId)}
                           sx={{
@@ -358,7 +364,7 @@ export default function CartPage() {
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Link href="/checkout" passHref>
-                  <Button variant="contained" color="primary">
+                  <Button variant="contained" disabled={blocked} color="primary">
                     Checkout
                   </Button>
                 </Link>
@@ -406,6 +412,7 @@ export default function CartPage() {
       {/* Floating + button to quickly navigate to viewbooks */}
       <Link href="/viewbooks" passHref>
         <Tooltip title="Browse books" arrow>
+        
           <Fab
             aria-label="browse-books"
             sx={{

@@ -44,6 +44,7 @@ export default function EditProfilePage() {
   const { role } = useAuth();
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const { blocked } = useAuth()
   const { user, loading } = useSelector((state: RootState) => state.auth);
 
   const [bioLength, setBioLength] = useState(user?.bio?.length ?? 0);
@@ -173,7 +174,7 @@ export default function EditProfilePage() {
                 {user.firstName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
               </Avatar>
 
-              <Button variant="outlined" component="label" sx={{ borderRadius: "999px", textTransform: "none", px: 3 }}>
+              <Button variant="outlined" disabled={blocked} component="label" sx={{ borderRadius: "999px", textTransform: "none", px: 3 }}>
                 Change Photo
                 <input hidden accept="image/*" type="file" onChange={handlePhotoChange} />
               </Button>
@@ -209,7 +210,7 @@ export default function EditProfilePage() {
                     Cancel
                   </Button>
 
-                  <Button type="submit" variant="contained" disabled={isSubmitting || loading} sx={{ textTransform: "none", borderRadius: "999px", px: 4, bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }}>
+                  <Button type="submit" variant="contained" disabled={isSubmitting || loading || blocked} sx={{ textTransform: "none", borderRadius: "999px", px: 4, bgcolor: "#c57a45", "&:hover": { bgcolor: "#b36a36" } }}>
                     {isSubmitting || loading ? "Saving..." : "Save Changes"}
                   </Button>
                 </Stack>

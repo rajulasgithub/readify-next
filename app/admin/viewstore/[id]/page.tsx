@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  CardMedia
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useRouter } from "next/navigation";
@@ -93,24 +94,49 @@ const ViewStore: React.FC = () => {
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Book Cover</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Author</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Price</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="right">
-                    Actions
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
 
               <TableBody>
                 {sellerBooks.map((book) => (
                   <TableRow key={book._id} hover>
+                     <TableCell>
+    {/* Display Book Image */}
+    {book.image ? (
+      <CardMedia
+        component="img"
+        image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`} // adjust path
+        alt={book.title}
+        sx={{
+          width: 60,
+          height: 80,
+          borderRadius: 1,
+          objectFit: "cover",
+        }}
+      />
+    ) : (
+      <Box
+        sx={{
+          width: 60,
+          height: 80,
+          borderRadius: 1,
+          bgcolor: "#e0e0e0",
+        }}
+      />
+    )}
+  </TableCell>
+
                     <TableCell sx={{ fontWeight: 600 }}>{book.title}</TableCell>
                     <TableCell>{book.author}</TableCell>
                     <TableCell>{formatCurrency(book.prize)}</TableCell>
                     <TableCell>{book.category}</TableCell>
-                    <TableCell align="right">
+                    <TableCell >
                       <Button
                         variant="outlined"
                         size="small"
