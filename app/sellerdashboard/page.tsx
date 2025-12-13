@@ -32,17 +32,14 @@ const SellerDashboard: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  // Fetch seller stats once when mounted
   useEffect(() => {
     dispatch(fetchSellerStats());
   }, [dispatch]);
 
-  // Read seller stats from auth slice
   const { sellerStats, sellerStatsLoading } = useSelector(
     (state: RootState) => state.auth
   );
 
-  // Demo fallback numbers used only if sellerStats is null
  
 
   const stats: StatCard[] = [
@@ -205,9 +202,6 @@ const SellerDashboard: React.FC = () => {
             </Box>
           ))}
         </Box>
-
-        {/* You can add other dashboard sections below (book list, chart, etc.) */}
-
       </Container>
     </Box>
   );
