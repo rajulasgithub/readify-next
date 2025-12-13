@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
       sx={{
         bgcolor: "#f9fafb",
         borderTop: "1px solid #e5e7eb",
-        mt: "auto", // ensures footer sticks to bottom
+        mt: "auto", 
         py: 6,
         width: "100%",
       }}
@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
           spacing={4}
           sx={{ textAlign: { xs: "center", md: "left" } }}
         >
-          {/* Brand */}
+          
           <Box sx={{ maxWidth: 280 }}>
             <Typography
               variant="h5"
@@ -39,7 +39,7 @@ const Footer: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Quick Links */}
+         
           <Stack spacing={1}>
             <Typography
               variant="subtitle1"
@@ -62,8 +62,6 @@ const Footer: React.FC = () => {
               </Typography>
             ))}
           </Stack>
-
-          {/* Social Media */}
           <Stack alignItems={{ xs: "center", md: "flex-start" }} spacing={2}>
             <Typography
               variant="subtitle1"
@@ -90,7 +88,6 @@ const Footer: React.FC = () => {
 
         <Divider sx={{ my: 4, borderColor: "#e5e7eb" }} />
 
-        {/* Copyright */}
         <Typography
           variant="caption"
           sx={{

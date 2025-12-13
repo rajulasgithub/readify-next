@@ -46,7 +46,6 @@ const getToken = () => {
   return Cookies.get("accessToken") || null;
 };
 
-/** Safely extract an error message from unknown shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
@@ -59,7 +58,6 @@ const extractErrorMessage = (err: unknown): string => {
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // fallback
   }
   return "Unknown error";
 };
@@ -84,7 +82,6 @@ export const fetchWishlist = createAsyncThunk<
       params: { page, limit },
     });
 
-    // keep original response parsing (data.data etc.)
     return {
       items: (res.data.data as WishlistItem[]) || [],
       totalPages: Number(res.data.totalPages ?? 1),

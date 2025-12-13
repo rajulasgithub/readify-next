@@ -1,4 +1,3 @@
-// CheckoutPage.tsx
 "use client";
 
 import {
@@ -43,7 +42,6 @@ import { useEffect, useState, useMemo } from "react";
 import { clearCart } from "@/src/redux/slices/cartSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
-// ------------------ validation schema ------------------
 const addressSchema = yup.object({
   fullName: yup.string().required("Full name is required"),
   phone: yup
@@ -62,7 +60,6 @@ const addressSchema = yup.object({
 
 type AddressForm = yup.InferType<typeof addressSchema> & { _id?: string };
 
-// ------------------ helper: normalize API payload ------------------
 export interface OrderAddress {
   _id: string;
   fullName: string;
@@ -78,7 +75,6 @@ interface AddressWrapper {
   addresses: unknown[];
 }
 
-// Type guard for OrderAddress
 function isOrderAddress(obj: unknown): obj is OrderAddress {
   return (
     typeof obj === "object" &&
@@ -93,16 +89,13 @@ function isOrderAddress(obj: unknown): obj is OrderAddress {
   );
 }
 
-// Type-safe normalize function
 function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
   if (!raw) return null;
 
-  // Case 1: raw is an array of OrderAddress
   if (Array.isArray(raw) && raw.length && isOrderAddress(raw[0])) {
     return raw as OrderAddress[];
   }
 
-  // Case 2: raw is an array of wrapper objects containing addresses
   if (Array.isArray(raw) && raw.length && typeof raw[0] === "object" && raw[0] !== null && "addresses" in raw[0]) {
     const flattened: OrderAddress[] = raw.flatMap((entry) => {
       const wrapper = entry as AddressWrapper;
@@ -114,7 +107,6 @@ function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
     return flattened.length ? flattened : null;
   }
 
-  // Case 3: raw is a single object with addresses property
   if (typeof raw === "object" && raw !== null && "addresses" in raw) {
     const wrapper = raw as AddressWrapper;
     if (Array.isArray(wrapper.addresses)) {
@@ -122,7 +114,6 @@ function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
     }
   }
 
-  // Case 4: raw is a single OrderAddress object
   if (isOrderAddress(raw)) {
     return [raw];
   }
@@ -131,7 +122,6 @@ function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
 }
 
 export { normalizeSavedAddresses, isOrderAddress };
-// ------------------ component ------------------
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -146,23 +136,18 @@ const totalPrice: number = cart?.totalPrice ?? 0;
 const placing: boolean = ordersState.placing;
 const rawSaved: unknown = ordersState.savedAddresses ?? null;
 const addressLoading: boolean = ordersState.addressLoading;
-  // Normalize the addresses so UI always sees flat AddressForm[] or null
  const savedAddresses = useMemo<OrderAddress[] | null>(() => normalizeSavedAddresses(rawSaved), [rawSaved]);
 
-  // debug log to confirm shape — remove in production
   useEffect(() => {
     console.log("Normalized savedAddresses:", savedAddresses);
   }, [savedAddresses]);
 
-  // Local UI states
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false); // for add/edit dialog
+  const [dialogOpen, setDialogOpen] = useState(false); 
 
-  // Compute whether user can add another address (max 3)
   const canAddAddress = !(savedAddresses && savedAddresses.length >= 3);
 
-  // subtotal calculation
   const subtotal =
     typeof totalPrice === "number"
       ? totalPrice
@@ -198,23 +183,19 @@ const addressLoading: boolean = ordersState.addressLoading;
     },
   });
 
-  // fetch addresses on mount
   useEffect(() => {
     dispatch(fetchAddressThunk());
   }, [dispatch]);
 
-  // when addresses change, select the first by default (if none selected)
   useEffect(() => {
     if (savedAddresses && savedAddresses.length && !selectedAddressId) {
       setSelectedAddressId(savedAddresses[0]._id);
     }
-    // if there are no addresses, clear selection
     if (!savedAddresses || savedAddresses.length === 0) {
       setSelectedAddressId(null);
     }
   }, [savedAddresses, selectedAddressId]);
 
-  // prefill form when editingAddressId changes
   useEffect(() => {
     if (editingAddressId && savedAddresses) {
       const addr = savedAddresses.find((a) => a._id === editingAddressId);
@@ -233,14 +214,12 @@ const addressLoading: boolean = ordersState.addressLoading;
     }
   }, [editingAddressId, savedAddresses, reset]);
 
-  // open add dialog
   const openAdd = () => {
     setEditingAddressId(null);
     reset();
     setDialogOpen(true);
   };
 
-  // open edit dialog
   const openEdit = (id: string) => {
     setEditingAddressId(id);
     setDialogOpen(true);
@@ -252,11 +231,9 @@ const addressLoading: boolean = ordersState.addressLoading;
     reset();
   };
 
-  // handle add or save
  const onSaveAddress = async (data: AddressForm) => {
   try {
     if (editingAddressId) {
-      // Pass AddressForm as OrderAddress if compatible
       await dispatch(
         saveAddressThunk({
           addressId: editingAddressId,
@@ -272,13 +249,11 @@ const addressLoading: boolean = ordersState.addressLoading;
         })
       ).unwrap();
       toast.success("Address added successfully");
-      // Effect will auto-select the first address
     }
 
     dispatch(fetchAddressThunk());
     closeDialog();
   } catch (err: unknown) {
-    // Properly handle unknown error
     const msg = err instanceof Error ? err.message : "Failed to save address";
     toast.error(msg);
   }
@@ -299,7 +274,6 @@ const onDeleteAddress = async (id: string) => {
   }
 };
 
-  // Place order using selected address id
   const placeOrderWithSelected = async () => {
     if (!items.length) {
       toast.error("Your cart is empty");
@@ -352,7 +326,6 @@ const onDeleteAddress = async (id: string) => {
         </Stack>
 
         <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
-          {/* LEFT: Addresses */}
           <Card sx={{ flex: 1, borderRadius: 3, boxShadow: "0 12px 30px rgba(15,23,42,0.08)", bgcolor: "#ffffff" }}>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -378,7 +351,6 @@ const onDeleteAddress = async (id: string) => {
                 </Box>
               </Stack>
 
-              {/* Addresses list */}
               {addressLoading ? (
                 <Typography>Loading addresses...</Typography>
               ) : savedAddresses && savedAddresses.length ? (
@@ -460,7 +432,6 @@ const onDeleteAddress = async (id: string) => {
             </CardContent>
           </Card>
 
-          {/* RIGHT: Order Summary */}
           <Card sx={{ flex: { xs: "unset", md: "0 0 360px" }, borderRadius: 3, boxShadow: "0 12px 30px rgba(15,23,42,0.1)", bgcolor: "#ffffff", height: "fit-content" }}>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
@@ -545,7 +516,6 @@ const onDeleteAddress = async (id: string) => {
           </Card>
         </Box>
 
-        {/* Add/Edit Dialog */}
         <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
           <DialogTitle>{editingAddressId ? "Edit Address" : "Add Address"}</DialogTitle>
           <DialogContent>

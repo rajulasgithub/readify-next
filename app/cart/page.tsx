@@ -368,8 +368,6 @@ export default function CartPage() {
             </Box>
           </>
         )}
-
-        {/* Pagination placed at the bottom of the component (inside the Container) */}
         <Box
           sx={{
             display: "flex",
@@ -404,8 +402,6 @@ export default function CartPage() {
           />
         </Box>
       </Container>
-
-      {/* Floating + button to quickly navigate to viewbooks */}
       <Link href="/viewbooks" passHref>
         <Tooltip title="Browse books" arrow>
         

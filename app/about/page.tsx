@@ -124,13 +124,11 @@ export default function AboutPage() {
             </Stack>
           </CardContent>
         </Card>
-
-       
         <Typography
           textAlign="center"
           sx={{ mt: 5, color: "#6b7280", fontSize: 14 }}
         >
-          Thank you for choosing Readify ❤️  
+          Thank you for choosing Readify 
           <br />
           We hope you enjoy your reading journey with us.
         </Typography>

@@ -4,7 +4,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
 
-/* ------------------------- TYPES ------------------------- */
 
 export interface OrderAddress {
   _id: string;
@@ -19,7 +18,7 @@ export interface OrderAddress {
 
 export interface OrderItem {
   _id?: string;
-  book: unknown; // can be populated object or id string depending on backend
+  book: unknown; 
   quantity: number;
   orderedAt?: string;
   price: number;
@@ -29,7 +28,7 @@ export interface OrderItem {
 
 export interface Order {
   _id: string;
-  user: unknown; // can be populated user object or user id
+  user: unknown; 
   items: OrderItem[];
   totalQty: number;
   totalAmount: number;
@@ -66,7 +65,7 @@ export interface OrdersListResponse {
   limit?: number;
   totalPages?: number;
   totalOrders?: number;
-   totalItems?: number;      // backend uses totalItems for item-level pagination
+   totalItems?: number;     
 }
 
 interface OrderDetailResponse {
@@ -74,7 +73,6 @@ interface OrderDetailResponse {
   order: Order;
 }
 
-/* ------------------------- INITIAL STATE ------------------------- */
 
 interface PaginationState {
   page: number;
@@ -105,8 +103,8 @@ interface OrdersState {
   addressLoading: boolean;
   addressError: string | null;
 
-  loading: boolean; // generic loading for status updates
-  error: string | null; // generic error for status updates
+  loading: boolean; 
+  error: string | null; 
 }
 
 const initialState: OrdersState = {
@@ -135,9 +133,7 @@ const initialState: OrdersState = {
   error: null,
 };
 
-/* ------------------------- Helpers ------------------------- */
 
-/** Safely extract an error message from unknown shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
@@ -150,12 +146,10 @@ const extractErrorMessage = (err: unknown): string => {
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // ignore
   }
   return "Unknown error";
 };
 
-/* ------------------------- THUNKS ------------------------- */
 
 export const fetchAddressThunk = createAsyncThunk<
   { addresses: OrderAddress[] },
@@ -232,7 +226,6 @@ export const deleteAddressThunk = createAsyncThunk<string, string, { rejectValue
   }
 );
 
-// ---------- Place Order ----------
 export const placeOrderThunk = createAsyncThunk<PlaceOrderResponse, PlaceOrderPayload, { rejectValue: string }>(
   "orders/placeOrder",
   async (payload, { rejectWithValue }) => {
@@ -251,7 +244,6 @@ export const placeOrderThunk = createAsyncThunk<PlaceOrderResponse, PlaceOrderPa
   }
 );
 
-// ---------- Fetch User Orders (server-side pagination) ----------
 export const fetchUserOrdersThunk = createAsyncThunk<
   OrdersListResponse,
   { page: number; limit: number },
@@ -275,7 +267,6 @@ export const fetchUserOrdersThunk = createAsyncThunk<
   }
 );
 
-// ---------- Fetch Seller Orders ----------
 export const fetchSellerOrdersThunk = createAsyncThunk<OrdersListResponse, void, { rejectValue: string }>(
   "orders/fetchSellerOrders",
   async (_, { rejectWithValue }) => {
@@ -294,7 +285,6 @@ export const fetchSellerOrdersThunk = createAsyncThunk<OrdersListResponse, void,
   }
 );
 
-// ---------- Update Order Item Status (cancel/dispatched/delivered) ----------
 export const updateOrderItemStatusThunk = createAsyncThunk<
   OrderDetailResponse,
   { orderId: string; itemId: string; action: string },
@@ -319,7 +309,6 @@ export const updateOrderItemStatusThunk = createAsyncThunk<
   }
 );
 
-// ---------- Fetch Seller Order Details ----------
 export const fetchSellerOrderDetailsThunk = createAsyncThunk<OrderDetailResponse, string, { rejectValue: string }>(
   "orders/fetchSellerOrderDetails",
   async (orderId, { rejectWithValue }) => {
@@ -338,7 +327,6 @@ export const fetchSellerOrderDetailsThunk = createAsyncThunk<OrderDetailResponse
   }
 );
 
-/* ------------------------- SLICE ------------------------- */
 
 const ordersSlice = createSlice({
   name: "orders",
@@ -354,7 +342,6 @@ const ordersSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // ---------- Address reducers ----------
     builder
       .addCase(fetchAddressThunk.pending, (state) => { state.addressLoading = true; state.addressError = null; })
       .addCase(fetchAddressThunk.fulfilled, (state, action) => { state.addressLoading = false; state.savedAddresses = action.payload.addresses; })
@@ -378,18 +365,15 @@ const ordersSlice = createSlice({
       })
       .addCase(deleteAddressThunk.rejected, (state, action) => { state.addressLoading = false; state.addressError = action.payload || "Failed to delete address"; });
 
-    // ---------- Place order ----------
     builder
       .addCase(placeOrderThunk.pending, (state) => { state.placing = true; state.placeError = null; state.lastPlacedMessage = null; })
       .addCase(placeOrderThunk.fulfilled, (state, action) => {
         state.placing = false;
         state.lastPlacedMessage = action.payload.message;
-        // IMPORTANT: do NOT add action.payload.order.address into savedAddresses here.
       })
 
       .addCase(placeOrderThunk.rejected, (state, action) => { state.placing = false; state.placeError = action.payload || "Failed to place order"; });
 
-    // ---------- User orders (server-side pagination support) ----------
     builder.addCase(fetchUserOrdersThunk.pending, (state) => {
   state.userOrdersLoading = true;
   state.userOrdersError = null;
@@ -402,12 +386,10 @@ builder.addCase(
 
     const p = action.payload ?? ({} as OrdersListResponse);
 
-    // accept either `orders` (order docs) or `orderItems` (flattened item docs)
     const list = (p.orders ?? (p as any).orderItems ?? (p as any).items) as any[] ?? [];
 
     state.userOrders = Array.isArray(list) ? (list as Order[]) : [];
 
-    // normalize pagination — prefer item-level totalItems, fallback to totalOrders
     const page = p.page ?? state.pagination?.page ?? 1;
     const limit = p.limit ?? state.pagination?.limit ?? 8;
     const totalOrders = p.totalItems ?? p.totalOrders ?? (Array.isArray(list) ? list.length : 0);
@@ -427,13 +409,11 @@ builder.addCase(fetchUserOrdersThunk.rejected, (state, action) => {
   state.userOrdersError = action.payload || "Failed to fetch user orders";
 });
 
-    // ---------- Seller orders ----------
     builder
       .addCase(fetchSellerOrdersThunk.pending, (state) => { state.sellerOrdersLoading = true; state.sellerOrdersError = null; })
       .addCase(fetchSellerOrdersThunk.fulfilled, (state, action) => { state.sellerOrdersLoading = false; state.sellerOrders = action.payload.orders; })
       .addCase(fetchSellerOrdersThunk.rejected, (state, action) => { state.sellerOrdersLoading = false; state.sellerOrdersError = action.payload || "Failed to fetch seller orders"; });
 
-    // ---------- Update order item status ----------
     builder.addCase(updateOrderItemStatusThunk.pending, (state) => { state.loading = true; state.error = null; });
     builder.addCase(updateOrderItemStatusThunk.fulfilled, (state, action) => {
       state.loading = false;
@@ -446,7 +426,7 @@ builder.addCase(fetchUserOrdersThunk.rejected, (state, action) => {
     });
     builder.addCase(updateOrderItemStatusThunk.rejected, (state, action) => { state.loading = false; state.error = action.payload || "Failed to update item status"; });
 
-    // ---------- Selected seller order details ----------
+  
     builder
       .addCase(fetchSellerOrderDetailsThunk.pending, (state) => { state.selectedSellerOrderLoading = true; state.selectedSellerOrderError = null; })
       .addCase(fetchSellerOrderDetailsThunk.fulfilled, (state, action) => { state.selectedSellerOrderLoading = false; state.selectedSellerOrder = action.payload.order; })

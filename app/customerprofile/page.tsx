@@ -27,7 +27,6 @@ export default function UserProfilePage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  // 🔹 Redux state
   const { user, loading } = useSelector((state: RootState) => state.auth);
   const wishlistCount = useSelector(
   (state: RootState) => state.wishlist.items.length
@@ -37,10 +36,8 @@ const cartCount = useSelector(
   (state: RootState) => state.cart.items.length
 );
 
-  // 🔹 AuthContext just for logout (token/cookie cleanup)
   const { logoutUser } = useAuth();
 
-  // 🔹 Fetch latest profile from backend on mount
   useEffect(() => {
     dispatch(fetchProfileThunk());
  dispatch(fetchWishlist({ page: 1, limit: 100 }));
@@ -66,7 +63,6 @@ const cartCount = useSelector(
   return (
     <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        {/* Optional: small loading text */}
         {loading && (
           <Typography
             variant="body2"
@@ -83,7 +79,6 @@ const cartCount = useSelector(
             gap: 3,
           }}
         >
-          {/* Left: Profile card */}
           <Card
             sx={{
               flex: "0 0 330px",
@@ -156,10 +151,8 @@ const cartCount = useSelector(
             </CardContent>
           </Card>
 
-          {/* Right: Stats + actions */}
           <Box sx={{ flex: 1 }}>
             <Stack spacing={3}>
-              {/* Stats cards */}
               <Box
                 sx={{
                   display: "flex",
@@ -167,7 +160,6 @@ const cartCount = useSelector(
                   flexWrap: "wrap",
                 }}
               >
-                {/* Wishlist card */}
                 <Card
                   sx={{
                     flex: "1 1 250px",
@@ -238,7 +230,6 @@ const cartCount = useSelector(
                 </Card>
               </Box>
 
-              {/* Orders */}
               <Card
                 sx={{
                   borderRadius: 3,
@@ -293,7 +284,6 @@ const cartCount = useSelector(
                 </CardContent>
               </Card>
 
-              {/* Quick actions */}
               <Card
                 sx={{
                   borderRadius: 3,

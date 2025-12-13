@@ -50,7 +50,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (savedLastName) setLastName(savedLastName);
     if (savedPhone) setPhone(savedPhone);
 
-    // fetch profile for blocked
     if (savedToken) {
 
       api.get("/api/user/profile", {

@@ -4,7 +4,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/api";
 import Cookies from "js-cookie";
 
-/* ------------------------- TYPES ------------------------- */
 
 export interface CartItem {
   bookId: string;
@@ -30,7 +29,6 @@ interface CartState {
   };
 }
 
-/* ------------------ localStorage helpers (client-only) ------------------ */
 const CART_STORAGE_KEY = "book_app_cart_v1";
 
 function loadCartFromStorage(): { items: CartItem[]; totalQuantity: number; totalPrice: number } | null {
@@ -63,7 +61,6 @@ function clearCartFromStorage() {
   }
 }
 
-/* ------------------------- persisted initial state ------------------------- */
 
 const persistedCart = loadCartFromStorage();
 
@@ -86,7 +83,6 @@ const initialState: CartState = persistedCart
       totalPrice: 0,
     };
 
-/* ------------------------- helpers ------------------------- */
 
 const getToken = () => {
   if (typeof window === "undefined") return null;
@@ -106,7 +102,6 @@ const recalcTotals = (state: CartState) => {
   state.totalPrice = total;
 };
 
-/** Safely extract message from unknown error shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
@@ -229,7 +224,6 @@ export const updateCartQuantity = createAsyncThunk<
   }
 });
 
-/* ------------------------- SLICE ------------------------- */
 
 export const cartSlice = createSlice({
   name: "cart",
@@ -240,11 +234,9 @@ export const cartSlice = createSlice({
       state.error = null;
       state.success = false;
     },
-    // optional: client-only add/remove which persist locally (not used if server is source-of-truth)
-    // addLocalItem: (state, action: PayloadAction<CartItem>) => { ... }
+   
   },
   extraReducers: (builder) => {
-    // FETCH CART ITEMS
     builder
       .addCase(fetchCartItems.pending, (state) => {
         state.loading = true;
@@ -261,7 +253,6 @@ export const cartSlice = createSlice({
         }>) => {
           state.loading = false;
           state.items = action.payload.items;
-          // compute totals robustly
           recalcTotals(state);
           state.pagination = {
             totalItems: action.payload.totalItems,
@@ -269,7 +260,6 @@ export const cartSlice = createSlice({
             currentPage: action.payload.currentPage,
           };
           state.success = true;
-          // persist updated cart
           saveCartToStorage({ items: state.items, totalQuantity: state.totalQuantity, totalPrice: state.totalPrice });
         }
       )
@@ -295,7 +285,7 @@ export const cartSlice = createSlice({
       .addCase(addToCart.fulfilled, (state) => {
         state.loading = false;
         state.success = true;
-        // Note: server endpoint is authoritative; call fetchCartItems from UI after addToCart if you want immediate local update
+        
       })
       .addCase(addToCart.rejected, (state, action: PayloadAction<string | undefined>) => {
         state.loading = false;

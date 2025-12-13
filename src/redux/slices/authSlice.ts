@@ -27,7 +27,6 @@ interface AuthState {
   loading: boolean;
   error: string | null;
 
-  // seller stats
   sellerStats: SellerStats | null;
   sellerStatsLoading: boolean;
   sellerStatsError: string | null;
@@ -56,7 +55,6 @@ export interface ApiResponse {
 
 export type UpdateProfilePayload = FormData;
 
-/** Safely extract an error message from different error shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
 
@@ -75,13 +73,11 @@ const extractErrorMessage = (err: unknown): string => {
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // ignore and fallback
   }
 
   return "Unknown error";
 };
 
-// REGISTER USER
 export const registerUser = createAsyncThunk<
   ApiResponse,
   RegisterFormData,
@@ -96,7 +92,6 @@ export const registerUser = createAsyncThunk<
   }
 });
 
-// LOGIN USER
 export const loginUserThunk = createAsyncThunk<
   ApiResponse,
   LoginFormData,
@@ -159,15 +154,7 @@ export const fetchProfileThunk = createAsyncThunk<
   }
 });
 
-/**
- * NEW: fetchSellerStats thunk
- * Expects backend endpoint: GET /api/seller/stats
- * Response shape can be either:
- *  - { success: true, data: { totalBooks, totalOrders, totalRevenue } }
- *  - or directly { totalBooks, totalOrders, totalRevenue }
- *
- * We robustly handle both shapes without using `any`.
- */
+
 export const fetchSellerStats = createAsyncThunk<
   { totalBooks: number; totalOrders: number; totalRevenue: number },
   void,
@@ -181,10 +168,10 @@ export const fetchSellerStats = createAsyncThunk<
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    // raw holds the unknown response body
+    
     const raw: unknown = data;
 
-    // Helper to safely coerce a value to number (handles number or numeric string)
+    
     const toNumber = (v: unknown): number => {
       if (typeof v === "number") return v;
       if (typeof v === "string") {
@@ -194,12 +181,10 @@ export const fetchSellerStats = createAsyncThunk<
       return 0;
     };
 
-    // Determine payload object either from data.data or data directly
     let payloadObj: Record<string, unknown> = {};
 
     if (raw && typeof raw === "object") {
       const rawObj = raw as Record<string, unknown>;
-      // prefer raw.data if present
       const possibleInner = rawObj["data"];
       if (possibleInner && typeof possibleInner === "object") {
         payloadObj = possibleInner as Record<string, unknown>;
@@ -239,7 +224,6 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
     },
-    // optional: clear seller stats
     clearSellerStats: (state) => {
       state.sellerStats = null;
       state.sellerStatsError = null;

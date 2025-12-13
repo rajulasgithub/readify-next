@@ -31,7 +31,6 @@ import {
 import { addReview } from "@/src/redux/slices/bookSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
-/* -------------------- Local types -------------------- */
 type ReviewType = { user: string; rating: number; comment?: string };
 type BookType = { _id?: string; title?: string; image?: string[]; reviews?: ReviewType[] };
 type OrderItemType = {
@@ -43,7 +42,7 @@ type OrderItemType = {
 };
 type OrderType = {
   _id: string;
-  items: OrderItemType[] | OrderItemType; // backend may send single object
+  items: OrderItemType[] | OrderItemType; 
   status: string;
   paymentMethod?: string;
   createdAt?: string;
@@ -60,7 +59,6 @@ type FlattenedItemType = OrderItemType & {
   address?: unknown;
 };
 
-/* -------------------- Component -------------------- */
 export default function UserOrdersPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { blocked } = useAuth();
@@ -127,7 +125,6 @@ export default function UserOrdersPage() {
     return book.reviews.find((r) => r.user === userId) || null;
   };
 
-  // flatten items safely (handle object or array)
   const itemCards: FlattenedItemType[] = useMemo(() => {
     return orders.flatMap((order) => {
       const itemsArray = Array.isArray(order.items) ? order.items : [order.items]; // <-- safe
@@ -356,7 +353,6 @@ export default function UserOrdersPage() {
           </>
         )}
 
-        {/* REVIEW MODAL */}
         <Dialog open={reviewOpen} onClose={() => setReviewOpen(false)}>
           <DialogTitle>Add Review</DialogTitle>
           <DialogContent>
@@ -398,7 +394,6 @@ export default function UserOrdersPage() {
           </DialogActions>
         </Dialog>
 
-        {/* CANCEL CONFIRM MODAL */}
         <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)}>
           <DialogTitle sx={{ fontWeight: 700 }}> Cancel Item </DialogTitle>
           <DialogContent>

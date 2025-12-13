@@ -62,7 +62,6 @@ const getToken = () => {
   return Cookies.get("accessToken") || null;
 };
 
-/** Safely extract a message from various error shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
@@ -78,14 +77,11 @@ const extractErrorMessage = (err: unknown): string => {
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // fallback
   }
   return "Unknown error";
 };
 
-// --------- Thunks (typed) ----------
 
-// addBook: expect Book returned in res.data.data
 export const addBook = createAsyncThunk<Book, FormData, { rejectValue: string }>(
   "books/addBook",
   async (formData: FormData, { rejectWithValue }) => {
@@ -96,7 +92,6 @@ export const addBook = createAsyncThunk<Book, FormData, { rejectValue: string }>
           Authorization: `Bearer ${token}`,
         },
       });
-      // assume backend returns { data: <book> }
       return res.data.data as Book;
     } catch (err: unknown) {
       return rejectWithValue(extractErrorMessage(err) || "Failed to add book");
@@ -348,7 +343,6 @@ export const bookSlice = createSlice({
       })
       .addCase(addReview.fulfilled, (state) => {
         state.loading = false;
-        // backend does not return updated book; UI triggers refetch elsewhere
       })
       .addCase(addReview.rejected, (state, action: PayloadAction<string | undefined>) => {
         state.loading = false;

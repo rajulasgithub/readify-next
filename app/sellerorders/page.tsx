@@ -105,7 +105,6 @@ export default function SellerOrdersPage() {
     Placed: {new Date(order.createdAt).toLocaleString()}
   </Typography>
 
-  {/* ⭐ CUSTOMER NAME */}
   <Typography variant="body2" sx={{ color: "#6b7280", mt: 1 }}>
     Customer: {order.user?.firstName} {order.user?.lastName}
   </Typography>
@@ -135,7 +134,6 @@ export default function SellerOrdersPage() {
 
                     <Divider sx={{ my: 1.5 }} />
 
-                    {/* brief preview of first item title(s) */}
                     <Stack spacing={0.5}>
                       {(order.items || []).slice(0, 3).map((it: Order, idx: number) => (
                         <Typography key={idx} variant="body2" sx={{ color: "#374151" }}>

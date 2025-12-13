@@ -66,10 +66,8 @@ userId: null,
 
 const users = role === "seller" ? sellers : customers;
 
-// Use ref to store timeout for debouncing
 const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-// Fetch users with optional search and page
 const fetchUsersWithSearch = useCallback(
   (searchVal: string, pageNum: number) => {
     if (!role) return;
@@ -87,10 +85,10 @@ const fetchUsersWithSearch = useCallback(
       `?type=${role}&page=${pageNum}&search=${encodeURIComponent(searchVal)}`
     );
   },
-  [dispatch, role, router] // dependencies that actually matter
+  [dispatch, role, router] 
 );
 
-// Trigger search with debounce (500ms)
+
 useEffect(() => {
   if (searchTimeout.current) clearTimeout(searchTimeout.current);
 

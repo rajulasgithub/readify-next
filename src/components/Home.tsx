@@ -32,7 +32,6 @@ const Home: React.FC = () => {
     dispatch(getHomeBooksThunk());
   }, [dispatch]);
 
-  // Merge all books for UI
   const allCollections = [
     ...newBooks.map((b) => ({
       id: b._id,
@@ -55,7 +54,6 @@ const Home: React.FC = () => {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* HERO SECTION */}
         <Box sx={{ maxWidth: "900px", mx: "auto", width: "100%" }}>
           <Box
             sx={{
@@ -128,7 +126,6 @@ const Home: React.FC = () => {
               </Stack>
             </Box>
 
-            {/* RIGHT SIDE IMAGE */}
             <Box
               sx={{
                 flex: 1,
@@ -184,7 +181,6 @@ const Home: React.FC = () => {
           </Box>
         </Box>
 
-        {/* SECTION HEADING */}
         <Box sx={{ mb: 2 }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
@@ -200,7 +196,6 @@ const Home: React.FC = () => {
           </Stack>
         </Box>
 
-        {/* BOOK COLLECTIONS */}
         <Box
           sx={{
             display: "flex",
@@ -260,8 +255,8 @@ const Home: React.FC = () => {
         left: 0,
         width: "100%",
         height: "100%",
-        objectFit: "contain", // ensures the full image is visible
-        backgroundColor: "#f3f3f3", // optional nice background
+        objectFit: "contain", 
+        backgroundColor: "#f3f3f3", 
       }}
     />
   </Box>

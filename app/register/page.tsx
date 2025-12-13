@@ -54,14 +54,12 @@ export default function RegisterPage() {
 
   const [password, setPassword] = useState("");
 
-  // ✔ Password validation checks
   const isLengthValid = password.length >= 6;
   const hasUppercase = /[A-Z]/.test(password);
   const hasLowercase = /[a-z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const hasSpecial = /[@$!%*?&]/.test(password);
 
-  // show rules only after user starts typing
   const showPasswordRules = password.length > 0;
 
   useEffect(() => {
@@ -223,7 +221,6 @@ export default function RegisterPage() {
               />
             </Stack>
 
-            {/* PASSWORD INPUT WITH LIVE CHECKS */}
             <Box>
               <TextField
                 type="password"
@@ -234,12 +231,12 @@ export default function RegisterPage() {
                 inputRef={passwordRef}
                 {...passwordField}
                 onChange={(e) => {
-                  passwordOnChange(e);       // update react-hook-form
-                  setPassword(e.target.value); // update local state
+                  passwordOnChange(e);      
+                  setPassword(e.target.value); 
                 }}
               />
 
-              {/* Live Password Rules – only after typing */}
+              
               {showPasswordRules && (
                 <Box sx={{ mt: 1, ml: 1 }}>
                   <Typography

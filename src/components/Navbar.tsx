@@ -54,7 +54,7 @@ export default function Navbar() {
   const isLoggedIn = !!role;
   const isCustomer = role === "customer";
   const isSeller = role === "seller";
-  const isAdmin = role === "admin"; // ✅ Added
+  const isAdmin = role === "admin"; 
 
   useEffect(() => {
     setMounted(true);
@@ -90,7 +90,7 @@ export default function Navbar() {
       <Divider sx={{ mb: 2 }} />
 
       <List>
-        {/* CUSTOMER MOBILE MENU */}
+       
         {isCustomer && (
           <>
             <ListItem component={Link} href="/categories" sx={{ cursor: "pointer" }}>
@@ -118,7 +118,7 @@ export default function Navbar() {
           </>
         )}
 
-        {/* SELLER MOBILE MENU */}
+       
         {isSeller && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
@@ -137,7 +137,7 @@ export default function Navbar() {
           </>
         )}
 
-        {/* ADMIN MOBILE MENU */}
+       
         {isAdmin && (
           <>
             <ListItem component={Link} href="/admin/dashboard" sx={{ cursor: "pointer" }}>
@@ -155,7 +155,7 @@ export default function Navbar() {
           </>
         )}
 
-        {/* GUEST MOBILE MENU */}
+       
         {!isLoggedIn && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
@@ -190,7 +190,6 @@ export default function Navbar() {
             px: { xs: 2, md: 5 },
           }}
         >
-          {/* LOGO */}
           <Link href="/">
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
               <Box
@@ -212,13 +211,11 @@ export default function Navbar() {
             </Box>
           </Link>
 
-          {/* DESKTOP MENU */}
           <Stack
             direction="row"
             spacing={3}
             sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}
           >
-            {/* CUSTOMER DESKTOP MENU */}
             {isCustomer && (
               <>
                 <Link href="/viewbooks" style={{ textDecoration: "none" }}>
@@ -286,7 +283,6 @@ export default function Navbar() {
               </>
             )}
 
-            {/* SELLER DESKTOP MENU */}
             {isSeller && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
@@ -323,7 +319,6 @@ export default function Navbar() {
               </>
             )}
 
-            {/* ADMIN DESKTOP MENU */}
             {isAdmin && (
               <>
                 <Link href="/admin" style={{ textDecoration: "none" }}>
@@ -348,7 +343,6 @@ export default function Navbar() {
               </>
             )}
 
-            {/* GUEST DESKTOP MENU */}
             {!isLoggedIn && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
@@ -382,14 +376,12 @@ export default function Navbar() {
             )}
           </Stack>
 
-          {/* MOBILE MENU BUTTON */}
           <IconButton sx={{ display: { xs: "flex", md: "none" } }} onClick={handleDrawerToggle}>
             <MenuIcon sx={{ color: "#111827" }} />
           </IconButton>
         </Toolbar>
       </AppBar>
 
-      {/* CATEGORY MENU */}
       <Menu
         anchorEl={catAnchorEl}
         open={isCatMenuOpen}
@@ -429,7 +421,6 @@ export default function Navbar() {
         </Box>
       </Menu>
 
-      {/* MOBILE DRAWER */}
       <Drawer
         anchor="left"
         open={mobileOpen}

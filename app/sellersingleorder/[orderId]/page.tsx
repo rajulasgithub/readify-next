@@ -62,11 +62,9 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
     if (orderId) dispatch(fetchSellerOrderDetailsThunk(orderId));
   }, [dispatch, orderId]);
 
-  // NOTE: we no longer return early on loading/error — we keep the page shell so footer stays at bottom.
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 5 }}>
       <Container maxWidth="md">
-        {/* HEADER */}
         <Typography
           variant="overline"
           sx={{ letterSpacing: 3, color: "text.secondary" }}
@@ -83,14 +81,12 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
           Order Summary
         </Typography>
 
-        {/* If loading: show a centered spinner but keep space (so footer doesn't jump) */}
         {selectedSellerOrderLoading && (
           <Box
             sx={{
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              // keep a reasonable height so page doesn't collapse (adjust as needed)
               minHeight: { xs: "40vh", md: "48vh" },
             }}
           >
@@ -98,7 +94,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
           </Box>
         )}
 
-        {/* If there is an error, show it in a styled box but keep page shell */}
         {!selectedSellerOrderLoading && selectedSellerOrderError && (
           <Box
             sx={{
@@ -115,10 +110,8 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
           </Box>
         )}
 
-        {/* Only render order details when available */}
         {!selectedSellerOrderLoading && selectedSellerOrder && (
           <>
-            {/* ORDER INFORMATION */}
             <Card
               elevation={0}
               sx={{
@@ -149,7 +142,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
               </CardContent>
             </Card>
 
-            {/* CUSTOMER DETAILS */}
             <Card
               elevation={0}
               sx={{
@@ -179,7 +171,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
               </CardContent>
             </Card>
 
-            {/* DELIVERY ADDRESS */}
             <Card
               elevation={0}
               sx={{
@@ -214,7 +205,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
               </CardContent>
             </Card>
 
-            {/* ORDERED ITEMS */}
             <Card
               elevation={0}
               sx={{
@@ -243,7 +233,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                         alignItems: "flex-start",
                       }}
                     >
-                      {/* IMAGE */}
                       <CardMedia
                         component="img"
                         image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.book?.image}`}
@@ -256,7 +245,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                         }}
                       />
 
-                      {/* DETAILS */}
                       <Stack flex={1} spacing={1}>
                         <Typography fontWeight="bold">{item.book?.title}</Typography>
                         <Typography>
@@ -273,7 +261,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                         </Typography>
                       </Stack>
 
-                      {/* STATUS DROPDOWN */}
                       <FormControl size="small" sx={{ minWidth: 160 }}>
                         <InputLabel>Status</InputLabel>
                         <Select
@@ -305,7 +292,6 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
           </>
         )}
 
-        {/* If not loading and no order found, show friendly message (keeps layout stable) */}
         {!selectedSellerOrderLoading && !selectedSellerOrder && !selectedSellerOrderError && (
           <Box sx={{ minHeight: "30vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Typography color="text.secondary">No order details available.</Typography>

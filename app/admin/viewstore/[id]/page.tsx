@@ -30,7 +30,7 @@ const ViewStore: React.FC = () => {
   const { sellerBooks, loading, error, pagination } = useSelector((state: RootState) => state.admin);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(8); // or any default
+  const [limit] = useState(8); 
 
   useEffect(() => {
     if (!id) return;
@@ -118,7 +118,7 @@ const ViewStore: React.FC = () => {
               </Table>
             </Box>
 
-            {/* Pagination */}
+        
             {pagination?.totalPages && pagination.totalPages > 1 && (
               <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
                 <Pagination

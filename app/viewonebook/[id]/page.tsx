@@ -75,18 +75,15 @@ export default function ViewOneBook() {
   useEffect(() => {
     if (id) {
       dispatch(fetchSingleBook(id));
-      // fetch wishlist to check status (no explicit any cast)
       dispatch(fetchWishlist({ page: 1, limit: 9999 }));
     }
   }, [id, dispatch]);
 
-  // typed book object used in UI
   const book = (singleBook as BookType) || ({} as BookType);
   const bookImage = Array.isArray(book.image) ? book.image?.[0] : book.image;
 
   const confirmDelete = async () => {
     if (!id) return;
-    // deleteBook thunk dispatch
     await dispatch(deleteBook(id));
     setOpenConfirm(false);
 
@@ -119,8 +116,7 @@ export default function ViewOneBook() {
         }
       );
     } else {
-      // result.payload might be undefined or a string; keep behavior same
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      
       const payloadMsg = (result as any)?.payload;
       toast.error(payloadMsg || "Failed to add book to cart.");
     }
@@ -150,7 +146,6 @@ export default function ViewOneBook() {
       );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payloadMsg = (result as any)?.payload;
          toast(
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -183,7 +178,6 @@ export default function ViewOneBook() {
       );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const payloadMsg = (result as any)?.payload;
          toast(
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -285,7 +279,6 @@ export default function ViewOneBook() {
             )}
           </Box>
 
-          {/* Right: Details */}
           <Box sx={{ flex: 1 }}>
             {loading ? (
               <>
@@ -415,7 +408,6 @@ export default function ViewOneBook() {
           </Box>
         </Stack>
 
-        {/* Delete confirmation */}
         <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
           <DialogTitle>Are you sure you want to delete this book?</DialogTitle>
           <DialogActions>

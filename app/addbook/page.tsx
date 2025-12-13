@@ -116,7 +116,6 @@ const bookSchema = yup.object({
 
   category: yup.string().required("Category is required"),
 
-  // image validated here
   image: yup
     .mixed()
     .required("An image is required")
@@ -155,7 +154,7 @@ const AddBook: React.FC = () => {
   const descriptionValue = watch("description") || "";
   const excerptValue = (watch("excerpt") as string) || "";
 
-  // local UI preview state (keeps preview URL safe)
+
   const [preview, setPreview] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -163,7 +162,7 @@ const AddBook: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) {
-      // clear
+     
       setValue("image", null, { shouldValidate: true });
       if (preview) {
         URL.revokeObjectURL(preview);
@@ -174,19 +173,19 @@ const AddBook: React.FC = () => {
 
     const file = files[0];
 
-    // update react-hook-form state and validate immediately
+   
     setValue("image", file, { shouldValidate: true });
 
-    // update preview UI
+   
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
 
-    // reset input value so same file can be selected again if needed
+    
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const removeImage = () => {
-    // remove file from form state
+   
     setValue("image", null, { shouldValidate: true, shouldDirty: true });
     if (preview) {
       URL.revokeObjectURL(preview);
@@ -200,10 +199,10 @@ const AddBook: React.FC = () => {
   };
 
   const onSubmit = async (data: BookFormInputs) => {
-    // at this point, yup has validated image as required.
+   
     const file = data.image;
     if (!file) {
-      // defensive: show nothing further
+     
       return;
     }
 
@@ -236,10 +235,10 @@ const AddBook: React.FC = () => {
     }
   };
 
-  // helper to scroll to image area when image error occurs
+
   const onInvalid = (formErrors: any) => {
     if (formErrors.image) {
-      // scroll to image (file input wrapper) to make error visible
+    
       fileRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
@@ -269,10 +268,8 @@ const AddBook: React.FC = () => {
         <Stack spacing={1.5} sx={{ mb: 3, alignItems: "center" }}>
           <Typography variant="subtitle2">Book Image *</Typography>
 
-          {/* Hidden input (single file) */}
+         
           <input ref={fileRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
-
-          {/* Centered preview area (click to open). We keep aria-hidden false so scrollIntoView works */}
           <Box
             onClick={openFilePicker}
             sx={{
@@ -289,7 +286,7 @@ const AddBook: React.FC = () => {
             {preview ? (
               <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <CardMedia component="img" image={preview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                {/* delete button on top-right of preview */}
+               
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
@@ -321,7 +318,6 @@ const AddBook: React.FC = () => {
               Click to choose image
             </Typography>
 
-            {/* show validation error from RHF/Yup */}
             <Typography variant="caption" sx={{ color: "red" }}>
               {(errors as any).image?.message ?? ""}
             </Typography>

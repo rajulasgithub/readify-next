@@ -65,11 +65,6 @@ export default function LoginPage() {
   try {
   
     const payload = await dispatch(loginUserThunk(data)).unwrap();
-    // const tokenFromCookie = Cookies.get("accessToken") ?? "";
-    // const roleFromCookie = Cookies.get("role") ?? "";
-    // const emailFromCookie = Cookies.get("email") ?? "";
-
-    // loginUser(tokenFromCookie, roleFromCookie, emailFromCookie);
 
   loginUser(
   payload.accessToken ?? "",

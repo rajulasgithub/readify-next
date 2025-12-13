@@ -34,15 +34,15 @@ export default function ViewSellerBooks() {
   const [page, setPage] = useState(1);
   const limit = 8;
 
-  // controlled input + debounced search value
+ 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
-  // debounce: wait 400ms after user stops typing to update `search`
+ 
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1); // reset page on new search
+      setPage(1); 
     }, 400);
 
     return () => clearTimeout(t);
@@ -71,15 +71,15 @@ export default function ViewSellerBooks() {
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        {/* wrap in a form to prevent default submit (Enter) from reloading the page */}
+       
         <Box component="form" onSubmit={(e) => e.preventDefault()} sx={{ mb: 8 }}>
           <Searchfield
             value={searchInput}
             onChange={(val) => {
-              setSearchInput(val); // update local controlled input
+              setSearchInput(val); 
             }}
             placeholder="Search books..."
-            // If your Searchfield forwards inputProps you can pass onKeyDown to block Enter — this line is safe even if ignored:
+           
             inputProps={{ onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter") e.preventDefault(); } }}
           />
         </Box>
@@ -172,20 +172,20 @@ export default function ViewSellerBooks() {
               <CardActions sx={{ px: 2, pb: 2, pt: 1 }}>
   <Button
     fullWidth
-    variant="contained" // changed from outlined
+    variant="contained" 
     size="small"
     onClick={() => viewDetails(book._id)}
     sx={{
       borderRadius: "999px",
       textTransform: "none",
-      bgcolor: "#c57a45", // main color
+      bgcolor: "#c57a45", 
       color: "#fff",
       fontWeight: 600,
       fontSize: 14,
       "&:hover": {
-        bgcolor: "#b36a36", // slightly darker on hover
+        bgcolor: "#b36a36", 
       },
-      boxShadow: "0 4px 12px rgba(197,122,69,0.4)", // subtle shadow
+      boxShadow: "0 4px 12px rgba(197,122,69,0.4)", 
     }}
   >
     View Details

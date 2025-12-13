@@ -292,16 +292,16 @@ export default function WishlistPage() {
     top: 8,
     right: 8,
     bgcolor: "#ffffff",
-    opacity: blocked ? 0.4 : 1,        // ← Dim when blocked
-    pointerEvents: blocked ? "none" : "auto", // ← Prevent clicking even if opacity allows
+    opacity: blocked ? 0.4 : 1,       
+    pointerEvents: blocked ? "none" : "auto", 
     "&:hover": {
-      bgcolor: blocked ? "#ffffff" : "#f1f5f9", // No hover effect if blocked
+      bgcolor: blocked ? "#ffffff" : "#f1f5f9", 
     },
   }}
 >
   <DeleteIcon
     fontSize="small"
-    color={blocked ? "disabled" : "error"}   // ← Grey out icon
+    color={blocked ? "disabled" : "error"}  
   />
 </IconButton>
 
@@ -414,7 +414,6 @@ export default function WishlistPage() {
         )}
       </Container>
 
-      {/* Floating + button to quickly navigate to viewbooks */}
       <Link href="/viewbooks" passHref>
         <Tooltip title="Browse books" arrow>
           <Fab

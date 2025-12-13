@@ -31,7 +31,6 @@ const initialState: HomeState = {
   errorBest: null,
 };
 
-/** Safely extract an error message from unknown shapes */
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
   if (typeof err === "string") return err;
@@ -44,7 +43,6 @@ const extractErrorMessage = (err: unknown): string => {
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // fallback
   }
   return "Unknown error";
 };

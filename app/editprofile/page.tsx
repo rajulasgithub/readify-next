@@ -23,7 +23,6 @@ import { toast } from "react-toastify";
 import { updateProfileThunk } from "@/src/redux/slices/authSlice";
 import { useAuth } from "@/src/context/AuthContext";
 
-// yup schema
 const schema = yup
   .object({
     firstName: yup.string().required("First name is required"),

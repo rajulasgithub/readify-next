@@ -48,12 +48,10 @@ export default function ViewBooks() {
   const [searchInput, setSearchInput] = useState<string>("");
   const [search, setSearch] = useState<string>("");
 
-  // Fetch wishlist once
   useEffect(() => {
     dispatch(fetchWishlist({ page: 1, limit: 9999 }));
   }, [dispatch]);
 
-  // Debounced search
   useEffect(() => {
     const timeout = setTimeout(() => {
       setSearch(searchInput.trim());
@@ -63,7 +61,6 @@ export default function ViewBooks() {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  // Fetch books
   useEffect(() => {
     dispatch(
       fetchBooks({

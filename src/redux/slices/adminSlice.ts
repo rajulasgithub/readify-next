@@ -65,11 +65,7 @@ const getToken = () => {
   return Cookies.get("accessToken") || null;
 };
 
-/**
- * Safely extract a user-friendly message from different error shapes
- * (axios-like response, Error instance, string, or other).
- * Avoids using `any`.
- */
+
 const extractErrorMessage = (err: unknown): string => {
   if (!err) return "Unknown error";
 
@@ -77,7 +73,6 @@ const extractErrorMessage = (err: unknown): string => {
 
   if (err instanceof Error) return err.message;
 
-  // Try to access axios-style response -> data -> message safely
   try {
     const possible = err as {
       response?: { data?: { message?: unknown } };
@@ -88,11 +83,9 @@ const extractErrorMessage = (err: unknown): string => {
 
     if (typeof maybeMessage === "string" && maybeMessage.length > 0) return maybeMessage;
 
-    // Fallback to JSON stringification when reasonable
     const str = JSON.stringify(err);
     if (str && str !== "{}") return str;
   } catch {
-    // ignore
   }
 
   return "Unknown error";
@@ -258,7 +251,6 @@ const adminSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Fetch users
     builder
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
@@ -280,7 +272,6 @@ const adminSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Fetch seller books
     builder
   .addCase(fetchSellerBooks.pending, (state) => {
     state.loading = true;
@@ -296,7 +287,6 @@ const adminSlice = createSlice({
     state.error = action.payload as string;
   });
 
-    //  Toggle Block / Unblock
     builder
       .addCase(toggleBlockUser.pending, (state) => {
         state.actionLoading = true;

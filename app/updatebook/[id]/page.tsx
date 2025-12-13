@@ -77,7 +77,6 @@ const UpdateBook: React.FC = () => {
 
   const {  singleBookLoading, singleBookError, loading, error } = useSelector((state: RootState) => state.books);
 
-  // image handling
   const [existingImage, setExistingImage] = useState<string>("");
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newPreview, setNewPreview] = useState<string | null>(null);
@@ -103,34 +102,6 @@ const UpdateBook: React.FC = () => {
 
   const watchDescription = watch("description", "");
   const watchExcerpt = watch("excerpt", "");
-
-//   type MaybeArrayInput = string | string[] | null | undefined | object;
-
-//   const parseMaybeArray = (val: MaybeArrayInput): string[] => {
-//   if (val === null || val === undefined || val === "") return [];
-
-//   let v: unknown = val;
-//   let attempts = 0;
-
-//   while (typeof v === "string" && attempts < 3) {
-//     const trimmed = v.trim();
-//     if (trimmed.startsWith("[") || trimmed.startsWith("{") || trimmed.startsWith('"')) {
-//       try {
-//         v = JSON.parse(trimmed);
-//         attempts++;
-//         continue;
-//       } catch {
-//         break;
-//       }
-//     }
-//     break;
-//   }
-
-//   if (Array.isArray(v)) return v.map((x) => (x == null ? "" : String(x)));
-//   if (typeof v === "string") return v.trim() ? [v.trim()] : [];
-
-//   return [String(v)];
-// };
 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

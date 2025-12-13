@@ -61,7 +61,6 @@ const revenue = sellerStats?.totalRevenue ?? 0;
 return (
 <Box sx={{ bgcolor: "#f5f7fb", minHeight: "100vh", py: 4 }}> <Container maxWidth="lg">
 <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
-{/* Left: Seller profile card */}
 <Card
 sx={{
 flex: "0 0 330px",
@@ -128,12 +127,9 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
         </CardContent>
       </Card>
 
-      {/* Right: Stats + actions */}
       <Box sx={{ flex: 1 }}>
         <Stack spacing={3}>
-          {/* Stats cards */}
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-            {/* Products card */}
             <Card sx={{ flex: "1 1 250px", borderRadius: 3, boxShadow: "0 8px 20px rgba(15,23,42,0.06)", bgcolor: "#ffffff" }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2}>
@@ -161,7 +157,6 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
               </CardContent>
             </Card>
 
-            {/* Orders card */}
             <Card sx={{ flex: "1 1 250px", borderRadius: 3, boxShadow: "0 8px 20px rgba(15,23,42,0.06)", bgcolor: "#ffffff" }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2}>
@@ -189,7 +184,6 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
               </CardContent>
             </Card>
 
-            {/* Revenue card */}
             <Card sx={{ flex: "1 1 250px", borderRadius: 3, boxShadow: "0 8px 20px rgba(15,23,42,0.06)", bgcolor: "#ffffff" }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2}>
@@ -218,7 +212,6 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
             </Card>
           </Box>
 
-          {/* Manage Orders card */}
           <Card sx={{ borderRadius: 3, boxShadow: "0 8px 24px rgba(15,23,42,0.06)", bgcolor: "#ffffff" }}>
             <CardContent>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
