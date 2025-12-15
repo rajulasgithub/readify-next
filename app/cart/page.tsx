@@ -45,7 +45,6 @@ export default function CartPage() {
   const {
     items = [],
     loading,
-    error,
     totalPrice = 0,
     totalQuantity = 0,
     pagination,

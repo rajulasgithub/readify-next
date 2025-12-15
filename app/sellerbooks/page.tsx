@@ -73,15 +73,14 @@ export default function ViewSellerBooks() {
       <Container maxWidth="lg">
        
         <Box component="form" onSubmit={(e) => e.preventDefault()} sx={{ mb: 8 }}>
-          <Searchfield
-            value={searchInput}
-            onChange={(val) => {
-              setSearchInput(val); 
-            }}
-            placeholder="Search books..."
-           
-            inputProps={{ onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter") e.preventDefault(); } }}
-          />
+        <Searchfield
+  value={searchInput}
+  onChange={(val) => setSearchInput(val)}
+  placeholder="Search books..."
+  onKeyDown={(e) => {
+    if (e.key === "Enter") e.preventDefault();
+  }}
+/>
         </Box>
 
         {loading ? (

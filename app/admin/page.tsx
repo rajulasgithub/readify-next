@@ -10,7 +10,6 @@ import {
   Button,
 } from "@mui/material";
 
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";

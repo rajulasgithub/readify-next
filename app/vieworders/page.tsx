@@ -10,7 +10,6 @@ import {
   Stack,
   Chip,
   CircularProgress,
-  Grid,
   CardMedia,
   Button,
   Dialog,
@@ -30,33 +29,21 @@ import {
 } from "@/src/redux/slices/orderSlice";
 import { addReview } from "@/src/redux/slices/bookSlice";
 import { useAuth } from "@/src/context/AuthContext";
+import type { Order, OrderItem, Book } from "@/src/redux/slices/orderSlice";
 
 type ReviewType = { user: string; rating: number; comment?: string };
-type BookType = { _id?: string; title?: string; image?: string[]; reviews?: ReviewType[] };
-type OrderItemType = {
-  _id: string;
-  book: string | BookType;
-  status: string;
-  paymentMethod?: string;
-  price?: number;
+type BookWithReviews = Book & {
+  reviews?: ReviewType[];
 };
-type OrderType = {
-  _id: string;
-  items: OrderItemType[] | OrderItemType; 
-  status: string;
-  paymentMethod?: string;
-  createdAt?: string;
-  totalAmount?: number;
-  address?: unknown;
-};
-type FlattenedItemType = OrderItemType & {
-  book: BookType;
+
+type FlattenedItemType = OrderItem & {
+  book?: BookWithReviews;
   orderId: string;
   orderStatus: string;
-  paymentMethod?: string;
+  paymentMethod?: Order["paymentMethod"];
   createdAt?: string;
   orderTotalAmount?: number;
-  address?: unknown;
+  address?: Order["address"];
 };
 
 export default function UserOrdersPage() {
@@ -88,16 +75,15 @@ export default function UserOrdersPage() {
     const totalPages = pagination?.totalPages ?? 1;
     if (page > totalPages) setPage(totalPages);
     if (page < 1) setPage(1);
-  }, [pagination?.totalPages]);
+  }, [pagination?.totalPages, page]);
 
-  const orders: OrderType[] = Array.isArray(userOrders) ? (userOrders as OrderType[]) : [];
   const loading = userOrdersLoading;
   const error = userOrdersError;
 
   const serverPage = pagination?.page ?? page;
   const serverLimit = pagination?.limit ?? limit;
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
-  const totalOrders = pagination?.totalOrders ?? 0;
+  const totalOrders = pagination?.totalItems ?? 0;
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -118,32 +104,29 @@ export default function UserOrdersPage() {
 
   const formatDate = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "");
 
-  const getUserReview = (book?: BookType | null) => {
-    if (!book?.reviews) return null;
+  const getUserReview = (book?: BookWithReviews | null): ReviewType | null => {
+    if (!book?.reviews?.length) return null;
     const userId = localStorage.getItem("userId");
     if (!userId) return null;
-    return book.reviews.find((r) => r.user === userId) || null;
+    return book.reviews.find((r) => r.user === userId) ?? null;
   };
 
   const itemCards: FlattenedItemType[] = useMemo(() => {
-    return orders.flatMap((order) => {
-      const itemsArray = Array.isArray(order.items) ? order.items : [order.items]; // <-- safe
-      return itemsArray.map((item) => {
-        const bookObj: BookType =
-          typeof item.book === "string" ? { _id: item.book } : (item.book as BookType);
-        return {
-          ...item,
-          book: bookObj,
-          orderId: order._id,
-          orderStatus: order.status,
-          paymentMethod: order.paymentMethod,
-          createdAt: order.createdAt,
-          orderTotalAmount: order.totalAmount,
-          address: order.address,
-        } as FlattenedItemType;
-      });
+    const ordersArray: Order[] = Array.isArray(userOrders) ? userOrders : [];
+    return ordersArray.flatMap((order) => {
+      if (!Array.isArray(order.items)) return [];
+      return order.items.map((item) => ({
+        ...item,
+        book: item.book,
+        orderId: order._id,
+        orderStatus: item.status ?? order.status ?? "unknown",
+        paymentMethod: order.paymentMethod,
+        createdAt: order.createdAt,
+        orderTotalAmount: order.totalAmount,
+        address: order.address,
+      }));
     });
-  }, [orders]);
+  }, [userOrders]);
 
   const startIndex = totalOrders === 0 ? 0 : (serverPage - 1) * serverLimit + 1;
   const endIndex = Math.min(serverPage * serverLimit, totalOrders);
@@ -198,32 +181,26 @@ export default function UserOrdersPage() {
 
         {!loading && !error && itemCards.length > 0 && (
           <>
-            <Grid container spacing={2} justifyContent="center">
+            <Stack direction="row" spacing={2} flexWrap="wrap" justifyContent="center">
               {itemCards.map((item) => {
-                const firstImage =
-                  item.book?.image && item.book.image.length > 0 ? item.book.image[0] : null;
-                const imageUrl = firstImage
-                  ? `${backendUrl}/${firstImage}`
-                  : "/images/book-placeholder.png";
-
+                const firstImage = item.book?.image?.[0] ?? null;
+                const imageUrl = firstImage ? `${backendUrl}/${firstImage}` : "/images/book-placeholder.png";
                 const existingReview = getUserReview(item.book);
                 const isCancelling = updatingItemId === item._id;
-                const disableCancel = item.status !== "ordered" || isCancelling;
 
                 return (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={3}
+                  <Box
                     key={item._id}
-                    display="flex"
-                    justifyContent="center"
+                    sx={{
+                      width: { xs: "100%", sm: "48%", md: 260 },
+                      display: "flex",
+                      justifyContent: "center",
+                      mb: 2,
+                    }}
                   >
                     <Card
                       sx={{
                         width: "100%",
-                        maxWidth: 260,
                         borderRadius: 2.5,
                         overflow: "hidden",
                         display: "flex",
@@ -235,7 +212,7 @@ export default function UserOrdersPage() {
                       <CardMedia
                         component="img"
                         image={imageUrl}
-                        alt="Book"
+                        alt={item.book?.title ?? "Book"}
                         sx={{ height: 170, objectFit: "contain", bgcolor: "#f9fafb", p: 1.2 }}
                       />
 
@@ -251,28 +228,21 @@ export default function UserOrdersPage() {
                             overflow: "hidden",
                           }}
                         >
-                          {item.book?.title}
+                          {item.book?.title ?? "Untitled Book"}
                         </Typography>
 
                         <Chip
-                          label={item.status}
+                          label={item.orderStatus ?? "unknown"}
                           size="small"
-                          color={getStatusColor(item.status)}
+                          color={getStatusColor(item.orderStatus ?? "unknown")}
                           sx={{ fontSize: 9, fontWeight: 600, height: 20, mt: 1, mb: 1 }}
                         />
 
-                        {existingReview && (
-                          <Rating
-                            value={existingReview.rating}
-                            readOnly
-                            size="small"
-                            sx={{ mb: 1 }}
-                          />
-                        )}
+                        {existingReview && <Rating value={existingReview.rating} readOnly size="small" sx={{ mb: 1 }} />}
 
                         <Stack direction="row" spacing={0.5} mb={1}>
                           <Chip
-                            label={item.paymentMethod}
+                            label={item.paymentMethod ?? "N/A"}
                             size="small"
                             sx={{ bgcolor: "#ecfdf3", fontSize: 9, fontWeight: 600, height: 20 }}
                           />
@@ -282,46 +252,34 @@ export default function UserOrdersPage() {
                         </Stack>
 
                         <Stack direction="row" spacing={1} mt={1}>
-                          {item.status === "delivered" && (
+                          {item.orderStatus === "delivered" && (
                             <Button
                               size="small"
                               variant="contained"
                               onClick={() => {
-                                setReviewBookId(item.book._id ?? null);
+                                setReviewBookId(item.book?._id ?? null);
                                 setReviewRating(existingReview?.rating ?? null);
                                 setReviewComment(existingReview?.comment ?? "");
                                 setReviewOpen(true);
                               }}
-                              sx={{
-                                textTransform: "none",
-                                fontSize: 12,
-                                borderRadius: 999,
-                                px: 1.8,
-                                py: 0.3,
-                              }}
+                              sx={{ textTransform: "none", fontSize: 12, borderRadius: 999, px: 1.8, py: 0.3 }}
                             >
                               {existingReview ? "Edit Review" : "Add Review"}
                             </Button>
                           )}
 
-                          {item.status !== "cancelled" && (
+                          {item.orderStatus === "ordered" && (
                             <Button
                               size="small"
                               variant="outlined"
                               color="error"
-                              disabled={disableCancel || blocked}
+                              disabled={isCancelling || blocked}
                               onClick={() => {
                                 setSelectedOrderId(item.orderId);
                                 setSelectedItemId(item._id);
                                 setCancelModalOpen(true);
                               }}
-                              sx={{
-                                textTransform: "none",
-                                fontSize: 12,
-                                borderRadius: 999,
-                                px: 1.5,
-                                py: 0.2,
-                              }}
+                              sx={{ textTransform: "none", fontSize: 12, borderRadius: 999, px: 1.5, py: 0.2 }}
                             >
                               {isCancelling ? "Cancelling..." : "Cancel"}
                             </Button>
@@ -329,20 +287,15 @@ export default function UserOrdersPage() {
                         </Stack>
                       </CardContent>
                     </Card>
-                  </Grid>
+                  </Box>
                 );
               })}
-            </Grid>
+            </Stack>
 
             {totalPages > 1 && (
               <>
                 <Stack alignItems="center" sx={{ pt: 3 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={serverPage}
-                    onChange={(_, value) => setPage(value)}
-                    color="primary"
-                  />
+                  <Pagination count={totalPages} page={serverPage} onChange={(_, value) => setPage(value)} color="primary" />
                 </Stack>
 
                 <Typography align="center" variant="body2" sx={{ color: "#6b7280", mt: 1 }}>
@@ -353,6 +306,7 @@ export default function UserOrdersPage() {
           </>
         )}
 
+        {/* Review Dialog */}
         <Dialog open={reviewOpen} onClose={() => setReviewOpen(false)}>
           <DialogTitle>Add Review</DialogTitle>
           <DialogContent>
@@ -376,13 +330,7 @@ export default function UserOrdersPage() {
                   alert("Please add a rating");
                   return;
                 }
-                await dispatch(
-                  addReview({
-                    bookId: reviewBookId,
-                    rating: reviewRating,
-                    comment: reviewComment,
-                  })
-                );
+                await dispatch(addReview({ bookId: reviewBookId, rating: reviewRating, comment: reviewComment }));
                 dispatch(fetchUserOrdersThunk({ page: serverPage, limit: serverLimit }));
                 setReviewOpen(false);
                 setReviewRating(null);
@@ -394,13 +342,14 @@ export default function UserOrdersPage() {
           </DialogActions>
         </Dialog>
 
+        {/* Cancel Dialog */}
         <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)}>
-          <DialogTitle sx={{ fontWeight: 700 }}> Cancel Item </DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>Cancel Item</DialogTitle>
           <DialogContent>
-            <Typography> Are you sure you want to cancel this item? </Typography>
+            <Typography>Are you sure you want to cancel this item?</Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setCancelModalOpen(false)}> No </Button>
+            <Button onClick={() => setCancelModalOpen(false)}>No</Button>
             <Button
               variant="contained"
               color="error"
@@ -409,11 +358,7 @@ export default function UserOrdersPage() {
                 try {
                   setUpdatingItemId(selectedItemId);
                   await dispatch(
-                    updateOrderItemStatusThunk({
-                      orderId: selectedOrderId,
-                      itemId: selectedItemId,
-                      action: "cancelled",
-                    })
+                    updateOrderItemStatusThunk({ orderId: selectedOrderId, itemId: selectedItemId, action: "cancelled" })
                   ).unwrap();
                   dispatch(fetchUserOrdersThunk({ page: serverPage, limit: serverLimit }));
                 } catch (err) {

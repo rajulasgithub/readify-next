@@ -17,9 +17,13 @@ import {
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
-import { FieldError } from "react-hook-form";
+import {
+  useForm,
+  Controller,
+  FieldError,
+  FieldErrors,
+} from "react-hook-form";
 
-import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
@@ -28,7 +32,9 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { addBook } from "@/src/redux/slices/bookSlice";
 
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/src/context/AuthContext"; 
+import { useAuth } from "@/src/context/AuthContext";
+
+
 
 const categories = [
   "Academic",
@@ -60,19 +66,23 @@ const languages = [
   "Telugu",
 ];
 
-type BookFormInputs = {
+
+
+export type BookFormInputs = {
   title: string;
   description: string;
-  excerpt?: string;
-  page_count?: number | string;
+  excerpt: string;
+  page_count: number;
   publish_date: string;
   author: string;
   genre: string[];
   language: string[];
-  prize?: number | string;
+  prize: number;
   category: string;
-  image?: File | null;
+  image: File | null; 
 };
+
+
 
 const bookSchema = yup.object({
   title: yup.string().required("Title is required"),
@@ -80,117 +90,122 @@ const bookSchema = yup.object({
   description: yup
     .string()
     .required("Description is required")
-    .test(
-      "len",
-      "Description must be at least 20 characters and at most 1000 characters",
-      (val) => !!val && val.length >= 20 && val.length <= 1000
-    ),
+    .min(20)
+    .max(1000),
 
   excerpt: yup
     .string()
     .required("Excerpt is required")
-    .min(20, "Excerpt must be at least 20 characters")
-    .max(1000, "Excerpt must be at most 1000 characters"),
+    .min(20)
+    .max(1000),
 
   page_count: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" || originalValue == null ? undefined : Number(originalValue)))
     .typeError("Page count must be a number")
-    .positive("Page count must be positive")
     .required("Page count is required"),
 
   publish_date: yup.string().required("Publish date is required"),
 
   author: yup.string().required("Author is required"),
 
-  genre: yup.array().ensure().of(yup.string().required()).min(1, "Select at least one genre"),
+  genre: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, "Select at least one genre")
+    .required(),
 
-  language: yup.array().ensure().of(yup.string().required()).min(1, "Select at least one language"),
+  language: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, "Select at least one language")
+    .required(),
 
   prize: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" || originalValue == null ? undefined : Number(originalValue)))
     .typeError("Price must be a number")
-    .positive("Price must be positive")
     .required("Price is required"),
 
   category: yup.string().required("Category is required"),
 
   image: yup
-    .mixed()
-    .required("An image is required")
-    .test("fileType", "Only image files are allowed", (value) => {
-      if (!value) return false;
-      return value instanceof File && value.type?.startsWith("image/");
-    }),
+    .mixed<File>()
+     .defined() 
+    .nullable()
+    .test(
+      "required",
+      "Image is required",
+      (value) => value instanceof File
+    ),
 });
 
-const AddBook: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const route = useRouter();
-  const { blocked } = useAuth();
-  console.log(blocked)
 
-  const { loading, error } = useSelector((state: RootState) => state.books);
+
+
+
+
+const AddBook: React.FC = () => {
+const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+  const { blocked } = useAuth();
+
+  const { loading, error } = useSelector(
+    (state: RootState) => state.books
+  );
 
   const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<BookFormInputs>({
-    resolver: yupResolver(bookSchema),
-    defaultValues: {
-      genre: [],
-      language: [],
-      excerpt: "",
-      category: "",
-      image: null,
-    },
-  });
+  register,
+  handleSubmit,
+  control,
+  watch,
+  setValue,
+  formState: { errors },
+} = useForm<BookFormInputs>({
+  resolver: yupResolver(bookSchema),
+  defaultValues: {
+    title: "",
+    description: "",
+    excerpt: "",
+    page_count: undefined as unknown as number,
+    publish_date: "",
+    author: "",
+    genre: [],
+    language: [],
+    prize: undefined as unknown as number,
+    category: "",
+    image: null,
+  },
+});
 
   const descriptionValue = watch("description") || "";
-  const excerptValue = (watch("excerpt") as string) || "";
-
+  const excerptValue = watch("excerpt") || "";
 
   const [preview, setPreview] = useState<string | null>(null);
-
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) {
-     
       setValue("image", null, { shouldValidate: true });
-      if (preview) {
-        URL.revokeObjectURL(preview);
-        setPreview(null);
-      }
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
       return;
     }
 
     const file = files[0];
-
-   
     setValue("image", file, { shouldValidate: true });
 
-   
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
 
-    
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const removeImage = () => {
-   
-    setValue("image", null, { shouldValidate: true, shouldDirty: true });
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    setValue("image", null, { shouldValidate: true });
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -198,48 +213,33 @@ const AddBook: React.FC = () => {
     fileRef.current?.click();
   };
 
+  
+
   const onSubmit = async (data: BookFormInputs) => {
-   
-    const file = data.image;
-    if (!file) {
-     
-      return;
-    }
+    if (!data.image) return;
 
     const formData = new FormData();
-
-    formData.append("image", file);
-
+    formData.append("image", data.image);
     formData.append("title", data.title);
     formData.append("description", data.description);
-    if (data.excerpt) formData.append("excerpt", data.excerpt);
+    formData.append("excerpt", data.excerpt);
     formData.append("page_count", String(data.page_count));
     formData.append("publish_date", data.publish_date);
     formData.append("author", data.author);
-
-    formData.append("genre", JSON.stringify(data.genre ?? []));
-    formData.append("language", JSON.stringify(data.language ?? []));
-
+    formData.append("genre", JSON.stringify(data.genre));
+    formData.append("language", JSON.stringify(data.language));
     formData.append("prize", String(data.prize));
     formData.append("category", data.category);
 
-    try {
-      const dispatchTyped = dispatch as AppDispatch;
-      const resultAction = await dispatchTyped(addBook(formData));
-
-      if (addBook.fulfilled.match(resultAction)) {
-        route.push("/sellerbooks");
-      }
-    } catch (err) {
-      console.error("Error adding book:", err);
+    const result = await dispatch(addBook(formData));
+    if (addBook.fulfilled.match(result)) {
+      router.push("/sellerbooks");
     }
   };
 
-
-  const onInvalid = (formErrors: any) => {
+  const onInvalid = (formErrors: FieldErrors<BookFormInputs>) => {
     if (formErrors.image) {
-    
-      fileRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      fileRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -318,9 +318,9 @@ const AddBook: React.FC = () => {
               Click to choose image
             </Typography>
 
-            <Typography variant="caption" sx={{ color: "red" }}>
-              {(errors as any).image?.message ?? ""}
-            </Typography>
+           <Typography variant="caption" sx={{ color: "red" }}>
+  {errors.image?.message}
+</Typography>
           </Box>
         </Stack>
 
@@ -381,52 +381,67 @@ const AddBook: React.FC = () => {
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Controller
-                name="genre"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    multiple
-                    options={genres}
-                    value={field.value || []}
-                    onChange={(_, value) => field.onChange(value)}
-                    isOptionEqualToValue={(opt, val) => opt === val}
-                    getOptionLabel={(opt) => opt}
-                    sx={{ width: "100%" }}
-                    slotProps={{
-                      popper: {
-                        style: { minWidth: 240, maxWidth: 480 },
-                      },
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Genre" error={!!errors.genre} helperText={(errors.genre as FieldError)?.message} fullWidth />
-                    )}
-                  />
-                )}
-              />
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    multiple
-                    options={languages}
-                    value={field.value || []}
-                    onChange={(_, value) => field.onChange(value)}
-                    isOptionEqualToValue={(opt, val) => opt === val}
-                    getOptionLabel={(opt) => opt}
-                    sx={{ width: "100%" }}
-                    slotProps={{
-                      popper: {
-                        style: { minWidth: 240, maxWidth: 480 },
-                      },
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Language" error={!!errors.language} helperText={(errors.language as FieldError)?.message} fullWidth />
-                    )}
-                  />
-                )}
-              />
+            <Controller
+  name="genre"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={genres}
+      value={field.value || []}
+      onChange={(_, value) => field.onChange(value)}
+      isOptionEqualToValue={(opt, val) => opt === val}
+      getOptionLabel={(opt) => opt}
+      sx={{ width: "100%" }}
+      slotProps={{
+        popper: {
+          sx: { minWidth: 240, maxWidth: 480 }, // use sx instead of style
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Genre"
+          error={!!errors.genre}
+          helperText={(errors.genre as FieldError)?.message}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
+
+             <Controller
+  name="language"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={languages}
+      value={field.value || []}
+      onChange={(_, value) => field.onChange(value)}
+      sx={{ width: '100%' }}
+      slotProps={{
+        popper: {
+          sx: {
+            minWidth: 240,
+            maxWidth: 480,
+          },
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Language"
+          error={!!errors.language}
+          helperText={errors.language?.message as string}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
+
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>

@@ -41,31 +41,53 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { clearCart } from "@/src/redux/slices/cartSlice";
 import { useAuth } from "@/src/context/AuthContext";
+import type { CartItem } from "@/src/redux/slices/cartSlice";
 
-const addressSchema = yup.object({
-  fullName: yup.string().required("Full name is required"),
-  phone: yup
-    .string()
-    .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
-    .required("Phone is required"),
-  addressLine1: yup.string().required("Address Line 1 is required"),
-  addressLine2: yup.string().notRequired(),
-  city: yup.string().required("City is required"),
-  state: yup.string().required("State is required"),
-  pinCode: yup
-    .string()
-    .matches(/^[0-9]{6}$/, "Enter a valid 6-digit pincode")
-    .required("Pincode is required"),
-});
+// ------------------- SCHEMA -------------------
+const addressSchema: yup.ObjectSchema<AddressFormFields> = yup
+  .object({
+    fullName: yup.string().required("Full name is required"),
+    phone: yup
+      .string()
+      .matches(/^[0-9]{10}$/, "Enter a valid 10-digit phone number")
+      .required("Phone is required"),
+    addressLine1: yup.string().required("Address Line 1 is required"),
 
-type AddressForm = yup.InferType<typeof addressSchema> & { _id?: string };
+    // 🔑 REQUIRED + NULLABLE (this removes `undefined`)
+    addressLine2: yup.string().nullable().required(),
 
+    city: yup.string().required("City is required"),
+    state: yup.string().required("State is required"),
+    pinCode: yup
+      .string()
+      .matches(/^[0-9]{6}$/, "Enter a valid 6-digit pincode")
+      .required("Pincode is required"),
+  })
+  .required();
+
+
+
+
+
+// Only schema fields for form
+type AddressFormFields = {
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string | null; // 👈 NO undefined
+  city: string;
+  state: string;
+  pinCode: string;
+};
+
+
+// Store _id separately
 export interface OrderAddress {
   _id: string;
   fullName: string;
   phone: string;
   addressLine1: string;
-  addressLine2?: string;
+  addressLine2: string | null;
   city: string;
   state: string;
   pinCode: string;
@@ -121,71 +143,59 @@ function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
   return null;
 }
 
-export { normalizeSavedAddresses, isOrderAddress };
+// ------------------- COMPONENT -------------------
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { blocked } = useAuth()
- 
- const cart = useSelector((state: RootState) => state.cart);
-const items: CartItem[] = cart?.items || [];
-const totalPrice: number = cart?.totalPrice ?? 0;
+  const { blocked } = useAuth();
 
+  const cart = useSelector((state: RootState) => state.cart);
+  const items: CartItem[] = cart.items;
+  // const totalPrice: number = cart.totalPrice;
 
- const ordersState = useSelector((state: RootState) => state.orders);
-const placing: boolean = ordersState.placing;
-const rawSaved: unknown = ordersState.savedAddresses ?? null;
-const addressLoading: boolean = ordersState.addressLoading;
- const savedAddresses = useMemo<OrderAddress[] | null>(() => normalizeSavedAddresses(rawSaved), [rawSaved]);
-
-  useEffect(() => {
-    console.log("Normalized savedAddresses:", savedAddresses);
-  }, [savedAddresses]);
-
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false); 
-
-  const canAddAddress = !(savedAddresses && savedAddresses.length >= 3);
-
-  const subtotal =
-    typeof totalPrice === "number"
-      ? totalPrice
-      : items.reduce((sum, item) => {
-          const price =
-            item.price ??
-            item.prize ??
-            item.book?.price ??
-            item.book?.prize ??
-            0;
-          const qty = item.quantity ?? item.qty ?? 1;
-          return sum + price * qty;
-        }, 0);
-
-  const shipping = items.length ? 40 : 0;
-  const grandTotal = subtotal + shipping;
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<AddressForm>({
-    resolver: yupResolver(addressSchema),
-    defaultValues: {
-      fullName: "",
-      phone: "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      pinCode: "",
-    },
-  });
+  const ordersState = useSelector((state: RootState) => state.orders);
+  const placing: boolean = ordersState.placing;
+  const rawSaved: unknown = ordersState.savedAddresses ?? null;
+  const addressLoading: boolean = ordersState.addressLoading;
+  const savedAddresses = useMemo<OrderAddress[] | null>(
+    () => normalizeSavedAddresses(rawSaved),
+    [rawSaved]
+  );
 
   useEffect(() => {
     dispatch(fetchAddressThunk());
   }, [dispatch]);
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const canAddAddress = !(savedAddresses && savedAddresses.length >= 3);
+
+  const subtotal = items.reduce((sum, item) => sum + item.prize * item.quantity, 0);
+  const shipping = items.length ? 40 : 0;
+  const grandTotal = subtotal + shipping;
+
+  // ------------------- FORM -------------------
+ const {
+  register,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+  reset,
+} = useForm<AddressFormFields>({
+  resolver: yupResolver(addressSchema),
+  defaultValues: {
+    fullName: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: null, // ✅ MUST be null
+    city: "",
+    state: "",
+    pinCode: "",
+  },
+});
+
+
 
   useEffect(() => {
     if (savedAddresses && savedAddresses.length && !selectedAddressId) {
@@ -197,21 +207,20 @@ const addressLoading: boolean = ordersState.addressLoading;
   }, [savedAddresses, selectedAddressId]);
 
   useEffect(() => {
-    if (editingAddressId && savedAddresses) {
-      const addr = savedAddresses.find((a) => a._id === editingAddressId);
-      if (addr) {
-        reset({
-          fullName: addr.fullName ?? "",
-          phone: addr.phone ?? "",
-          addressLine1: addr.addressLine1 ?? "",
-          addressLine2: addr.addressLine2 ?? "",
-          city: addr.city ?? "",
-          state: addr.state ?? "",
-          pinCode: addr.pinCode ?? "",
-          _id: addr._id,
-        } as AddressForm);
-      }
-    }
+  if (editingAddressId && savedAddresses) {
+  const addr = savedAddresses.find((a) => a._id === editingAddressId);
+  if (addr) {
+    reset({
+     fullName: addr.fullName,
+  phone: addr.phone,
+  addressLine1: addr.addressLine1,
+  addressLine2: addr.addressLine2 ?? null, // ensure null
+  city: addr.city,
+  state: addr.state,
+  pinCode: addr.pinCode,
+    });
+  }
+}
   }, [editingAddressId, savedAddresses, reset]);
 
   const openAdd = () => {
@@ -231,21 +240,25 @@ const addressLoading: boolean = ordersState.addressLoading;
     reset();
   };
 
- const onSaveAddress = async (data: AddressForm) => {
+  const onSaveAddress = async (data: AddressFormFields) => {
   try {
     if (editingAddressId) {
+      // Construct the payload with correct types
+      const updatedAddress: OrderAddress = { ...data, _id: editingAddressId };
       await dispatch(
         saveAddressThunk({
           addressId: editingAddressId,
-          updatedAddress: data as OrderAddress,
+          updatedAddress,
         })
       ).unwrap();
       toast.success("Address updated successfully");
       setSelectedAddressId(editingAddressId);
     } else {
+      // Payload for adding new address
+      const newAddress: Omit<OrderAddress, "_id"> = data;
       await dispatch(
         addAddressThunk({
-          newAddress: data as OrderAddress,
+          newAddress,
         })
       ).unwrap();
       toast.success("Address added successfully");
@@ -259,20 +272,21 @@ const addressLoading: boolean = ordersState.addressLoading;
   }
 };
 
-const onDeleteAddress = async (id: string) => {
-  if (!confirm("Delete this address?")) return;
 
-  try {
-    await dispatch(deleteAddressThunk(id)).unwrap();
-    toast.success("Address deleted");
+  const onDeleteAddress = async (id: string) => {
+    if (!confirm("Delete this address?")) return;
 
-    if (selectedAddressId === id) setSelectedAddressId(null);
-    dispatch(fetchAddressThunk());
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to delete address";
-    toast.error(msg);
-  }
-};
+    try {
+      await dispatch(deleteAddressThunk(id)).unwrap();
+      toast.success("Address deleted");
+
+      if (selectedAddressId === id) setSelectedAddressId(null);
+      dispatch(fetchAddressThunk());
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete address";
+      toast.error(msg);
+    }
+  };
 
   const placeOrderWithSelected = async () => {
     if (!items.length) {
@@ -291,22 +305,22 @@ const onDeleteAddress = async (id: string) => {
     }
 
     try {
-      const mappedItems = items.map((item) => {
-        const bookId = item.bookId ?? item.book?._1d ?? item._id ?? undefined;
-        const price = item.price ?? item.prize ?? item.book?.price ?? item.book?.prize ?? 0;
-        const quantity = item.quantity ?? item.qty ?? 1;
-        return { book: bookId, quantity, price };
-      });
+      const mappedItems = items.map((item) => ({
+        book: item.bookId,
+        quantity: item.quantity,
+        price: item.prize,
+      }));
 
       await dispatch(placeOrderThunk({ address: addr, items: mappedItems })).unwrap();
       toast.success("Order placed successfully!");
       dispatch(clearCart());
       router.push("/vieworders");
-    }catch (err: unknown) {
-  const msg = err instanceof Error ? err.message : "Failed to place order";
-  toast.error(msg);
-}
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to place order";
+      toast.error(msg);
+    }
   };
+
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "linear-gradient(135deg, #f5f7fb 0%, #e5edf7 100%)", py: 4 }}>
@@ -449,32 +463,20 @@ const onDeleteAddress = async (id: string) => {
                 <>
                   <Box sx={{ maxHeight: 260, overflowY: "auto", pr: 1, mb: 2 }}>
                     <Stack spacing={1.5}>
-                      {items.map((item) => {
-                        const title = item.title ?? item.book?.title ?? "Book";
-                        const author = item.author ?? item.book?.author;
-                        const qty = item.quantity ?? item.qty ?? 1;
-                        const price = item.price ?? item.prize ?? item.book?.price ?? item.book?.prize ?? 0;
-                        return (
-                          <Box key={item._id ?? item.book?._id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", p: 1.2, borderRadius: 2, bgcolor: "#f9fafb" }}>
-                            <Box sx={{ maxWidth: "70%" }}>
-                              <Typography variant="body1" fontWeight={600} sx={{ mb: 0.3 }}>
-                                {title}
-                              </Typography>
-                              {author && (
-                                <Typography variant="body2" sx={{ color: "#6b7280" }}>
-                                  {author}
-                                </Typography>
-                              )}
-                              <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.4 }}>
-                                Qty: {qty}
-                              </Typography>
-                            </Box>
-                            <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
-                              ₹{price * qty}
-                            </Typography>
-                          </Box>
-                        );
-                      })}
+                    {items.map((item) => (
+  <Box key={item.bookId} sx={{ display: "flex", justifyContent: "space-between" }}>
+    <Box>
+      <Typography fontWeight={600}>{item.title}</Typography>
+      <Typography variant="body2" color="text.secondary">
+        Qty: {item.quantity}
+      </Typography>
+    </Box>
+
+    <Typography fontWeight={700}>
+      ₹{item.prize * item.quantity}
+    </Typography>
+  </Box>
+))}
                     </Stack>
                   </Box>
 

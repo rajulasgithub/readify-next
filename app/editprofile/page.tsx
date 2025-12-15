@@ -33,11 +33,17 @@ const schema = yup
       .transform((value) => value.replace(/\s/g, ""))
       .matches(/^\+?[0-9]{10,15}$/, "Enter a valid phone number with country code")
       .required("Phone number is required"),
-    bio: yup.string().max(100, "Bio can be max 100 characters").optional(),
+    bio: yup.string().max(100, "Bio can be max 100 characters").defined(),
   })
   .required();
 
-type EditProfileForm = yup.InferType<typeof schema>;
+type EditProfileForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  bio: string;
+};
 
 export default function EditProfilePage() {
   const { role } = useAuth();
@@ -58,16 +64,22 @@ export default function EditProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(initialImageUrl);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue } = useForm<EditProfileForm>({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      firstName: user?.firstName ?? "",
-      lastName: user?.lastName ?? "",
-      email: user?.email ?? "",
-      phone: user?.phone ? String(user.phone) : "",
-      bio: user?.bio ?? "",
-    },
-  });
+  const {
+  register,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+  reset,
+  setValue,
+} = useForm<EditProfileForm>({
+  resolver: yupResolver(schema),
+  defaultValues: {
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    email: user?.email ?? "",
+    phone: user?.phone ? String(user.phone) : "",
+    bio: user?.bio ?? "", // 🔑 NEVER undefined
+  },
+});
 
   useEffect(() => {
     if (user) {

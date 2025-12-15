@@ -24,13 +24,12 @@ import {
   updateOrderItemStatusThunk,
 } from "@/src/redux/slices/orderSlice";
 import { useAuth } from "@/src/context/AuthContext";
+import { useParams } from "next/navigation";
+import type { OrderItem } from "@/src/redux/slices/orderSlice";
 
-interface SellerOrderParams {
-  orderId: string;
-}
 
-export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
-  const { orderId } = params;
+export default function SellerOrderDetailsPage() {
+   const { orderId } = useParams<{ orderId: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { blocked } = useAuth()
 
@@ -158,15 +157,17 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack spacing={1.2}>
-                  <Typography>
-                    <strong>Name:</strong> {selectedSellerOrder.customer?.name}
-                  </Typography>
-                  <Typography>
-                    <strong>Email:</strong> {selectedSellerOrder.customer?.email}
-                  </Typography>
-                  <Typography>
-                    <strong>Phone:</strong> {selectedSellerOrder.customer?.phone}
-                  </Typography>
+                 <Stack spacing={1.2}>
+  <Typography>
+    <strong>Name:</strong>{" "}
+    {selectedSellerOrder.user?.firstName}{" "}
+    {selectedSellerOrder.user?.lastName}
+  </Typography>
+
+  <Typography>
+    <strong>Email:</strong> {selectedSellerOrder.user?.email}
+  </Typography>
+</Stack>
                 </Stack>
               </CardContent>
             </Card>
@@ -220,7 +221,7 @@ export default function SellerOrderDetailsPage({ params }: SellerOrderParams) {
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack spacing={2}>
-                  {selectedSellerOrder.items.map((item: SellerOrderItem, idx: number) => (
+                  {selectedSellerOrder.items.map((item: OrderItem, idx: number) => (
                     <Box
                       key={item._id ?? idx}
                       sx={{

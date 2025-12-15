@@ -19,7 +19,8 @@ export interface User {
   totalOrders: number;
   totalSpent: number;
   role?: string;
-  blocked?: boolean;
+  blocked: boolean;
+  image:string
 }
 
 export interface Book {
@@ -30,6 +31,7 @@ export interface Book {
   category: string;
   coverImage?: string;
   createdAt: string;
+  image:string
 }
 
 interface FetchUsersResponse {
@@ -59,6 +61,14 @@ interface AdminState {
   actionLoading: boolean;
   actionError: string | null;
 }
+
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 
 const getToken = () => {
   if (typeof window === "undefined") return null;
@@ -133,7 +143,7 @@ export const fetchUsers = createAsyncThunk<
 });
 
 export const fetchSellerBooks = createAsyncThunk<
-  { books: Book[]; pagination: { total: number; page: number; limit: number; totalPages: number } },
+  { books: Book[]; pagination: Pagination },
   { id: string; page?: number; limit?: number },
   { rejectValue: string }
 >(
@@ -141,9 +151,12 @@ export const fetchSellerBooks = createAsyncThunk<
   async ({ id, page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
       const token = getToken();
-      const res = await api.get(`/api/admin/sellerbooks/${id}?page=${page}&limit=${limit}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await api.get(
+        `/api/admin/sellerbooks/${id}?page=${page}&limit=${limit}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
 
       return {
         books: res.data.data,
@@ -154,6 +167,9 @@ export const fetchSellerBooks = createAsyncThunk<
     }
   }
 );
+
+
+
 
 export const toggleBlockUser = createAsyncThunk<
   { userId: string; role: "seller" | "customer" },
@@ -190,6 +206,34 @@ export const deleteUserThunk = createAsyncThunk<
     return rejectWithValue(extractErrorMessage(err));
   }
 });
+
+
+
+export const deleteBookThunk = createAsyncThunk<
+  { bookId: string },
+  { bookId: string },
+  { rejectValue: string }
+>(
+  "admin/deleteBook",
+  async ({ bookId }, { rejectWithValue }) => {
+    try {
+      const token = getToken();
+
+      await api.patch(
+        `/api/admin/deletebook/${bookId}`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      return { bookId };
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err));
+    }
+  }
+);
+
 
 const initialState: AdminState = {
   loading: false,
@@ -277,11 +321,14 @@ const adminSlice = createSlice({
     state.loading = true;
     state.error = null;
   })
-  .addCase(fetchSellerBooks.fulfilled, (state, action: PayloadAction<{ books: Book[]; pagination: any }>) => {
+ .addCase(
+  fetchSellerBooks.fulfilled,
+  (state, action: PayloadAction<{ books: Book[]; pagination: Pagination }>) => {
     state.loading = false;
     state.sellerBooks = action.payload.books;
     state.pagination = action.payload.pagination;
-  })
+  }
+)
   .addCase(fetchSellerBooks.rejected, (state, action) => {
     state.loading = false;
     state.error = action.payload as string;
@@ -326,6 +373,24 @@ const adminSlice = createSlice({
         state.actionLoading = false;
         state.actionError = action.payload as string;
       });
+      // deletebook
+      builder
+  .addCase(deleteBookThunk.pending, (state) => {
+    state.actionLoading = true;
+    state.actionError = null;
+  })
+  .addCase(deleteBookThunk.fulfilled, (state, action) => {
+    state.actionLoading = false;
+
+    const { bookId } = action.payload;
+    state.sellerBooks = state.sellerBooks.filter(
+      (book) => book._id !== bookId
+    );
+  })
+  .addCase(deleteBookThunk.rejected, (state, action) => {
+    state.actionLoading = false;
+    state.actionError = action.payload as string;
+  });
   },
 });
 

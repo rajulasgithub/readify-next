@@ -1,6 +1,6 @@
 "use client";
 
-import React, {  useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -17,9 +17,10 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller} from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+// import { fetchSingleBook } from "@/src/redux/slices/bookSlice";
 
 // Redux
 import { useDispatch, useSelector } from "react-redux";
@@ -28,45 +29,57 @@ import type { RootState, AppDispatch } from "@/src/redux/store";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
+import { updateBook } from "@/src/redux/slices/bookSlice";
 
 const categories = ["Academic","Fiction","Non-Fiction","Comics","Children","Poetry"];
 const genres = ["Fiction","Thriller","Romance","Fantasy","Sci-Fi","Mystery","Biography","Adventure","Self-help"];
 const languages = ["English","Malayalam","Hindi","Tamil","Kannada","Telugu"];
 
-type BookFormInputs = {
-  title: string;
-  description: string;
-  excerpt?: string;
-  page_count: number | string;
-  author: string;
-  genre: string[];
-  language: string[];
-  publish_date: string;
-  prize: number | string;
-  category: string;
-};
+type BookFormInputs = yup.InferType<typeof bookSchema>;
+
 
 const DESCRIPTION_MIN = 50;
 const DESCRIPTION_MAX = 1000;
 const EXCERPT_MIN = 20;
 const EXCERPT_MAX = 1000;
 
-const bookSchema: yup.ObjectSchema<BookFormInputs> = yup.object({
+const bookSchema = yup.object({
   title: yup.string().required("Title is required"),
-  description: yup.string().required("Description is required")
-    .min(DESCRIPTION_MIN, `Description must be at least ${DESCRIPTION_MIN} characters`)
-    .max(DESCRIPTION_MAX, `Description cannot exceed ${DESCRIPTION_MAX} characters`),
-  excerpt: yup.string().nullable()
-    .min(EXCERPT_MIN, `Excerpt must be at least ${EXCERPT_MIN} characters`)
-    .max(EXCERPT_MAX, `Excerpt cannot exceed ${EXCERPT_MAX} characters`),
-  page_count: yup.number().typeError("Must be a number").required("Page count is required"),
-  author: yup.string().required("Author is required"),
-  genre: yup.array().of(yup.string()).min(1, "Select at least one genre"),
-  language: yup.array().of(yup.string()).min(1, "Select at least one language"),
-  publish_date: yup.string().required("Publish date is required"),
-  prize: yup.number().typeError("Must be a number").required("Price is required"),
-  category: yup.string().required("Category is required"),
-}).required();
+
+  description: yup
+    .string()
+    .required("Description is required")
+    .min(DESCRIPTION_MIN)
+    .max(DESCRIPTION_MAX),
+
+  excerpt: yup
+    .string()
+    .required("Excerpt is required") // ✅ REQUIRED
+    .min(EXCERPT_MIN)
+    .max(EXCERPT_MAX),
+
+  page_count: yup
+    .number()
+    .typeError("Page count must be a number")
+    .required(),
+
+  author: yup.string().required(),
+
+  genre: yup.array(yup.string()).min(1).required(),
+
+  language: yup.array(yup.string()).min(1).required(),
+
+  publish_date: yup.string().required(),
+
+  prize: yup
+    .number()
+    .typeError("Prize must be a number")
+    .required(),
+
+  category: yup.string().required(),
+});
+
+
 
 const UpdateBook: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -75,33 +88,66 @@ const UpdateBook: React.FC = () => {
   const bookId = params?.id as string;
   const { blocked } = useAuth();
 
-  const {  singleBookLoading, singleBookError, loading, error } = useSelector((state: RootState) => state.books);
+  const { singleBook, singleBookLoading, singleBookError, loading, error } = useSelector(
+  (state: RootState) => state.books
+);
 
   const [existingImage, setExistingImage] = useState<string>("");
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newPreview, setNewPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
+const {
+  register,
+  handleSubmit,
+  control,
+  reset,
+  watch,
+  formState: { errors },
+} = useForm<BookFormInputs>({
+  resolver: yupResolver(bookSchema),
+  defaultValues: {
+    title: "",
+    description: "",
+    excerpt: "", 
+    page_count: 0,
+    publish_date: "",
+    author: "",
+    genre: [],
+    language: [],
+    prize: 0,
+    category: "",
+  },
+});
+
+  useEffect(() => {
+  if (singleBook) {
+    reset({
+      title: singleBook.title || "",
+      description: singleBook.description || "",
+      excerpt: singleBook.excerpt || "",
+      page_count: singleBook.page_count || 0,
+      publish_date: singleBook.publish_date || "",
+      author: singleBook.author || "",
+      genre: singleBook.genre || [],
+      language: singleBook.language || [],
+      prize: singleBook.prize || 0,
+      category: singleBook.category || "",
+    });
+
+    setExistingImage(singleBook.image || "");
+  }
+}, [singleBook, reset]);
+  
+
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const { register, handleSubmit,  control, watch, formState: { errors } } = useForm<BookFormInputs>({
-    resolver: yupResolver(bookSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      excerpt: "",
-      page_count: 0,
-      publish_date: "",
-      author: "",
-      genre: [],
-      language: [],
-      prize: 0,
-      category: "",
-    },
-  });
+
+
+
+  
 
   const watchDescription = watch("description", "");
-  const watchExcerpt = watch("excerpt", "");
 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,66 +270,104 @@ const UpdateBook: React.FC = () => {
               inputProps={{ maxLength: DESCRIPTION_MAX }}
             />
 
-            <TextField
-              label={`Excerpt (min ${EXCERPT_MIN} - max ${EXCERPT_MAX} chars)`}
-              fullWidth
-              multiline
-              rows={2}
-              {...register("excerpt")}
-              error={!!errors.excerpt}
-              helperText={errors.excerpt?.message || `${watchExcerpt.length} / ${EXCERPT_MAX}`}
-              inputProps={{ maxLength: EXCERPT_MAX }}
-            />
+           <TextField
+  label="Excerpt"
+  multiline
+  rows={3}
+  {...register("excerpt")}
+  error={!!errors.excerpt}
+  helperText={errors.excerpt?.message}
+/>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField label="Page Count" type="number" fullWidth {...register("page_count")} error={!!errors.page_count} helperText={errors.page_count?.message} />
+             <TextField
+  label="Page Count"
+  type="number"
+  fullWidth
+  {...register("page_count", { valueAsNumber: true })}
+  error={!!errors.page_count}
+  helperText={errors.page_count?.message}
+/>
               <TextField label="Publish Date" type="date" fullWidth InputLabelProps={{ shrink: true }} {...register("publish_date")} error={!!errors.publish_date} helperText={errors.language?.message as string} />
             </Stack>
 
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.language?.message as string} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Controller
-                name="genre"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    multiple
-                    options={genres}
-                    onChange={(_, value) => field.onChange(value)}
-                    value={field.value || []}
-                    sx={{ width: '100%' }}
-                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Genre" error={!!errors.genre} helperText={errors.language?.message as string}fullWidth />
-                    )}
-                  />
-                )}
-              />
+             <Controller
+  name="genre"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={genres}
+      value={field.value ?? []}
+      onChange={(_, value) => field.onChange(value)}
+      sx={{ width: "100%" }}
+      slotProps={{
+        popper: {
+          style: {
+            minWidth: 240,
+            maxWidth: 480,
+          },
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Genre"
+          error={!!errors.genre}
+          helperText={errors.genre?.message as string}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
 
-              <Controller
-                name="language"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    multiple
-                    options={languages}
-                    onChange={(_, value) => field.onChange(value)}
-                    value={field.value || []}
-                    sx={{ width: '100%' }}
-                    PopperProps={{ style: { minWidth: 240, maxWidth: 480 } }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Language" error={!!errors.language} helperText={errors.language?.message as string} fullWidth />
-                    )}
-                  />
-                )}
-              />
+
+             <Controller
+  name="language"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      multiple
+      options={languages}
+      value={field.value ?? []}
+      onChange={(_, value) => field.onChange(value)}
+      sx={{ width: "100%" }}
+      slotProps={{
+        popper: {
+          style: {
+            minWidth: 240,
+            maxWidth: 480,
+          },
+        },
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Language"
+          error={!!errors.language}
+          helperText={errors.language?.message as string}
+          fullWidth
+        />
+      )}
+    />
+  )}
+/>
+
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <TextField label="Price (₹)" type="number" fullWidth {...register("prize")} error={!!errors.prize} helperText={errors.language?.message as string} />
+             <TextField
+  label="Price (₹)"
+  type="number"
+  fullWidth
+  {...register("prize", { valueAsNumber: true })}
+  error={!!errors.prize}
+  helperText={errors.prize?.message}
+/>
               <Controller
                 name="category"
                 control={control}

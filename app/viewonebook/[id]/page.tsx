@@ -84,6 +84,7 @@ export default function ViewOneBook() {
 
   const confirmDelete = async () => {
     if (!id) return;
+    console.log("id is",id)
     await dispatch(deleteBook(id));
     setOpenConfirm(false);
 
@@ -116,9 +117,12 @@ export default function ViewOneBook() {
         }
       );
     } else {
-      
-      const payloadMsg = (result as any)?.payload;
-      toast.error(payloadMsg || "Failed to add book to cart.");
+     const errorMsg =
+    "error" in result && result.error?.message
+      ? result.error.message
+      : "Failed to add book to cart.";
+
+  toast.error(errorMsg);
     }
   };
 
@@ -136,7 +140,7 @@ export default function ViewOneBook() {
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span>removed from Wishlist!</span>
           <HeartBrokenIcon
-            onClick={() => router.push("/cart")}
+            onClick={() => router.push("/wishlist")}
             style={{ cursor: "pointer", color: "#1976d2" }}
           />
         </div>,
@@ -146,7 +150,6 @@ export default function ViewOneBook() {
       );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        const payloadMsg = (result as any)?.payload;
          toast(
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span>Failed to remove from Wishlist!</span>
@@ -168,7 +171,7 @@ export default function ViewOneBook() {
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span>Added to Wishlist!</span>
           <FavoriteIcon
-            onClick={() => router.push("/cart")}
+            onClick={() => router.push("/wishlist")}
             style={{ cursor: "pointer", color: "#1976d2" }}
           />
         </div>,
@@ -178,7 +181,6 @@ export default function ViewOneBook() {
       );
         dispatch(fetchWishlist({ page: 1, limit: 9999 }));
       } else {
-        const payloadMsg = (result as any)?.payload;
          toast(
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span>failed adding Wishlist!</span>

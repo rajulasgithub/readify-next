@@ -10,16 +10,16 @@ export interface Book {
   image: string;
   title: string;
   description: string;
-  excerpt?: string;
+  excerpt: string;
   page_count: number;
   publish_date: string;
   author: string;
-  genre: string;
-  language: string;
+  genre: string[];
+  language: string[];
   prize: number;
   category: "Academic" | "Fiction" | "Non-Fiction" | "Comics" | "Children" | "Poetry";
   is_deleted?: boolean;
-  reviews?: Review[];
+  reviews: Review[];
   avgRating?: number;
   totalReviews?: number;
 }
@@ -159,8 +159,8 @@ export const deleteBook = createAsyncThunk<string, string, { rejectValue: string
     try {
       const token = getToken();
       if (!token) return rejectWithValue("No token found");
-
-      await api.patch(`/api/books/deletetbook/${id}`, {}, {
+      console.log("id",id)
+      await api.patch(`/api/books/deletebook/${id}`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -170,6 +170,7 @@ export const deleteBook = createAsyncThunk<string, string, { rejectValue: string
     }
   }
 );
+
 
 interface UpdateBookParams {
   id: string;

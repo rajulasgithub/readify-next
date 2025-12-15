@@ -10,25 +10,55 @@ export interface OrderAddress {
   fullName: string;
   phone: string;
   addressLine1: string;
-  addressLine2?: string;
+  addressLine2: string | null;
   city: string;
   state: string;
   pinCode: string;
 }
 
+export interface Book {
+  _id: string;
+  title: string;
+  price?: number;
+  image:string;
+}
+
 export interface OrderItem {
-  _id?: string;
-  book: unknown; 
+  _id: string;
+  book: Book; 
   quantity: number;
   orderedAt?: string;
   price: number;
   status?: string;
   cancelledAt?: string | null;
+  
+}
+
+interface OrderItemApi {
+  _id: string;
+  items: {
+    _id: string;      // ✅ itemId
+    quantity: number;
+    price: number;
+    status?: string;
+    cancelledAt?: string | null;
+  };
+  createdAt: string;
+  book: Book;
+}
+
+
+
+export interface OrderUser {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
 }
 
 export interface Order {
   _id: string;
-  user: unknown; 
+  user: OrderUser; 
   items: OrderItem[];
   totalQty: number;
   totalAmount: number;
@@ -39,6 +69,7 @@ export interface Order {
   paymentStatus: string;
   createdAt: string;
   updatedAt: string;
+ 
 }
 
 export interface PlaceOrderPayload {
@@ -60,7 +91,7 @@ export interface OrdersListResponse {
   message: string;
   orders: Order[];
 
-  
+   orderItems: OrderItemApi[];
   page?: number;
   limit?: number;
   totalPages?: number;
@@ -79,7 +110,9 @@ interface PaginationState {
   limit: number;
   totalPages: number;
   totalOrders: number;
+  totalItems: number;
 }
+
 
 interface OrdersState {
   placing: boolean;
@@ -384,25 +417,60 @@ builder.addCase(
   (state, action: PayloadAction<OrdersListResponse>) => {
     state.userOrdersLoading = false;
 
-    const p = action.payload ?? ({} as OrdersListResponse);
+    const orderItems: OrderItemApi[] = action.payload.orderItems ?? [];
 
-    const list = (p.orders ?? (p as any).orderItems ?? (p as any).items) as any[] ?? [];
+    const emptyUser: OrderUser = {
+      _id: "",
+      firstName: "",
+      lastName: "",
+    };
 
-    state.userOrders = Array.isArray(list) ? (list as Order[]) : [];
+    const emptyAddress: OrderAddress = {
+      _id: "",
+      fullName: "",
+      phone: "",
+      addressLine1: "",
+      addressLine2: null,
+      city: "",
+      state: "",
+      pinCode: "",
+    };
 
-    const page = p.page ?? state.pagination?.page ?? 1;
-    const limit = p.limit ?? state.pagination?.limit ?? 8;
-    const totalOrders = p.totalItems ?? p.totalOrders ?? (Array.isArray(list) ? list.length : 0);
-    const totalPages = p.totalPages ?? Math.max(1, Math.ceil(totalOrders / limit));
+    state.userOrders = orderItems.map((oi) => ({
+      _id: oi._id,
+      user: emptyUser,
+      items: [
+        {
+          _id: oi.items._id,
+          book: oi.book,
+          quantity: oi.items.quantity,
+          price: oi.items.price,
+          status: oi.items.status ?? "ordered",
+          cancelledAt: oi.items.cancelledAt ?? null,
+        },
+      ],
+      totalQty: oi.items.quantity,
+      totalAmount: oi.items.price * oi.items.quantity,
+      address: emptyAddress,
+      paymentMethod: "cod",
+      status: oi.items.status ?? "ordered",
+      paymentStatus: "paid",
+      createdAt: oi.createdAt,
+      updatedAt: oi.createdAt,
+      cancelledAt: oi.items.cancelledAt ?? null,
+    }));
 
     state.pagination = {
-      page,
-      limit,
-      totalPages,
-      totalOrders,
+      page: action.payload.page ?? 1,
+      limit: action.payload.limit ?? 8,
+      totalPages: action.payload.totalPages ?? 1,
+      totalOrders: action.payload.totalItems ?? state.userOrders.length,
+      totalItems: action.payload.totalItems ?? state.userOrders.length,
     };
   }
 );
+
+
 
 builder.addCase(fetchUserOrdersThunk.rejected, (state, action) => {
   state.userOrdersLoading = false;
@@ -415,15 +483,26 @@ builder.addCase(fetchUserOrdersThunk.rejected, (state, action) => {
       .addCase(fetchSellerOrdersThunk.rejected, (state, action) => { state.sellerOrdersLoading = false; state.sellerOrdersError = action.payload || "Failed to fetch seller orders"; });
 
     builder.addCase(updateOrderItemStatusThunk.pending, (state) => { state.loading = true; state.error = null; });
-    builder.addCase(updateOrderItemStatusThunk.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
+   builder.addCase(updateOrderItemStatusThunk.fulfilled, (state, action) => {
+  state.loading = false;
 
-      const updatedOrder = action.payload.order;
-      state.userOrders = state.userOrders.map(o => o._id === updatedOrder._id ? updatedOrder : o);
-      state.sellerOrders = state.sellerOrders.map(o => o._id === updatedOrder._id ? updatedOrder : o);
-      if (state.selectedSellerOrder?._id === updatedOrder._id) state.selectedSellerOrder = updatedOrder;
-    });
+  const updated = action.payload.order;
+
+  state.userOrders = state.userOrders.map(order => {
+    if (order._id !== updated._id) return order;
+
+    return {
+      ...order,
+      status: updated.status,
+      cancelledAt: updated.cancelledAt ?? null,
+      items: order.items.map(item => ({
+        ...item,
+        status: updated.status,
+        cancelledAt: updated.cancelledAt ?? null,
+      })),
+    };
+  });
+});
     builder.addCase(updateOrderItemStatusThunk.rejected, (state, action) => { state.loading = false; state.error = action.payload || "Failed to update item status"; });
 
   
