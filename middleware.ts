@@ -13,7 +13,6 @@ const sellerRoutes = [
   "/sellerbooks",
   "/sellersingleorder",
   "/updatebook",
- 
 ];
 
 const customerRoutes = [
@@ -23,10 +22,9 @@ const customerRoutes = [
   "/vieworders",
   "/cart",
   "/wishlist",
- 
 ];
 
-const sharedRoutes = ["/viewonebook","/editprofile"]; 
+const sharedRoutes = ["/viewonebook", "/editprofile"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,26 +32,55 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;
   const role = request.cookies.get("role")?.value;
 
+  
+  if (token && (pathname === "/login" || pathname === "/register")) {
+    if (role === "seller") {
+      return NextResponse.redirect(new URL("/sellerbooks", request.url));
+    }
+    if (role === "customer") {
+      return NextResponse.redirect(new URL("/viewbooks", request.url));
+    }
+    if (role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+  }
 
-  // Public routes
+  
   const isPublicRoute = publicRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
+
   if (!token && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Shared routes are accessible by all logged-in users
-  const isSharedRoute = sharedRoutes.some((route) => pathname.startsWith(route));
-  if (!isSharedRoute) {
-    // Role-based checks
-    if (adminRoutes.some((route) => pathname.startsWith(route)) && role !== "admin") {
+ 
+  const isSharedRoute = sharedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (!isSharedRoute && token) {
+   
+    if (
+      adminRoutes.some((route) => pathname.startsWith(route)) &&
+      role !== "admin"
+    ) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
-    if (sellerRoutes.some((route) => pathname.startsWith(route)) && role !== "seller") {
+
+    
+    if (
+      sellerRoutes.some((route) => pathname.startsWith(route)) &&
+      role !== "seller"
+    ) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
-    if (customerRoutes.some((route) => pathname.startsWith(route)) && role !== "customer") {
+
+    
+    if (
+      customerRoutes.some((route) => pathname.startsWith(route)) &&
+      role !== "customer"
+    ) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
   }

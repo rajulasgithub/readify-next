@@ -3,9 +3,16 @@
 import React from "react";
 import { Box, Container, Typography, Button, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/context/AuthContext";
 
 const Unauthorized: React.FC = () => {
   const router = useRouter();
+   const { role, logoutUser } = useAuth();
+   const handleLogout = () => {
+    logoutUser();
+    router.push("/login");
+  };
+
 
   return (
     <Box
@@ -47,9 +54,9 @@ const Unauthorized: React.FC = () => {
           <Button
             variant="outlined"
             color="secondary"
-            onClick={() => router.push("/login")}
+           onClick={handleLogout}
           >
-            Login
+            Logout
           </Button>
         </Stack>
       </Container>

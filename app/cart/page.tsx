@@ -16,7 +16,12 @@ import {
   Pagination,
   Fab,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -36,11 +41,17 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 
 export default function CartPage() {
-  const {blocked} = useAuth()
-  const [page, setPage] = useState(1);
-  const limit = 2;
+  const { blocked } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+
+  const [page, setPage] = useState(1);
+  const limit = 4;
+
+  // Confirmation dialog state
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const {
     items = [],
@@ -66,51 +77,38 @@ export default function CartPage() {
     }
   };
 
-  const removeItemHandler = (id: string) => {
-    dispatch(removeCartItem(id));
+  const openRemoveConfirm = (id: string) => {
+    setSelectedItemId(id);
+    setConfirmRemoveOpen(true);
   };
 
-  const clearAllHandler = () => {
+  const confirmRemoveItem = () => {
+    if (selectedItemId) {
+      dispatch(removeCartItem(selectedItemId));
+    }
+    setConfirmRemoveOpen(false);
+    setSelectedItemId(null);
+  };
+
+  const confirmClearCart = () => {
     dispatch(clearCart());
+    setConfirmClearOpen(false);
   };
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: "70vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          bgcolor: "#f5f7fb",
-        }}
-      >
+      <Box minHeight="70vh" display="flex" justifyContent="center" alignItems="center">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#f5f7fb",
-        py: 5,
-        position: "relative",
-      }}
-    >
+    <Box minHeight="100vh" bgcolor="#f5f7fb" py={5}>
       <Container maxWidth="md">
-        {/* Header / summary */}
-        <Box
-          sx={{
-            mb: 4,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-          }}
-        >
-          <Box>
+        {/* Header */}
+        <Stack direction="row" justifyContent="space-between" mb={4}>
+          <Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <ShoppingCartIcon sx={{ color: "#c57a45" }} />
               <Typography variant="h4" fontWeight={700}>
@@ -118,64 +116,30 @@ export default function CartPage() {
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} mt={1}>
-              <Chip
-                label={`${items.length} item${totalQuantity !== 1 ? "s" : ""} in cart`}
-                size="small"
-                sx={{ bgcolor: "#fff7f0", color: "#c57a45", fontWeight: 500 }}
-              />
-              <Chip
-                label={`Total: ₹${typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice}`}
-                size="small"
-                sx={{ bgcolor: "#e3f2fd", color: "#1976d2", fontWeight: 500 }}
-              />
+              <Chip label={`${items.length} items`} />
+              <Chip label={`Total ₹${totalPrice}`} color="primary" />
             </Stack>
-          </Box>
+          </Stack>
 
           {items.length > 0 && (
             <Button
               variant="outlined"
-              disabled={blocked}
               color="error"
-              onClick={clearAllHandler}
-              sx={{
-                borderRadius: "999px",
-                textTransform: "none",
-                px: 3,
-              }}
+              disabled={blocked}
+              onClick={() => setConfirmClearOpen(true)}
             >
               Clear Cart
             </Button>
           )}
-        </Box>
+        </Stack>
 
-    
-
+        {/* Empty Cart */}
         {items.length === 0 ? (
-          <Box
-            sx={{
-              mt: 6,
-              p: 4,
-              bgcolor: "#ffffff",
-              borderRadius: 4,
-              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="h6" fontWeight={600} mb={1}>
-              Your cart is empty
-            </Typography>
-            <Typography color="text.secondary" mb={3}>
-              Add some books to your cart to see them here.
-            </Typography>
+          <Box textAlign="center" bgcolor="#fff" p={4} borderRadius={3}>
+            <Typography variant="h6">Your cart is empty</Typography>
             <Button
+              sx={{ mt: 2 }}
               variant="contained"
-              sx={{
-                bgcolor: "#c57a45",
-                textTransform: "none",
-                borderRadius: "999px",
-                px: 4,
-                "&:hover": { bgcolor: "#b36a36" },
-              }}
               onClick={() => router.push("/viewbooks")}
             >
               Browse Books
@@ -183,245 +147,119 @@ export default function CartPage() {
           </Box>
         ) : (
           <>
-            <Stack spacing={2.5}>
-              {items.map((item) => {
-                const subtotal = (item.prize ?? 0) * (item.quantity ?? 0);
+            <Stack spacing={2}>
+              {items.map((item) => (
+                <Card key={item.bookId} sx={{ display: "flex", p: 2 }}>
+                  <CardMedia
+                    component="img"
+                    image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.image}`}
+                    sx={{ width: 100, height: 140 }}
+                  />
 
-                return (
-                  <Card
-                    key={item.bookId}
-                    sx={{
-                      display: "flex",
-                      alignItems: "stretch",
-                      p: 2,
-                      borderRadius: 3,
-                      boxShadow: "0 10px 30px rgba(15,23,42,0.06)",
-                      bgcolor: "#ffffff",
-                      position: "relative",
-                      overflow: "hidden",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(135deg, rgba(197,122,69,0.06), transparent)",
-                        pointerEvents: "none",
-                      },
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${item.image}`}
-                      alt={item.title}
-                      sx={{
-                        width: 110,
-                        height: 150,
-                        borderRadius: 2,
-                        objectFit: "cover",
-                        mr: 2,
-                        flexShrink: 0,
-                      }}
-                    />
+                  <CardContent sx={{ flex: 1 }}>
+                    <Typography fontWeight={700}>{item.title}</Typography>
+                    <Typography color="text.secondary">{item.genre}</Typography>
 
-                    <CardContent
-                      sx={{
-                        flexGrow: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        zIndex: 1,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight={700}
-                          noWrap
-                          sx={{ mb: 0.5 }}
+                    <Stack direction="row" spacing={2} mt={1}>
+                      <Typography>₹{item.prize}</Typography>
+                      <Typography>
+                        Subtotal ₹{item.prize * item.quantity}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between" mt={2}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <IconButton
+                          disabled={item.quantity === 1 || blocked}
+                          onClick={() => decreaseQty(item.bookId, item.quantity)}
                         >
-                          {item.title}
-                        </Typography>
+                          <RemoveIcon />
+                        </IconButton>
 
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 0.5 }}
-                        >
-                          {item.genre}
-                        </Typography>
+                        <Typography>{item.quantity}</Typography>
 
-                        <Stack direction="row" spacing={3} mt={1}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Price: ₹{item.prize}
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            Subtotal: ₹{subtotal}
-                          </Typography>
-                        </Stack>
-                      </Box>
-
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        mt={2}
-                      >
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <IconButton
-                        
-                            size="small"
-                            onClick={() => decreaseQty(item.bookId, item.quantity)}
-                            disabled={item.quantity === 1 || blocked}
-                            sx={{
-                              borderRadius: "999px",
-                              bgcolor: "#f3f4f6",
-                              "&:hover": { bgcolor: "#e5e7eb" },
-                            }}
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </IconButton>
-
-                          <Typography sx={{ minWidth: 24, textAlign: "center" }}>
-                            {item.quantity}
-                          </Typography>
-
-                          <IconButton
-                            size="small"
-                            disabled={ blocked}
-                            onClick={() => increaseQty(item.bookId, item.quantity)}
-                            sx={{
-                              borderRadius: "999px",
-                              bgcolor: "#f3f4f6",
-                              "&:hover": { bgcolor: "#e5e7eb" },
-                            }}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-
-                        <Button
-                          size="small"
+                        <IconButton
                           disabled={blocked}
-                          startIcon={<DeleteIcon />}
-                          onClick={() => removeItemHandler(item.bookId)}
-                          sx={{
-                            textTransform: "none",
-                            color: "#b91c1c",
-                            "&:hover": {
-                              backgroundColor: "#fee2e2",
-                            },
-                          }}
+                          onClick={() => increaseQty(item.bookId, item.quantity)}
                         >
-                          Remove
-                        </Button>
+                          <AddIcon />
+                        </IconButton>
                       </Stack>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+
+                      <Button
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        disabled={blocked}
+                        onClick={() => openRemoveConfirm(item.bookId)}
+                      >
+                        Remove
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
             </Stack>
 
-            <Box
-              mt={4}
-              p={3}
-              bgcolor="#ffffff"
-              borderRadius={3}
-              boxShadow="0 8px 24px rgba(15, 23, 42, 0.08)"
-            >
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                mb={2}
-                flexWrap="wrap"
-                gap={2}
-              >
-                <Box>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    Total Items
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {items.length}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    Total Price
-                  </Typography>
-                  <Typography variant="h5" fontWeight={700} color="#111827">
-                    ₹{typeof totalPrice === "number" ? totalPrice.toFixed(2) : totalPrice}
-                  </Typography>
-                </Box>
+            {/* Summary */}
+            <Box mt={4} p={3} bgcolor="#fff" borderRadius={3}>
+              <Stack direction="row" justifyContent="space-between">
+                <Typography>Total Items: {totalQuantity}</Typography>
+                <Typography fontWeight={700}>₹{totalPrice}</Typography>
               </Stack>
 
               <Divider sx={{ my: 2 }} />
 
-              <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Link href="/checkout" passHref>
-                  <Button variant="contained" disabled={blocked} color="primary">
-                    Checkout
-                  </Button>
-                </Link>
-              </Stack>
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={blocked}
+                onClick={() => router.push("/checkout")}
+              >
+                Checkout
+              </Button>
             </Box>
           </>
         )}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            mt: 4,
-            mb: 6,
-          }}
-        >
-          <Pagination
-            count={totalPageCount}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            shape="rounded"
-            size="medium"
-            sx={{
-              "& .MuiPaginationItem-root": {
-                borderRadius: "10px",
-                fontWeight: 600,
-                color: "#0369a1",
-              },
-              "& .Mui-selected": {
-                backgroundColor: "#e0f2fe !important",
-                color: "#0369a1",
-                borderRadius: "12px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              },
-              "& .MuiPaginationItem-root:hover": {
-                backgroundColor: "#bae6fd",
-              },
-            }}
-          />
-        </Box>
+
+        {/* Pagination ONLY if items >= limit */}
+        {items.length >= limit && (
+          <Box display="flex" justifyContent="center" mt={4}>
+            <Pagination
+              count={totalPageCount}
+              page={page}
+              onChange={(_, value) => setPage(value)}
+            />
+          </Box>
+        )}
       </Container>
-      <Link href="/viewbooks" passHref>
-        <Tooltip title="Browse books" arrow>
-        
-          <Fab
-            aria-label="browse-books"
-            sx={{
-              position: "fixed",
-              right: 20,
-              bottom: 28,
-              bgcolor: "#c57a45",
-              color: "#fff",
-              "&:hover": {
-                bgcolor: "#b36a36",
-              },
-              zIndex: (theme) => theme.zIndex.tooltip + 1,
-            }}
-          >
-            <AddIcon />
-          </Fab>
-        </Tooltip>
-      </Link>
+
+      {/* Remove Item Dialog */}
+      <Dialog open={confirmRemoveOpen} onClose={() => setConfirmRemoveOpen(false)}>
+        <DialogTitle>Remove Item</DialogTitle>
+        <DialogContent>
+          Are you sure you want to remove this item from the cart?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmRemoveOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={confirmRemoveItem}>
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Clear Cart Dialog */}
+      <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
+        <DialogTitle>Clear Cart</DialogTitle>
+        <DialogContent>
+          Are you sure you want to remove all items from the cart?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmClearOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={confirmClearCart}>
+            Clear
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

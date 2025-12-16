@@ -147,7 +147,7 @@ sx={{ width: 90, height: 90, bgcolor: "#c57a45", fontSize: 34, fontWeight: 700 }
                   </Box>
                   <Box>
                     <Typography variant="body2" sx={{ color: "#6b7280" }}>
-                      Products
+                      Books
                     </Typography>
                     <Typography variant="h6" fontWeight={700}>
                       {productCount}

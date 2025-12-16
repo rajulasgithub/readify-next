@@ -37,7 +37,7 @@ export interface OrderItem {
 interface OrderItemApi {
   _id: string;
   items: {
-    _id: string;      // ✅ itemId
+    _id: string;     
     quantity: number;
     price: number;
     status?: string;
@@ -56,9 +56,16 @@ export interface OrderUser {
   email?: string;
 }
 
+export interface OrderCustomer {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 export interface Order {
   _id: string;
   user: OrderUser; 
+  customer?: OrderCustomer;
   items: OrderItem[];
   totalQty: number;
   totalAmount: number;

@@ -19,6 +19,7 @@ import { getHomeBooksThunk } from "@/src/redux/slices/homeSlice";
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const Home: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -28,7 +29,10 @@ const Home: React.FC = () => {
     (state: RootState) => state.home
   );
 
+  const {token ,role} = useAuth()
+  console.log(token)
   useEffect(() => {
+    
     dispatch(getHomeBooksThunk());
   }, [dispatch]);
 
@@ -111,7 +115,17 @@ const Home: React.FC = () => {
               >
                 <Button
                   variant="contained"
-                  onClick={() => router.push("/login")}
+                  onClick={() => {
+    if (!token) {
+      router.push("/login");
+    } else if (role === "seller") {
+      router.push("/sellerbooks"); 
+    } else if (role === "customer") {
+      router.push("/viewbooks");
+    } else {
+      router.push("/login"); 
+    }
+  }}
                   sx={{
                     borderRadius: "999px",
                     px: 4,
@@ -291,7 +305,7 @@ const Home: React.FC = () => {
                           bgcolor: "rgba(197,122,69,0.04)",
                         },
                       }}
-                      onClick={()=>router.push(`viewonebook/${book.id}`)}
+                      onClick={() => router.push(token? `/viewonebook/${book.id}`:'/login')}
                     >
                       View Details
                     </Button>

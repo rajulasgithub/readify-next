@@ -158,15 +158,14 @@ export default function SellerOrderDetailsPage() {
 
                 <Stack spacing={1.2}>
                  <Stack spacing={1.2}>
-  <Typography>
-    <strong>Name:</strong>{" "}
-    {selectedSellerOrder.user?.firstName}{" "}
-    {selectedSellerOrder.user?.lastName}
-  </Typography>
+ <Typography>
+  <strong>Name:</strong> {selectedSellerOrder.customer?.name}
+</Typography>
 
-  <Typography>
-    <strong>Email:</strong> {selectedSellerOrder.user?.email}
-  </Typography>
+<Typography>
+  <strong>Email:</strong> {selectedSellerOrder.customer?.email}
+</Typography>
+
 </Stack>
                 </Stack>
               </CardContent>
