@@ -109,7 +109,9 @@ export default function ViewSellerBooks() {
               mb: 5,
             }}
           >
-            {books.map((book: Book) => (
+           {books
+  .filter((book): book is Book => Boolean(book && book._id))
+  .map((book) => (
               <Card
                 key={book._id}
                 elevation={0}
@@ -130,7 +132,11 @@ export default function ViewSellerBooks() {
                 <Box sx={{ position: "relative", pt: "130%" }}>
                   <CardMedia
                     component="img"
-                    image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`}
+                    image={
+  book.image
+    ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.image}`
+    : "/placeholder-book.png"
+}
                     alt={book.title}
                     sx={{
                       position: "absolute",

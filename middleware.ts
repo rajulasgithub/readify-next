@@ -34,14 +34,6 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;
   const role = request.cookies.get("role")?.value;
 
-  const referer = request.headers.get("referer");
-
-  // Redirect authenticated users from "/" to their dashboard
-  if (token && pathname === "/" && !referer) {
-    if (role === "seller") return NextResponse.redirect(new URL("/sellerdashboard", request.url));
-    if (role === "customer") return NextResponse.redirect(new URL("/viewbooks", request.url));
-    if (role === "admin") return NextResponse.redirect(new URL("/admin", request.url));
-  }
 
   // Public routes
   const isPublicRoute = publicRoutes.some(

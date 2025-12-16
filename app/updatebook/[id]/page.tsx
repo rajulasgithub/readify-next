@@ -120,7 +120,7 @@ const {
   },
 });
 
-  useEffect(() => {
+ useEffect(() => {
   if (singleBook) {
     reset({
       title: singleBook.title || "",
@@ -129,8 +129,19 @@ const {
       page_count: singleBook.page_count || 0,
       publish_date: singleBook.publish_date || "",
       author: singleBook.author || "",
-      genre: singleBook.genre || [],
-      language: singleBook.language || [],
+
+      genre: Array.isArray(singleBook.genre)
+        ? singleBook.genre
+        : singleBook.genre
+        ? [singleBook.genre]
+        : [],
+
+      language: Array.isArray(singleBook.language)
+        ? singleBook.language
+        : singleBook.language
+        ? [singleBook.language]
+        : [],
+
       prize: singleBook.prize || 0,
       category: singleBook.category || "",
     });
@@ -138,7 +149,6 @@ const {
     setExistingImage(singleBook.image || "");
   }
 }, [singleBook, reset]);
-  
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 

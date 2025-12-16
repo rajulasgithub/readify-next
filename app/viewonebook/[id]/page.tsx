@@ -37,6 +37,7 @@ import { useAuth } from "@/src/context/AuthContext";
 
 import { AppDispatch, RootState } from "@/src/redux/store";
 import { fetchSingleBook, deleteBook } from "@/src/redux/slices/bookSlice";
+import { deleteBookThunk } from "@/src/redux/slices/adminSlice";
 
 
 type BookType = {
@@ -82,20 +83,29 @@ export default function ViewOneBook() {
   const book = (singleBook as BookType) || ({} as BookType);
   const bookImage = Array.isArray(book.image) ? book.image?.[0] : book.image;
 
-  const confirmDelete = async () => {
-    if (!id) return;
-    console.log("id is",id)
-    await dispatch(deleteBook(id));
-    setOpenConfirm(false);
+ const confirmDelete = async () => {
+  if (!id) return;
 
-    if (role === "seller") {
-      router.push("/sellerbooks");
-    } else if (role === "customer") {
-      router.push("/viewbooks");
-    } else {
+  try {
+    if (role === "admin") {
+  
+      await dispatch(deleteBookThunk({ bookId: id })).unwrap();
       router.push("/admin");
+    } else if (role === "seller") {
+
+      await dispatch(deleteBook(id)).unwrap();
+      router.push("/sellerbooks");
     }
-  };
+
+    toast.success("Book deleted successfully");
+  } catch (err) {
+    toast.error(
+      typeof err === "string" ? err : "Failed to delete book"
+    );
+  } finally {
+    setOpenConfirm(false);
+  }
+};
 
   const handleAddToCart = async () => {
     if (!id) return;
