@@ -314,7 +314,7 @@ export default function CheckoutPage() {
       await dispatch(placeOrderThunk({ address: addr, items: mappedItems })).unwrap();
       toast.success("Order placed successfully!");
       dispatch(clearCart());
-      router.push("/vieworders");
+      router.push("/successpage");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to place order";
       toast.error(msg);

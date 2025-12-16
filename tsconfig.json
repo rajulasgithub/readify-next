@@ -38,7 +38,7 @@
     "src/redux/store.ts",
     "app/sellerdashboard",
     ".next/dev/types/**/*.ts"
-  ],
+, "app/successpage"  ],
   "exclude": [
     "node_modules"
   ]
