@@ -26,6 +26,7 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/src/context/AuthContext";
+import { usePathname } from "next/navigation";
 
 const categories = [
   "Fiction",
@@ -49,6 +50,21 @@ export default function Navbar() {
 
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const isCatMenuOpen = Boolean(catAnchorEl);
+  const pathname = usePathname();
+  const isActive = (path: string) => pathname === path;
+
+  const activeStyle = {
+  color: "#2563eb", // blue
+  fontWeight: 600,
+};
+
+const inactiveStyle = {
+  color: "#4b5563",
+  fontWeight: 500,
+  cursor: "pointer",
+  "&:hover": { color: "#111827" },
+};
+
 
   const { role, logoutUser } = useAuth();
   const isLoggedIn = !!role;
@@ -97,7 +113,7 @@ export default function Navbar() {
               <ListItemText primary="Categories" />
             </ListItem>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
-              <ListItemText primary="About" />
+              <ListItemText  primary="About" />
             </ListItem>
             <ListItem component={Link} href="/wishlist" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Wishlist" />
@@ -219,7 +235,7 @@ export default function Navbar() {
             {isCustomer && (
               <>
                 <Link href="/viewbooks" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/viewbooks") ? activeStyle : inactiveStyle}>
                     Books
                   </Typography>
                 </Link>
@@ -238,7 +254,7 @@ export default function Navbar() {
                 </Typography>
 
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/about") ? activeStyle : inactiveStyle}>
                     About
                   </Typography>
                 </Link>
@@ -286,13 +302,13 @@ export default function Navbar() {
             {isSeller && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/about") ? activeStyle : inactiveStyle}>
                     About
                   </Typography>
                 </Link>
 
                 <Link href="/sellerbooks" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/sellerbooks") ? activeStyle : inactiveStyle}>
                     Books
                   </Typography>
                 </Link>
@@ -322,7 +338,7 @@ export default function Navbar() {
             {isAdmin && (
               <>
                 <Link href="/admin" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/admin") ? activeStyle : inactiveStyle}>
                     Dashboard
                   </Typography>
                 </Link>
@@ -346,13 +362,13 @@ export default function Navbar() {
             {!isLoggedIn && (
               <>
                 <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/about") ? activeStyle : inactiveStyle}>
                     About
                   </Typography>
                 </Link>
 
                 <Link href="/register" style={{ textDecoration: "none" }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 15, color: "#4b5563", cursor: "pointer", "&:hover": { color: "#111827" } }}>
+                  <Typography sx={isActive("/register") ? activeStyle : inactiveStyle}>
                     Register
                   </Typography>
                 </Link>
