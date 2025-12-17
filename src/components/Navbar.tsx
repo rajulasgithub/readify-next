@@ -192,7 +192,7 @@ const inactiveStyle = {
               <Box
                 component="img"
                 src="/logo.jpg"
-                alt="Readify Logo"
+                alt="ReadifyLogo"
                 sx={{ width: 32, height: 32 }}
               />
               <Typography

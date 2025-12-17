@@ -6,8 +6,6 @@ export default function AboutPage() {
   return (
     <Box sx={{ bgcolor: "#f5f7fb", py: 8, minHeight: "100vh" }}>
       <Container maxWidth="md">
-        
-      
         <Typography
           variant="h3"
           fontWeight={700}

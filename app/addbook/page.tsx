@@ -34,8 +34,6 @@ import { addBook } from "@/src/redux/slices/bookSlice";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 
-
-
 const categories = [
   "Academic",
   "Fiction",
@@ -66,8 +64,6 @@ const languages = [
   "Telugu",
 ];
 
-
-
 export type BookFormInputs = {
   title: string;
   description: string;
@@ -81,8 +77,6 @@ export type BookFormInputs = {
   category: string;
   image: File | null; 
 };
-
-
 
 const bookSchema = yup.object({
   title: yup.string().required("Title is required"),
@@ -137,10 +131,6 @@ const bookSchema = yup.object({
       (value) => value instanceof File
     ),
 });
-
-
-
-
 
 
 const AddBook: React.FC = () => {

@@ -26,8 +26,7 @@ const AdminStatsChart: React.FC = () => {
   ];
 
   const colors = ["#4F46E5", "#22C55E", "#06B6D4", "#F97316"]; 
-
-
+  
   return (
     <Card
       elevation={0}

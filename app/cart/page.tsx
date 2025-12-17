@@ -48,7 +48,7 @@ export default function CartPage() {
   const [page, setPage] = useState(1);
   const limit = 4;
 
-  // Confirmation dialog state
+
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export default function CartPage() {
   return (
     <Box minHeight="100vh" bgcolor="#f5f7fb" py={5}>
       <Container maxWidth="md">
-        {/* Header */}
+      
         <Stack direction="row" justifyContent="space-between" mb={4}>
           <Stack>
             <Stack direction="row" spacing={1} alignItems="center">
@@ -133,7 +133,7 @@ export default function CartPage() {
           )}
         </Stack>
 
-        {/* Empty Cart */}
+     
         {items.length === 0 ? (
           <Box textAlign="center" bgcolor="#fff" p={4} borderRadius={3}>
             <Typography variant="h6">Your cart is empty</Typography>
@@ -200,7 +200,7 @@ export default function CartPage() {
               ))}
             </Stack>
 
-            {/* Summary */}
+          
             <Box mt={4} p={3} bgcolor="#fff" borderRadius={3}>
               <Stack direction="row" justifyContent="space-between">
                 <Typography>Total Items: {totalQuantity}</Typography>
@@ -221,7 +221,7 @@ export default function CartPage() {
           </>
         )}
 
-        {/* Pagination ONLY if items >= limit */}
+       
         {items.length >= limit && (
           <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
@@ -233,7 +233,7 @@ export default function CartPage() {
         )}
       </Container>
 
-      {/* Remove Item Dialog */}
+   
       <Dialog open={confirmRemoveOpen} onClose={() => setConfirmRemoveOpen(false)}>
         <DialogTitle>Remove Item</DialogTitle>
         <DialogContent>
@@ -247,7 +247,7 @@ export default function CartPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Clear Cart Dialog */}
+   
       <Dialog open={confirmClearOpen} onClose={() => setConfirmClearOpen(false)}>
         <DialogTitle>Clear Cart</DialogTitle>
         <DialogContent>
