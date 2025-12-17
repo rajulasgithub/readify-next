@@ -27,34 +27,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/src/context/AuthContext";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
-const categories = [
-  "Fiction",
-  "Non-Fiction",
-  "Romance",
-  "Thriller",
-  "Science",
-  "Self Help",
-  "Biography",
-  "Children",
-  "Comics",
-  "Fantasy",
-  "Horror",
-  "History",
-];
+
 
 export default function Navbar() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
-  const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
-  const isCatMenuOpen = Boolean(catAnchorEl);
+ 
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
 
   const activeStyle = {
-  color: "#2563eb", // blue
+  color: "#2563eb", 
   fontWeight: 600,
 };
 
@@ -77,13 +64,7 @@ const inactiveStyle = {
   }, []);
 
   const handleDrawerToggle = (): void => setMobileOpen((prev) => !prev);
-  const handleCategoriesClick = (event: React.MouseEvent<HTMLElement>) =>
-    setCatAnchorEl(event.currentTarget);
-  const handleCategoriesClose = () => setCatAnchorEl(null);
-  const handleCategorySelect = (cat: string) => {
-    setCatAnchorEl(null);
-    router.push(`/categories?name=${encodeURIComponent(cat)}`);
-  };
+  
   const handleLogout = () => {
     logoutUser();
     router.push("/login");
@@ -208,12 +189,13 @@ const inactiveStyle = {
         >
           <Link href="/">
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
-              <Box
-                component="img"
-                src="/logo.jpg"
-                alt="Readify Logo"
-                sx={{ width: 32, height: 32 }}
-              />
+              <Image
+  src="/logo.jpg"
+  alt="Readify Logo"
+  width={32}
+  height={32}
+  priority
+/>
               <Typography
                 variant="h6"
                 sx={{
@@ -240,18 +222,7 @@ const inactiveStyle = {
                   </Typography>
                 </Link>
 
-                <Typography
-                  onClick={handleCategoriesClick}
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: 15,
-                    color: "#4b5563",
-                    cursor: "pointer",
-                    "&:hover": { color: "#111827" },
-                  }}
-                >
-                  Categories
-                </Typography>
+               
 
                 <Link href="/about" style={{ textDecoration: "none" }}>
                   <Typography sx={isActive("/about") ? activeStyle : inactiveStyle}>
@@ -398,45 +369,7 @@ const inactiveStyle = {
         </Toolbar>
       </AppBar>
 
-      <Menu
-        anchorEl={catAnchorEl}
-        open={isCatMenuOpen}
-        onClose={handleCategoriesClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        PaperProps={{
-          sx: {
-            mt: 1,
-            p: 2,
-            borderRadius: 2,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-          },
-        }}
-      >
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" },
-            gap: 1,
-            minWidth: 260,
-          }}
-        >
-          {categories.map((cat) => (
-            <MenuItem
-              key={cat}
-              onClick={() => handleCategorySelect(cat)}
-              sx={{
-                borderRadius: 1,
-                fontSize: 14,
-                "&:hover": { backgroundColor: "#f3f4f6" },
-              }}
-            >
-              {cat}
-            </MenuItem>
-          ))}
-        </Box>
-      </Menu>
-
+      
       <Drawer
         anchor="left"
         open={mobileOpen}
