@@ -189,13 +189,12 @@ const inactiveStyle = {
         >
           <Link href="/">
             <Box sx={{ display: "flex", alignItems: "center", cursor: "pointer", gap: 1 }}>
-              <Image
-  src="/logo.jpg"
-  alt="Readify Logo"
-  width={32}
-  height={32}
-  priority
-/>
+              <Box
+                component="img"
+                src="/logo.jpg"
+                alt="Readify Logo"
+                sx={{ width: 32, height: 32 }}
+              />
               <Typography
                 variant="h6"
                 sx={{
