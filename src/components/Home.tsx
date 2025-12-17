@@ -226,7 +226,7 @@ const Home: React.FC = () => {
           {!loadingNew &&
             !loadingBest &&
             allCollections.map((book) => (
-              <Box key={book.id} sx={{ width: { xs: "100%", sm: "45%", md: "23%" }, minWidth: 220 }}>
+              <Box  key={`${book.id}-${book.tag}`} sx={{ width: { xs: "100%", sm: "45%", md: "23%" }, minWidth: 220 }}>
                 <Card
                   elevation={0}
                   sx={{

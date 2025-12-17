@@ -50,17 +50,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (savedLastName) setLastName(savedLastName);
     if (savedPhone) setPhone(savedPhone);
 
-    if (savedToken) {
-
-      api.get("/api/user/profile", {
-          headers: { Authorization: `Bearer ${savedToken}` },
-        })
-        .then(res => {
-          console.log(res)
-          setBlocked(res.data.data.blocked || false);
-        })
-        .catch(err => console.error("Failed to fetch profile:", err));
-    }
+    if (savedToken && savedRole !== "admin") {
+    api
+      .get("/api/user/profile", {
+        headers: { Authorization: `Bearer ${savedToken}` },
+      })
+      .then((res) => {
+        setBlocked(res.data.data.blocked || false);
+      })
+      .catch((err) => {
+        console.warn("Profile fetch skipped / failed:", err.response?.status);
+      });
+  }
   }, []);
 
   const loginUser = (tokenValue: string, roleValue: string, emailValue: string, firstNameValue: string, lastNameValue: string, phoneValue: string) => {

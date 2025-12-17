@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/src/components/Navbar";
 import Footer from "@/src/components/Footer";
 import ClientProviders from "@/src/components/ClientProviders";
+import EmotionRegistry from "@/src/theme/emotion-registry";
 
 
 
@@ -39,11 +40,13 @@ export default function RootLayout({
         <link rel="icon" href="/logo.jpg" />
       </head>
      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <EmotionRegistry>
         <ClientProviders>
           <Navbar />
           {children}
           <Footer />
         </ClientProviders>
+        </EmotionRegistry>
       </body>
     </html>
   );
