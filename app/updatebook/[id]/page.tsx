@@ -17,12 +17,10 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 
-import { useForm, Controller} from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-// import { fetchSingleBook } from "@/src/redux/slices/bookSlice";
 
-// Redux
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
 
@@ -31,9 +29,9 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 import { updateBook } from "@/src/redux/slices/bookSlice";
 
-const categories = ["Academic","Fiction","Non-Fiction","Comics","Children","Poetry"];
-const genres = ["Fiction","Thriller","Romance","Fantasy","Sci-Fi","Mystery","Biography","Adventure","Self-help"];
-const languages = ["English","Malayalam","Hindi","Tamil","Kannada","Telugu"];
+const categories = ["Academic", "Fiction", "Non-Fiction", "Comics", "Children", "Poetry"];
+const genres = ["Fiction", "Thriller", "Romance", "Fantasy", "Sci-Fi", "Mystery", "Biography", "Adventure", "Self-help"];
+const languages = ["English", "Malayalam", "Hindi", "Tamil", "Kannada", "Telugu"];
 
 type BookFormInputs = yup.InferType<typeof bookSchema>;
 
@@ -54,7 +52,7 @@ const bookSchema = yup.object({
 
   excerpt: yup
     .string()
-    .required("Excerpt is required") // ✅ REQUIRED
+    .required("Excerpt is required")
     .min(EXCERPT_MIN)
     .max(EXCERPT_MAX),
 
@@ -89,73 +87,73 @@ const UpdateBook: React.FC = () => {
   const { blocked } = useAuth();
 
   const { singleBook, singleBookLoading, singleBookError, loading, error } = useSelector(
-  (state: RootState) => state.books
-);
+    (state: RootState) => state.books
+  );
 
   const [existingImage, setExistingImage] = useState<string>("");
   const [newImage, setNewImage] = useState<File | null>(null);
   const [newPreview, setNewPreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
-const {
-  register,
-  handleSubmit,
-  control,
-  reset,
-  watch,
-  formState: { errors },
-} = useForm<BookFormInputs>({
-  resolver: yupResolver(bookSchema),
-  defaultValues: {
-    title: "",
-    description: "",
-    excerpt: "", 
-    page_count: 0,
-    publish_date: "",
-    author: "",
-    genre: [],
-    language: [],
-    prize: 0,
-    category: "",
-  },
-});
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<BookFormInputs>({
+    resolver: yupResolver(bookSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      excerpt: "",
+      page_count: 0,
+      publish_date: "",
+      author: "",
+      genre: [],
+      language: [],
+      prize: 0,
+      category: "",
+    },
+  });
 
- useEffect(() => {
-  if (singleBook) {
-    reset({
-      title: singleBook.title || "",
-      description: singleBook.description || "",
-      excerpt: singleBook.excerpt || "",
-      page_count: singleBook.page_count || 0,
-      publish_date: singleBook.publish_date || "",
-      author: singleBook.author || "",
+  useEffect(() => {
+    if (singleBook) {
+      reset({
+        title: singleBook.title || "",
+        description: singleBook.description || "",
+        excerpt: singleBook.excerpt || "",
+        page_count: singleBook.page_count || 0,
+        publish_date: singleBook.publish_date || "",
+        author: singleBook.author || "",
 
-      genre: Array.isArray(singleBook.genre)
-        ? singleBook.genre
-        : singleBook.genre
-        ? [singleBook.genre]
-        : [],
+        genre: Array.isArray(singleBook.genre)
+          ? singleBook.genre
+          : singleBook.genre
+            ? [singleBook.genre]
+            : [],
 
-      language: Array.isArray(singleBook.language)
-        ? singleBook.language
-        : singleBook.language
-        ? [singleBook.language]
-        : [],
+        language: Array.isArray(singleBook.language)
+          ? singleBook.language
+          : singleBook.language
+            ? [singleBook.language]
+            : [],
 
-      prize: singleBook.prize || 0,
-      category: singleBook.category || "",
-    });
+        prize: singleBook.prize || 0,
+        category: singleBook.category || "",
+      });
 
-    setExistingImage(singleBook.image || "");
-  }
-}, [singleBook, reset]);
+      setExistingImage(singleBook.image || "");
+    }
+  }, [singleBook, reset]);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
 
 
 
-  
+
 
   const watchDescription = watch("description", "");
 
@@ -226,21 +224,21 @@ const {
           <Box
             onClick={openFilePicker}
             sx={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}
-              aria-hidden="true"
+            aria-hidden="true"
           >
             {previewSrc ? (
               <Card sx={{ width: 140, height: 190, borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <CardMedia component="img" image={previewSrc} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <IconButton
-                 onClick={(e) => {
-  e.stopPropagation();
+                  onClick={(e) => {
+                    e.stopPropagation();
 
-  if (newPreview) {
-    removeNewImage();
-  } else {
-    removeExistingImage();
-  }
-}}
+                    if (newPreview) {
+                      removeNewImage();
+                    } else {
+                      removeExistingImage();
+                    }
+                  }}
                   sx={{ position: 'absolute', top: 8, right: 8, bgcolor: '#fff', '&:hover': { bgcolor: '#f3f4f6' } }}
                 >
                   <DeleteOutlineIcon />
@@ -257,14 +255,14 @@ const {
           </Box>
         </Stack>
 
-       
+
         {error && <Typography variant="body2" sx={{ color: "#b91c1c", mb: 2, fontWeight: 500 }}>{typeof error === "string" ? error : "Failed to update book"}</Typography>}
 
-   {blocked && (
-  <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-    Your account is blocked. You cannot add books.
-  </Typography>
-)}
+        {blocked && (
+          <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+            Your account is blocked. You cannot add books.
+          </Typography>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Stack spacing={2.3}>
             <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />
@@ -280,104 +278,103 @@ const {
               inputProps={{ maxLength: DESCRIPTION_MAX }}
             />
 
-           <TextField
-  label="Excerpt"
-  multiline
-  rows={3}
-  {...register("excerpt")}
-  error={!!errors.excerpt}
-  helperText={errors.excerpt?.message}
-/>
+            <TextField
+              label="Excerpt"
+              multiline
+              rows={3}
+              {...register("excerpt")}
+              error={!!errors.excerpt}
+              helperText={errors.excerpt?.message}
+            />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-             <TextField
-  label="Page Count"
-  type="number"
-  fullWidth
-  {...register("page_count", { valueAsNumber: true })}
-  error={!!errors.page_count}
-  helperText={errors.page_count?.message}
-/>
+              <TextField
+                label="Page Count"
+                type="number"
+                fullWidth
+                {...register("page_count", { valueAsNumber: true })}
+                error={!!errors.page_count}
+                helperText={errors.page_count?.message}
+              />
               <TextField label="Publish Date" type="date" fullWidth InputLabelProps={{ shrink: true }} {...register("publish_date")} error={!!errors.publish_date} helperText={errors.language?.message as string} />
             </Stack>
 
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.language?.message as string} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-             <Controller
-  name="genre"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={genres}
-      value={field.value ?? []}
-      onChange={(_, value) => field.onChange(value)}
-      sx={{ width: "100%" }}
-      slotProps={{
-        popper: {
-          style: {
-            minWidth: 240,
-            maxWidth: 480,
-          },
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Genre"
-          error={!!errors.genre}
-          helperText={errors.genre?.message as string}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
+              <Controller
+                name="genre"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={genres}
+                    value={field.value ?? []}
+                    onChange={(_, value) => field.onChange(value)}
+                    sx={{ width: "100%" }}
+                    slotProps={{
+                      popper: {
+                        style: {
+                          minWidth: 240,
+                          maxWidth: 480,
+                        },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Genre"
+                        error={!!errors.genre}
+                        helperText={errors.genre?.message as string}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
+              />
 
-
-             <Controller
-  name="language"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={languages}
-      value={field.value ?? []}
-      onChange={(_, value) => field.onChange(value)}
-      sx={{ width: "100%" }}
-      slotProps={{
-        popper: {
-          style: {
-            minWidth: 240,
-            maxWidth: 480,
-          },
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Language"
-          error={!!errors.language}
-          helperText={errors.language?.message as string}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={languages}
+                    value={field.value ?? []}
+                    onChange={(_, value) => field.onChange(value)}
+                    sx={{ width: "100%" }}
+                    slotProps={{
+                      popper: {
+                        style: {
+                          minWidth: 240,
+                          maxWidth: 480,
+                        },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Language"
+                        error={!!errors.language}
+                        helperText={errors.language?.message as string}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
+              />
 
             </Stack>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-             <TextField
-  label="Price (₹)"
-  type="number"
-  fullWidth
-  {...register("prize", { valueAsNumber: true })}
-  error={!!errors.prize}
-  helperText={errors.prize?.message}
-/>
+              <TextField
+                label="Price (₹)"
+                type="number"
+                fullWidth
+                {...register("prize", { valueAsNumber: true })}
+                error={!!errors.prize}
+                helperText={errors.prize?.message}
+              />
               <Controller
                 name="category"
                 control={control}

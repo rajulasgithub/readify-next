@@ -194,7 +194,6 @@ const cartCount = useSelector(
                   </CardContent>
                 </Card>
 
-                {/* Cart card */}
                 <Card
                   sx={{
                     flex: "1 1 250px",

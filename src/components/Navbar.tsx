@@ -36,35 +36,35 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
- 
+
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
 
   const activeStyle = {
-  color: "#2563eb", 
-  fontWeight: 600,
-};
+    color: "#2563eb",
+    fontWeight: 600,
+  };
 
-const inactiveStyle = {
-  color: "#4b5563",
-  fontWeight: 500,
-  cursor: "pointer",
-  "&:hover": { color: "#111827" },
-};
+  const inactiveStyle = {
+    color: "#4b5563",
+    fontWeight: 500,
+    cursor: "pointer",
+    "&:hover": { color: "#111827" },
+  };
 
 
   const { role, logoutUser } = useAuth();
   const isLoggedIn = !!role;
   const isCustomer = role === "customer";
   const isSeller = role === "seller";
-  const isAdmin = role === "admin"; 
+  const isAdmin = role === "admin";
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleDrawerToggle = (): void => setMobileOpen((prev) => !prev);
-  
+
   const handleLogout = () => {
     logoutUser();
     router.push("/login");
@@ -87,14 +87,14 @@ const inactiveStyle = {
       <Divider sx={{ mb: 2 }} />
 
       <List>
-       
+
         {isCustomer && (
           <>
             <ListItem component={Link} href="/categories" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Categories" />
             </ListItem>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
-              <ListItemText  primary="About" />
+              <ListItemText primary="About" />
             </ListItem>
             <ListItem component={Link} href="/wishlist" sx={{ cursor: "pointer" }}>
               <ListItemText primary="Wishlist" />
@@ -115,7 +115,7 @@ const inactiveStyle = {
           </>
         )}
 
-       
+
         {isSeller && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
@@ -134,7 +134,7 @@ const inactiveStyle = {
           </>
         )}
 
-       
+
         {isAdmin && (
           <>
             <ListItem component={Link} href="/admin/dashboard" sx={{ cursor: "pointer" }}>
@@ -152,7 +152,7 @@ const inactiveStyle = {
           </>
         )}
 
-       
+
         {!isLoggedIn && (
           <>
             <ListItem component={Link} href="/about" sx={{ cursor: "pointer" }}>
@@ -221,7 +221,7 @@ const inactiveStyle = {
                   </Typography>
                 </Link>
 
-               
+
 
                 <Link href="/about" style={{ textDecoration: "none" }}>
                   <Typography sx={isActive("/about") ? activeStyle : inactiveStyle}>
@@ -313,7 +313,7 @@ const inactiveStyle = {
                   </Typography>
                 </Link>
 
-             
+
                 <Button
                   onClick={handleLogout}
                   sx={{
@@ -368,7 +368,7 @@ const inactiveStyle = {
         </Toolbar>
       </AppBar>
 
-      
+
       <Drawer
         anchor="left"
         open={mobileOpen}

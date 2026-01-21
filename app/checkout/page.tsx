@@ -43,7 +43,6 @@ import { clearCart } from "@/src/redux/slices/cartSlice";
 import { useAuth } from "@/src/context/AuthContext";
 import type { CartItem } from "@/src/redux/slices/cartSlice";
 
-// ------------------- SCHEMA -------------------
 const addressSchema: yup.ObjectSchema<AddressFormFields> = yup
   .object({
     fullName: yup.string().required("Full name is required"),
@@ -53,7 +52,6 @@ const addressSchema: yup.ObjectSchema<AddressFormFields> = yup
       .required("Phone is required"),
     addressLine1: yup.string().required("Address Line 1 is required"),
 
-    // 🔑 REQUIRED + NULLABLE (this removes `undefined`)
     addressLine2: yup.string().nullable().required(),
 
     city: yup.string().required("City is required"),
@@ -69,19 +67,17 @@ const addressSchema: yup.ObjectSchema<AddressFormFields> = yup
 
 
 
-// Only schema fields for form
 type AddressFormFields = {
   fullName: string;
   phone: string;
   addressLine1: string;
-  addressLine2: string | null; // 👈 NO undefined
+  addressLine2: string | null; 
   city: string;
   state: string;
   pinCode: string;
 };
 
 
-// Store _id separately
 export interface OrderAddress {
   _id: string;
   fullName: string;
@@ -143,7 +139,6 @@ function normalizeSavedAddresses(raw: unknown): OrderAddress[] | null {
   return null;
 }
 
-// ------------------- COMPONENT -------------------
 export default function CheckoutPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -151,7 +146,6 @@ export default function CheckoutPage() {
 
   const cart = useSelector((state: RootState) => state.cart);
   const items: CartItem[] = cart.items;
-  // const totalPrice: number = cart.totalPrice;
 
   const ordersState = useSelector((state: RootState) => state.orders);
   const placing: boolean = ordersState.placing;
@@ -176,7 +170,6 @@ export default function CheckoutPage() {
   const shipping = items.length ? 40 : 0;
   const grandTotal = subtotal + shipping;
 
-  // ------------------- FORM -------------------
  const {
   register,
   handleSubmit,
@@ -188,7 +181,7 @@ export default function CheckoutPage() {
     fullName: "",
     phone: "",
     addressLine1: "",
-    addressLine2: null, // ✅ MUST be null
+    addressLine2: null, 
     city: "",
     state: "",
     pinCode: "",
@@ -214,7 +207,7 @@ export default function CheckoutPage() {
      fullName: addr.fullName,
   phone: addr.phone,
   addressLine1: addr.addressLine1,
-  addressLine2: addr.addressLine2 ?? null, // ensure null
+  addressLine2: addr.addressLine2 ?? null, 
   city: addr.city,
   state: addr.state,
   pinCode: addr.pinCode,
@@ -243,7 +236,6 @@ export default function CheckoutPage() {
   const onSaveAddress = async (data: AddressFormFields) => {
   try {
     if (editingAddressId) {
-      // Construct the payload with correct types
       const updatedAddress: OrderAddress = { ...data, _id: editingAddressId };
       await dispatch(
         saveAddressThunk({
@@ -254,7 +246,6 @@ export default function CheckoutPage() {
       toast.success("Address updated successfully");
       setSelectedAddressId(editingAddressId);
     } else {
-      // Payload for adding new address
       const newAddress: Omit<OrderAddress, "_id"> = data;
       await dispatch(
         addAddressThunk({

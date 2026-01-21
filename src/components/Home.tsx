@@ -29,10 +29,10 @@ const Home: React.FC = () => {
     (state: RootState) => state.home
   );
 
-  const {token ,role} = useAuth()
+  const { token, role } = useAuth()
   console.log(token)
   useEffect(() => {
-    
+
     dispatch(getHomeBooksThunk());
   }, [dispatch]);
 
@@ -116,16 +116,16 @@ const Home: React.FC = () => {
                 <Button
                   variant="contained"
                   onClick={() => {
-    if (!token) {
-      router.push("/login");
-    } else if (role === "seller") {
-      router.push("/sellerbooks"); 
-    } else if (role === "customer") {
-      router.push("/viewbooks");
-    } else {
-      router.push("/login"); 
-    }
-  }}
+                    if (!token) {
+                      router.push("/login");
+                    } else if (role === "seller") {
+                      router.push("/sellerbooks");
+                    } else if (role === "customer") {
+                      router.push("/viewbooks");
+                    } else {
+                      router.push("/login");
+                    }
+                  }}
                   sx={{
                     borderRadius: "999px",
                     px: 4,
@@ -226,7 +226,7 @@ const Home: React.FC = () => {
           {!loadingNew &&
             !loadingBest &&
             allCollections.map((book) => (
-              <Box  key={`${book.id}-${book.tag}`} sx={{ width: { xs: "100%", sm: "45%", md: "23%" }, minWidth: 220 }}>
+              <Box key={`${book.id}-${book.tag}`} sx={{ width: { xs: "100%", sm: "45%", md: "23%" }, minWidth: 220 }}>
                 <Card
                   elevation={0}
                   sx={{
@@ -241,40 +241,40 @@ const Home: React.FC = () => {
                   }}
                 >
                   <Box sx={{ position: "relative", p: 2, pb: 0 }}>
-  {book.tag && (
-    <Chip
-      label={book.tag}
-      size="small"
-      sx={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        bgcolor: "#f97316",
-        color: "#fff",
-        fontSize: 11,
-        height: 22,
-        zIndex: 2,
-      }}
-    />
-  )}
+                    {book.tag && (
+                      <Chip
+                        label={book.tag}
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          top: 10,
+                          left: 10,
+                          bgcolor: "#f97316",
+                          color: "#fff",
+                          fontSize: 11,
+                          height: 22,
+                          zIndex: 2,
+                        }}
+                      />
+                    )}
 
-  <Box sx={{ width: "100%", pt: "140%", position: "relative", overflow: "hidden", borderRadius: 3 }}>
-    <CardMedia
-      component="img"
-      image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.img}`}
-      alt={book.name}
-      sx={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        objectFit: "contain", 
-        backgroundColor: "#f3f3f3", 
-      }}
-    />
-  </Box>
-</Box>
+                    <Box sx={{ width: "100%", pt: "140%", position: "relative", overflow: "hidden", borderRadius: 3 }}>
+                      <CardMedia
+                        component="img"
+                        image={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${book.img}`}
+                        alt={book.name}
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                          backgroundColor: "#f3f3f3",
+                        }}
+                      />
+                    </Box>
+                  </Box>
 
 
                   <CardContent sx={{ pt: 1, pb: 0 }}>
@@ -305,7 +305,7 @@ const Home: React.FC = () => {
                           bgcolor: "rgba(197,122,69,0.04)",
                         },
                       }}
-                      onClick={() => router.push(token? `/viewonebook/${book.id}`:'/login')}
+                      onClick={() => router.push(token ? `/viewonebook/${book.id}` : '/login')}
                     >
                       View Details
                     </Button>

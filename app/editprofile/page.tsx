@@ -77,7 +77,7 @@ export default function EditProfilePage() {
     lastName: user?.lastName ?? "",
     email: user?.email ?? "",
     phone: user?.phone ? String(user.phone) : "",
-    bio: user?.bio ?? "", // 🔑 NEVER undefined
+    bio: user?.bio ?? "", 
   },
 });
 

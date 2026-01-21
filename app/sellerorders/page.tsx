@@ -18,12 +18,12 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "@/src/redux/store";
-import { fetchSellerOrdersThunk ,Order,OrderItem} from "@/src/redux/slices/orderSlice";
+import { fetchSellerOrdersThunk, Order, OrderItem } from "@/src/redux/slices/orderSlice";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/context/AuthContext";
 
 export default function SellerOrdersPage() {
-  const {blocked } = useAuth()
+  const { blocked } = useAuth()
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
@@ -85,44 +85,43 @@ export default function SellerOrdersPage() {
         {!sellerOrdersLoading && !sellerOrdersError && Array.isArray(sellerOrders) && sellerOrders.length > 0 && (
           <Stack spacing={2}>
             {sellerOrders.map((order: Order) => {
-              // Display a single card per order
               const orderItemCount = Array.isArray(order.items) ? order.items.length : 0;
-             const subtotal =
-  order.totalAmount ??
-  (order.items ?? []).reduce(
-    (sum: number, item: OrderItem) =>
-      sum + (item.price ?? 0) * (item.quantity ?? 1),
-    0
-  );
+              const subtotal =
+                order.totalAmount ??
+                (order.items ?? []).reduce(
+                  (sum: number, item: OrderItem) =>
+                    sum + (item.price ?? 0) * (item.quantity ?? 1),
+                  0
+                );
 
               return (
                 <Card key={order._id}>
                   <CardContent>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Box>
-  <Typography variant="subtitle1" fontWeight={700}>
-    Order #{String(order._id).slice(-8)}
-  </Typography>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          Order #{String(order._id).slice(-8)}
+                        </Typography>
 
-  <Typography
-    variant="caption"
-    sx={{ color: "#6b7280", display: "block", mt: 0.5 }}
-  >
-    Placed: {new Date(order.createdAt).toLocaleString()}
-  </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "#6b7280", display: "block", mt: 0.5 }}
+                        >
+                          Placed: {new Date(order.createdAt).toLocaleString()}
+                        </Typography>
 
-  <Typography variant="body2" sx={{ color: "#6b7280", mt: 1 }}>
-    Customer: {order.user?.firstName} {order.user?.lastName}
-  </Typography>
+                        <Typography variant="body2" sx={{ color: "#6b7280", mt: 1 }}>
+                          Customer: {order.user?.firstName} {order.user?.lastName}
+                        </Typography>
 
-  <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
-    Items in order: {orderItemCount}
-  </Typography>
+                        <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
+                          Items in order: {orderItemCount}
+                        </Typography>
 
-  <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
-    Total: ₹{subtotal}
-  </Typography>
-</Box>
+                        <Typography variant="body2" sx={{ color: "#6b7280", mt: 0.5 }}>
+                          Total: ₹{subtotal}
+                        </Typography>
+                      </Box>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Button
                           size="small"
@@ -142,13 +141,12 @@ export default function SellerOrdersPage() {
 
                     <Stack spacing={0.5}>
                       {(order.items ?? []).slice(0, 3).map((it: OrderItem, idx: number) => (
-  <Typography key={idx} variant="body2" sx={{ color: "#374151" }}>
-    • {it.book?.title ??
-      `Book id: ${
-        typeof it.book === "string" ? it.book : it.book?._id ?? "?"
-      }`} — Qty: {it.quantity ?? 1}
-  </Typography>
-))}
+                        <Typography key={idx} variant="body2" sx={{ color: "#374151" }}>
+                          • {it.book?.title ??
+                            `Book id: ${typeof it.book === "string" ? it.book : it.book?._id ?? "?"
+                            }`} — Qty: {it.quantity ?? 1}
+                        </Typography>
+                      ))}
                       {order.items && order.items.length > 3 && (
                         <Typography variant="caption" sx={{ color: "#6b7280" }}>
                           +{order.items.length - 3} more items

@@ -22,7 +22,6 @@ export default function CheckoutSuccessPage() {
             Thank you for your purchase! Your order has been confirmed and will be processed soon.
           </Typography>
 
-          {/* Optional Order Info */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="body2" color="text.secondary">
               Order ID

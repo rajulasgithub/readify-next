@@ -29,7 +29,7 @@ import type { OrderItem } from "@/src/redux/slices/orderSlice";
 
 
 export default function SellerOrderDetailsPage() {
-   const { orderId } = useParams<{ orderId: string }>();
+  const { orderId } = useParams<{ orderId: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const { blocked } = useAuth()
 
@@ -157,16 +157,16 @@ export default function SellerOrderDetailsPage() {
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack spacing={1.2}>
-                 <Stack spacing={1.2}>
- <Typography>
-  <strong>Name:</strong> {selectedSellerOrder.customer?.name}
-</Typography>
+                  <Stack spacing={1.2}>
+                    <Typography>
+                      <strong>Name:</strong> {selectedSellerOrder.customer?.name}
+                    </Typography>
 
-<Typography>
-  <strong>Email:</strong> {selectedSellerOrder.customer?.email}
-</Typography>
+                    <Typography>
+                      <strong>Email:</strong> {selectedSellerOrder.customer?.email}
+                    </Typography>
 
-</Stack>
+                  </Stack>
                 </Stack>
               </CardContent>
             </Card>
@@ -269,7 +269,7 @@ export default function SellerOrderDetailsPage() {
                           onChange={(e) =>
                             handleStatusChange(idx, e.target.value as string, item._id)
                           }
-                          disabled={updatingStatus ||blocked}
+                          disabled={updatingStatus || blocked}
                         >
                           <MenuItem value="dispatched">Mark as Dispatched</MenuItem>
                           <MenuItem value="delivered">Mark as Delivered</MenuItem>

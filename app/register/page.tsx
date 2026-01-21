@@ -187,7 +187,7 @@ export default function RegisterPage() {
   inputProps={{ style: { textTransform: "uppercase" } }}
   onChange={(e) => {
     e.target.value = e.target.value.toUpperCase();
-    return register("lastName").onChange(e); // ✅ FIXED
+    return register("lastName").onChange(e); 
   }}
 />
 

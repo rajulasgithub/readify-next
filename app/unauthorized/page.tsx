@@ -13,7 +13,6 @@ const Unauthorized: React.FC = () => {
     router.push("/login");
   };
 
-
   return (
     <Box
       sx={{

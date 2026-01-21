@@ -75,7 +75,7 @@ export type BookFormInputs = {
   language: string[];
   prize: number;
   category: string;
-  image: File | null; 
+  image: File | null;
 };
 
 const bookSchema = yup.object({
@@ -123,7 +123,7 @@ const bookSchema = yup.object({
 
   image: yup
     .mixed<File>()
-     .defined() 
+    .defined()
     .nullable()
     .test(
       "required",
@@ -134,7 +134,7 @@ const bookSchema = yup.object({
 
 
 const AddBook: React.FC = () => {
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { blocked } = useAuth();
 
@@ -143,28 +143,28 @@ const dispatch = useDispatch<AppDispatch>();
   );
 
   const {
-  register,
-  handleSubmit,
-  control,
-  watch,
-  setValue,
-  formState: { errors },
-} = useForm<BookFormInputs>({
-  resolver: yupResolver(bookSchema),
-  defaultValues: {
-    title: "",
-    description: "",
-    excerpt: "",
-    page_count: undefined as unknown as number,
-    publish_date: "",
-    author: "",
-    genre: [],
-    language: [],
-    prize: undefined as unknown as number,
-    category: "",
-    image: null,
-  },
-});
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<BookFormInputs>({
+    resolver: yupResolver(bookSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      excerpt: "",
+      page_count: undefined as unknown as number,
+      publish_date: "",
+      author: "",
+      genre: [],
+      language: [],
+      prize: undefined as unknown as number,
+      category: "",
+      image: null,
+    },
+  });
 
   const descriptionValue = watch("description") || "";
   const excerptValue = watch("excerpt") || "";
@@ -172,7 +172,7 @@ const dispatch = useDispatch<AppDispatch>();
   const [preview, setPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -203,7 +203,7 @@ const dispatch = useDispatch<AppDispatch>();
     fileRef.current?.click();
   };
 
-  
+
 
   const onSubmit = async (data: BookFormInputs) => {
     if (!data.image) return;
@@ -258,7 +258,7 @@ const dispatch = useDispatch<AppDispatch>();
         <Stack spacing={1.5} sx={{ mb: 3, alignItems: "center" }}>
           <Typography variant="subtitle2">Book Image *</Typography>
 
-         
+
           <input ref={fileRef} type="file" hidden accept="image/*" onChange={handleImageUpload} />
           <Box
             onClick={openFilePicker}
@@ -276,7 +276,7 @@ const dispatch = useDispatch<AppDispatch>();
             {preview ? (
               <Card sx={{ width: 160, height: 200, borderRadius: 2, overflow: "hidden", position: "relative" }}>
                 <CardMedia component="img" image={preview} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-               
+
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
@@ -308,9 +308,9 @@ const dispatch = useDispatch<AppDispatch>();
               Click to choose image
             </Typography>
 
-           <Typography variant="caption" sx={{ color: "red" }}>
-  {errors.image?.message}
-</Typography>
+            <Typography variant="caption" sx={{ color: "red" }}>
+              {errors.image?.message}
+            </Typography>
           </Box>
         </Stack>
 
@@ -319,11 +319,11 @@ const dispatch = useDispatch<AppDispatch>();
             {typeof error === "string" ? error : "Failed to add book"}
           </Typography>
         )}
-           {blocked && (
-  <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-    Your account is blocked. You cannot add books.
-  </Typography>
-)}
+        {blocked && (
+          <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+            Your account is blocked. You cannot add books.
+          </Typography>
+        )}
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
           <Stack spacing={2.3}>
             <TextField label="Title" fullWidth {...register("title")} error={!!errors.title} helperText={errors.title?.message} />
@@ -371,66 +371,66 @@ const dispatch = useDispatch<AppDispatch>();
             <TextField label="Author" fullWidth {...register("author")} error={!!errors.author} helperText={errors.author?.message} />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Controller
-  name="genre"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={genres}
-      value={field.value || []}
-      onChange={(_, value) => field.onChange(value)}
-      isOptionEqualToValue={(opt, val) => opt === val}
-      getOptionLabel={(opt) => opt}
-      sx={{ width: "100%" }}
-      slotProps={{
-        popper: {
-          sx: { minWidth: 240, maxWidth: 480 }, // use sx instead of style
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Genre"
-          error={!!errors.genre}
-          helperText={(errors.genre as FieldError)?.message}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
+              <Controller
+                name="genre"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={genres}
+                    value={field.value || []}
+                    onChange={(_, value) => field.onChange(value)}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    getOptionLabel={(opt) => opt}
+                    sx={{ width: "100%" }}
+                    slotProps={{
+                      popper: {
+                        sx: { minWidth: 240, maxWidth: 480 },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Genre"
+                        error={!!errors.genre}
+                        helperText={(errors.genre as FieldError)?.message}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
+              />
 
-             <Controller
-  name="language"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      multiple
-      options={languages}
-      value={field.value || []}
-      onChange={(_, value) => field.onChange(value)}
-      sx={{ width: '100%' }}
-      slotProps={{
-        popper: {
-          sx: {
-            minWidth: 240,
-            maxWidth: 480,
-          },
-        },
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Language"
-          error={!!errors.language}
-          helperText={errors.language?.message as string}
-          fullWidth
-        />
-      )}
-    />
-  )}
-/>
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    options={languages}
+                    value={field.value || []}
+                    onChange={(_, value) => field.onChange(value)}
+                    sx={{ width: '100%' }}
+                    slotProps={{
+                      popper: {
+                        sx: {
+                          minWidth: 240,
+                          maxWidth: 480,
+                        },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Language"
+                        error={!!errors.language}
+                        helperText={errors.language?.message as string}
+                        fullWidth
+                      />
+                    )}
+                  />
+                )}
+              />
 
             </Stack>
 
@@ -463,7 +463,7 @@ const dispatch = useDispatch<AppDispatch>();
             <Button
               variant="contained"
               type="submit"
-              disabled={loading || blocked} 
+              disabled={loading || blocked}
               sx={{
                 bgcolor: "#c57a45",
                 "&:hover": { bgcolor: "#b36a36" },
@@ -478,7 +478,7 @@ const dispatch = useDispatch<AppDispatch>();
               }}
             >
               {loading && <CircularProgress size={18} sx={{ color: "#fff" }} />}
-                {loading ? "Adding..." : blocked ? "Blocked" : "Add Book"}
+              {loading ? "Adding..." : blocked ? "Blocked" : "Add Book"}
             </Button>
           </Stack>
 

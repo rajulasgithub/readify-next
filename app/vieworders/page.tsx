@@ -306,7 +306,6 @@ export default function UserOrdersPage() {
           </>
         )}
 
-        {/* Review Dialog */}
         <Dialog open={reviewOpen} onClose={() => setReviewOpen(false)}>
           <DialogTitle>Add Review</DialogTitle>
           <DialogContent>
@@ -342,7 +341,6 @@ export default function UserOrdersPage() {
           </DialogActions>
         </Dialog>
 
-        {/* Cancel Dialog */}
         <Dialog open={cancelModalOpen} onClose={() => setCancelModalOpen(false)}>
           <DialogTitle sx={{ fontWeight: 700 }}>Cancel Item</DialogTitle>
           <DialogContent>

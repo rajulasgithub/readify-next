@@ -125,7 +125,7 @@ export default function WishlistPage() {
               gap: 2,
             }}
           >
-         
+
             {hasItems && (
               <Stack direction="row" spacing={2} alignItems="center">
                 <Chip
@@ -283,27 +283,27 @@ export default function WishlistPage() {
                           />
                         )}
 
-                       <IconButton
-  size="small"
-  disabled={blocked}
-  onClick={() => removeHandler(item.bookId)}
-  sx={{
-    position: "absolute",
-    top: 8,
-    right: 8,
-    bgcolor: "#ffffff",
-    opacity: blocked ? 0.4 : 1,       
-    pointerEvents: blocked ? "none" : "auto", 
-    "&:hover": {
-      bgcolor: blocked ? "#ffffff" : "#f1f5f9", 
-    },
-  }}
->
-  <DeleteIcon
-    fontSize="small"
-    color={blocked ? "disabled" : "error"}  
-  />
-</IconButton>
+                        <IconButton
+                          size="small"
+                          disabled={blocked}
+                          onClick={() => removeHandler(item.bookId)}
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            bgcolor: "#ffffff",
+                            opacity: blocked ? 0.4 : 1,
+                            pointerEvents: blocked ? "none" : "auto",
+                            "&:hover": {
+                              bgcolor: blocked ? "#ffffff" : "#f1f5f9",
+                            },
+                          }}
+                        >
+                          <DeleteIcon
+                            fontSize="small"
+                            color={blocked ? "disabled" : "error"}
+                          />
+                        </IconButton>
 
                         <CardMedia
                           component="img"
@@ -375,7 +375,7 @@ export default function WishlistPage() {
                         <Button
                           variant="outlined"
                           size="small"
-                          
+
                           sx={{
                             borderRadius: "999px",
                             textTransform: "none",

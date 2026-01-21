@@ -7,9 +7,6 @@ import Footer from "@/src/components/Footer";
 import ClientProviders from "@/src/components/ClientProviders";
 import EmotionRegistry from "@/src/theme/emotion-registry";
 
-
-
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
